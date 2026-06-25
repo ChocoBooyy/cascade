@@ -21,10 +21,8 @@ public final class SequentialStep implements Step {
             }
             boolean finished = child.tick();
             if (!child.consumesTick()) {
-                // instantaneous: move on within the same tick
-                if (finished) {
-                    index++;
-                }
+                // instantaneous: it acts in a single tick, so move on regardless
+                index++;
                 continue;
             }
             if (finished) {

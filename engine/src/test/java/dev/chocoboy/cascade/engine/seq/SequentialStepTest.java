@@ -42,4 +42,29 @@ class SequentialStepTest {
     void emptySequenceIsDone() {
         assertTrue(new SequentialStep(List.of()).isDone());
     }
+
+    @Test
+    void advancesPastNonCompletingInstantStep() {
+        Step stuck = new Step() {
+            @Override
+            public boolean tick() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return false;
+            }
+
+            @Override
+            public boolean consumesTick() {
+                return false;
+            }
+        };
+        StringBuilder log = new StringBuilder();
+        SequentialStep seq = new SequentialStep(List.of(stuck, new RunStep(() -> log.append('z'))));
+
+        assertTrue(seq.tick());
+        assertEquals("z", log.toString());
+    }
 }
