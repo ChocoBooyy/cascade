@@ -13,7 +13,8 @@ public final class ParallelStep implements Step {
     @Override
     public boolean tick() {
         boolean allDone = true;
-        for (Step child : children) {
+        for (int i = 0; i < children.size(); i++) {
+            Step child = children.get(i);
             if (!child.isDone()) {
                 child.tick();
                 if (!child.isDone()) {
@@ -26,8 +27,8 @@ public final class ParallelStep implements Step {
 
     @Override
     public boolean isDone() {
-        for (Step child : children) {
-            if (!child.isDone()) {
+        for (int i = 0; i < children.size(); i++) {
+            if (!children.get(i).isDone()) {
                 return false;
             }
         }
