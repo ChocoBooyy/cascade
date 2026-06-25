@@ -1,0 +1,2 @@
+// Root holds no code. Each module configures itself.
+// The common and neoforge loader modules join here in the next milestone.
