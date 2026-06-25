@@ -27,4 +27,10 @@ class EasingsTest {
         assertEquals(0.25f, Easings.EASE_IN_QUAD.ease(0.5f), EPS);
         assertEquals(0.75f, Easings.EASE_OUT_QUAD.ease(0.5f), EPS);
     }
+
+    @Test
+    void inOutQuadCoversBothBranches() {
+        assertEquals(0.125f, Easings.EASE_IN_OUT_QUAD.ease(0.25f), EPS);
+        assertEquals(0.875f, Easings.EASE_IN_OUT_QUAD.ease(0.75f), EPS);
+    }
 }
