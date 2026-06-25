@@ -29,6 +29,7 @@ public final class ColorCurve {
     private static int channel(int fromShifted, int toShifted, float e) {
         int a = fromShifted & 0xFF;
         int b = toShifted & 0xFF;
-        return Math.round(a + (b - a) * e);
+        int value = Math.round(a + (b - a) * e);
+        return Math.min(255, Math.max(0, value));
     }
 }

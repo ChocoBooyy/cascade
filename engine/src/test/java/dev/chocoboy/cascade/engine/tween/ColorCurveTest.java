@@ -26,4 +26,16 @@ class ColorCurveTest {
         assertEquals(0x102030, c.at(-1f));
         assertEquals(0x405060, c.at(2f));
     }
+
+    @Test
+    void clampsOvershootEasing() {
+        ColorCurve c = ColorCurve.of(0x000000, 0xFFFFFF, t -> 1.5f);
+        assertEquals(0xFFFFFF, c.at(0.5f));
+    }
+
+    @Test
+    void clampsUndershootEasing() {
+        ColorCurve c = ColorCurve.of(0x000000, 0xFFFFFF, t -> -0.5f);
+        assertEquals(0x000000, c.at(0.5f));
+    }
 }
