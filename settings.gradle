@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        maven { url 'https://maven.neoforged.net/releases' }
     }
 }
 
@@ -12,3 +13,5 @@ plugins {
 rootProject.name = 'cascade'
 
 include 'engine'
+include 'common'
+include 'neoforge'

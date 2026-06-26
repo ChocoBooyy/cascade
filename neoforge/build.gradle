@@ -1,0 +1,58 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev'
+}
+
+base {
+    archivesName = "${mod_id}-neoforge"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+repositories {
+    maven { url 'https://maven.parchmentmc.org' }
+}
+
+neoForge {
+    version = neoforge_version
+    parchment {
+        minecraftVersion = parchment_minecraft
+        mappingsVersion = parchment_version
+    }
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+configurations {
+    commonJava {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+dependencies {
+    commonJava project(path: ':common', configuration: 'commonJava')
+    implementation project(':engine')
+}
+
+tasks.named('compileJava', JavaCompile) {
+    dependsOn(configurations.commonJava)
+    source(configurations.commonJava)
+}
+
+processResources {
+    def expandProps = [
+            version                      : project.version,
+            minecraft_version_range      : minecraft_version_range,
+            neoforge_loader_version_range: neoforge_loader_version_range
+    ]
+    inputs.properties(expandProps)
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand expandProps
+    }
+}
