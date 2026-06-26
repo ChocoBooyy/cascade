@@ -1,0 +1,27 @@
+package dev.chocoboy.cascade.neoforge;
+
+import dev.chocoboy.cascade.neoforge.net.CascadeEffects;
+import dev.chocoboy.cascade.neoforge.net.EffectPayload;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+public final class Vfx {
+
+    private static final double RADIUS = 64.0;
+
+    private Vfx() {
+    }
+
+    public static void burst(ServerLevel level, Vec3 pos) {
+        send(level, pos, new EffectPayload(CascadeEffects.BURST, pos, pos, level.getGameTime()));
+    }
+
+    public static void beam(ServerLevel level, Vec3 from, Vec3 to) {
+        send(level, from, new EffectPayload(CascadeEffects.BEAM, from, to, level.getGameTime()));
+    }
+
+    private static void send(ServerLevel level, Vec3 around, EffectPayload payload) {
+        PacketDistributor.sendToPlayersNear(level, null, around.x, around.y, around.z, RADIUS, payload);
+    }
+}
