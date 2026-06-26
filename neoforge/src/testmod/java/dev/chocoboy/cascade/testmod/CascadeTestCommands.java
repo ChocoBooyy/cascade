@@ -27,6 +27,17 @@ public final class CascadeTestCommands {
                     Vec3 to = from.add(player.getLookAngle().scale(10.0));
                     Vfx.beam(player.serverLevel(), from, to);
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("combo").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    Vec3 from = player.getEyePosition();
+                    Vec3 to = from.add(player.getLookAngle().scale(10.0));
+                    Vfx.at(player.serverLevel())
+                            .beam(from, to)
+                            .delay(8)
+                            .burst(player.position().add(0.0, 1.0, 0.0))
+                            .play();
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 }
