@@ -31,6 +31,14 @@ public final class CascadeTestClient {
                     }
                     return Command.SINGLE_SUCCESS;
                 }))
+                .then(Commands.literal("burst").executes(ctx -> {
+                    Player player = Minecraft.getInstance().player;
+                    if (player != null) {
+                        VfxRenderManager.get().spawnBurst(player.position().add(0.0, 1.0, 0.0),
+                                player.level().getGameTime());
+                    }
+                    return Command.SINGLE_SUCCESS;
+                }))
                 .executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal("vfxtest: try /vfxtest quad"), false);
                     return Command.SINGLE_SUCCESS;

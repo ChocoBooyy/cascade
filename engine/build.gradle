@@ -22,3 +22,16 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+// expose the source so the loader modules can compile it into their own mod module; a plain jar
+// dependency is a separate module that FML will not let the mod read at runtime
+configurations {
+    engineJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    engineJava sourceSets.main.java.sourceDirectories.singleFile
+}

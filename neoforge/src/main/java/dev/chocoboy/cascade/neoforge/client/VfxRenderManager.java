@@ -2,8 +2,15 @@ package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dev.chocoboy.cascade.engine.effect.Particle;
+import dev.chocoboy.cascade.engine.effect.ParticleSystem;
+import dev.chocoboy.cascade.engine.emitter.Shapes;
+import dev.chocoboy.cascade.engine.tween.ColorCurve;
+import dev.chocoboy.cascade.engine.tween.Curve;
+import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -18,6 +25,7 @@ public final class VfxRenderManager {
     private static final VfxRenderManager INSTANCE = new VfxRenderManager();
 
     private final List<Quad> quads = new ArrayList<>();
+    private final List<Burst> bursts = new ArrayList<>();
 
     private VfxRenderManager() {
     }
@@ -30,14 +38,26 @@ public final class VfxRenderManager {
         quads.add(new Quad(pos, rgb, size, lifetime));
     }
 
+    public void spawnBurst(Vec3 origin, long seed) {
+        ParticleSystem sim = new ParticleSystem(
+                Shapes.sphere(1.5f), 120, 30, 0.08f,
+                Curve.of(0.25f, 0.0f, Easings.EASE_OUT_QUAD),
+                Curve.of(1.0f, 0.0f, Easings.LINEAR),
+                ColorCurve.of(0xFFCC33, 0xFF3300, Easings.LINEAR),
+                new Random(seed));
+        bursts.add(new Burst(origin, sim));
+    }
+
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         quads.removeIf(q -> ++q.age >= q.lifetime);
+        bursts.removeIf(b -> b.sim.tick());
     }
 
     @SubscribeEvent
     public void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || quads.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS
+                || (quads.isEmpty() && bursts.isEmpty())) {
             return;
         }
         Camera camera = event.getCamera();
@@ -54,6 +74,18 @@ public final class VfxRenderManager {
                     (float) (q.pos.x - cam.x), (float) (q.pos.y - cam.y), (float) (q.pos.z - cam.z),
                     q.size, r, g, b, 255);
         }
+        for (Burst burst : bursts) {
+            for (Particle p : burst.sim.particles()) {
+                int color = burst.sim.colorOf(p);
+                int alpha = (int) (burst.sim.alphaOf(p) * 255f);
+                Billboards.quad(pose, vc, rotation,
+                        (float) (burst.origin.x + p.pos.x() - cam.x),
+                        (float) (burst.origin.y + p.pos.y() - cam.y),
+                        (float) (burst.origin.z + p.pos.z() - cam.z),
+                        burst.sim.sizeOf(p),
+                        (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, alpha);
+            }
+        }
         buffers.endBatch(VfxRenderTypes.ADDITIVE);
     }
 
@@ -69,6 +101,16 @@ public final class VfxRenderManager {
             this.rgb = rgb;
             this.size = size;
             this.lifetime = lifetime;
+        }
+    }
+
+    private static final class Burst {
+        private final Vec3 origin;
+        private final ParticleSystem sim;
+
+        private Burst(Vec3 origin, ParticleSystem sim) {
+            this.origin = origin;
+            this.sim = sim;
         }
     }
 }
