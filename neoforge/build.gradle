@@ -74,3 +74,9 @@ processResources {
         expand expandProps
     }
 }
+
+// the client run loads the dev testmod, so its classes and the mods.toml in its resources
+// must be built first; moddev wires this for the main mod but not the extra source set
+tasks.named('runClient') {
+    dependsOn 'testmodClasses'
+}
