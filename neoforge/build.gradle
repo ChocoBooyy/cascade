@@ -15,15 +15,28 @@ repositories {
     maven { url 'https://maven.parchmentmc.org' }
 }
 
+sourceSets {
+    testmod
+}
+
 neoForge {
     version = neoforge_version
     parchment {
         minecraftVersion = parchment_minecraft
         mappingsVersion = parchment_version
     }
+    addModdingDependenciesTo(sourceSets.testmod)
     mods {
         "${mod_id}" {
             sourceSet sourceSets.main
+        }
+        cascadetest {
+            sourceSet sourceSets.testmod
+        }
+    }
+    runs {
+        client {
+            client()
         }
     }
 }
@@ -33,11 +46,16 @@ configurations {
         canBeResolved = true
         canBeConsumed = false
     }
+    testmodImplementation.extendsFrom(implementation)
+    testmodRuntimeOnly.extendsFrom(runtimeOnly)
 }
 
 dependencies {
     commonJava project(path: ':common', configuration: 'commonJava')
     implementation project(':engine')
+
+    testmodImplementation sourceSets.main.output
+    testmodImplementation project(':engine')
 }
 
 tasks.named('compileJava', JavaCompile) {
