@@ -22,7 +22,6 @@ public final class VfxRenderManager {
     private static final int MAX_EFFECTS = 256;
 
     private final List<RenderedEffect> active = new ArrayList<>();
-    // TODO: isolate failures per effect; today one bad instance suppresses the whole layer for the session
     private boolean loggedError;
 
     private VfxRenderManager() {
@@ -41,11 +40,14 @@ public final class VfxRenderManager {
 
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
-        try {
-            active.removeIf(RenderedEffect::tick);
-        } catch (RuntimeException e) {
-            logOnce("ticking effects", e);
-        }
+        active.removeIf(effect -> {
+            try {
+                return effect.tick();
+            } catch (RuntimeException e) {
+                logOnce("ticking an effect", e);
+                return true;
+            }
+        });
     }
 
     @SubscribeEvent
@@ -58,14 +60,24 @@ public final class VfxRenderManager {
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         VertexConsumer vc = buffers.getBuffer(VfxRenderTypes.ADDITIVE);
         VfxFrame frame = new VfxFrame(pose, vc, camera.rotation(), camera.getPosition());
+        List<RenderedEffect> failed = null;
         try {
             for (RenderedEffect effect : active) {
-                effect.render(frame);
+                try {
+                    effect.render(frame);
+                } catch (RuntimeException e) {
+                    if (failed == null) {
+                        failed = new ArrayList<>();
+                    }
+                    failed.add(effect);
+                    logOnce("rendering an effect", e);
+                }
             }
-        } catch (RuntimeException e) {
-            logOnce("rendering effects", e);
         } finally {
             buffers.endBatch(VfxRenderTypes.ADDITIVE);
+        }
+        if (failed != null) {
+            active.removeAll(failed);
         }
     }
 
