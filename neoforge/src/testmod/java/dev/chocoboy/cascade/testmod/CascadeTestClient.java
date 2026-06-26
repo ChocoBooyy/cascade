@@ -39,6 +39,15 @@ public final class CascadeTestClient {
                     }
                     return Command.SINGLE_SUCCESS;
                 }))
+                .then(Commands.literal("beam").executes(ctx -> {
+                    Player player = Minecraft.getInstance().player;
+                    if (player != null) {
+                        Vec3 from = player.getEyePosition();
+                        Vec3 to = from.add(player.getLookAngle().scale(10.0));
+                        VfxRenderManager.get().spawnBeam(from, to, player.level().getGameTime());
+                    }
+                    return Command.SINGLE_SUCCESS;
+                }))
                 .executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal("vfxtest: try /vfxtest quad"), false);
                     return Command.SINGLE_SUCCESS;

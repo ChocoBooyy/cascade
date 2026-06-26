@@ -2,9 +2,11 @@ package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dev.chocoboy.cascade.engine.effect.BeamState;
 import dev.chocoboy.cascade.engine.effect.Particle;
 import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.emitter.Shapes;
+import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.ColorCurve;
 import dev.chocoboy.cascade.engine.tween.Curve;
 import dev.chocoboy.cascade.engine.tween.Easings;
@@ -26,6 +28,7 @@ public final class VfxRenderManager {
 
     private final List<Quad> quads = new ArrayList<>();
     private final List<Burst> bursts = new ArrayList<>();
+    private final List<BeamRender> beams = new ArrayList<>();
 
     private VfxRenderManager() {
     }
@@ -48,16 +51,23 @@ public final class VfxRenderManager {
         bursts.add(new Burst(origin, sim));
     }
 
+    public void spawnBeam(Vec3 from, Vec3 to, long seed) {
+        Vec3f a = new Vec3f((float) from.x, (float) from.y, (float) from.z);
+        Vec3f b = new Vec3f((float) to.x, (float) to.y, (float) to.z);
+        beams.add(new BeamRender(new BeamState(a, b, 16, 0.35f, 12, new Random(seed))));
+    }
+
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         quads.removeIf(q -> ++q.age >= q.lifetime);
         bursts.removeIf(b -> b.sim.tick());
+        beams.removeIf(b -> b.sim.tick());
     }
 
     @SubscribeEvent
     public void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS
-                || (quads.isEmpty() && bursts.isEmpty())) {
+                || (quads.isEmpty() && bursts.isEmpty() && beams.isEmpty())) {
             return;
         }
         Camera camera = event.getCamera();
@@ -86,6 +96,24 @@ public final class VfxRenderManager {
                         (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, alpha);
             }
         }
+        float halfWidth = 0.12f;
+        for (BeamRender beam : beams) {
+            List<Vec3f> spine = beam.sim.spine();
+            for (int i = 0; i < spine.size() - 1; i++) {
+                Vec3f p0 = spine.get(i);
+                Vec3f p1 = spine.get(i + 1);
+                Vec3 a = new Vec3(p0.x() - cam.x, p0.y() - cam.y, p0.z() - cam.z);
+                Vec3 b = new Vec3(p1.x() - cam.x, p1.y() - cam.y, p1.z() - cam.z);
+                Vec3 dir = b.subtract(a).normalize();
+                Vec3 toView = a.scale(-1.0).normalize();
+                Vec3 side = dir.cross(toView).normalize().scale(halfWidth);
+                var m = pose.last().pose();
+                vc.addVertex(m, (float) (a.x - side.x), (float) (a.y - side.y), (float) (a.z - side.z)).setColor(120, 200, 255, 255);
+                vc.addVertex(m, (float) (a.x + side.x), (float) (a.y + side.y), (float) (a.z + side.z)).setColor(120, 200, 255, 255);
+                vc.addVertex(m, (float) (b.x + side.x), (float) (b.y + side.y), (float) (b.z + side.z)).setColor(120, 200, 255, 255);
+                vc.addVertex(m, (float) (b.x - side.x), (float) (b.y - side.y), (float) (b.z - side.z)).setColor(120, 200, 255, 255);
+            }
+        }
         buffers.endBatch(VfxRenderTypes.ADDITIVE);
     }
 
@@ -110,6 +138,14 @@ public final class VfxRenderManager {
 
         private Burst(Vec3 origin, ParticleSystem sim) {
             this.origin = origin;
+            this.sim = sim;
+        }
+    }
+
+    private static final class BeamRender {
+        private final BeamState sim;
+
+        private BeamRender(BeamState sim) {
             this.sim = sim;
         }
     }
