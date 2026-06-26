@@ -1,2 +1,8 @@
-// Root holds no code. Each module configures itself.
-// The common and neoforge loader modules join here in the next milestone.
+plugins {
+    id 'net.neoforged.moddev' version '2.0.112' apply false
+}
+
+allprojects {
+    group = rootProject.mod_group
+    version = rootProject.mod_version
+}
