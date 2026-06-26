@@ -1,0 +1,23 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="cascadetest"
+version="0.0.0"
+displayName="Cascade Test Harness"
+description="Dev-only harness for exercising Cascade effects. Not published."
+
+[[dependencies.cascadetest]]
+modId="cascade"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.cascadetest]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="BOTH"
