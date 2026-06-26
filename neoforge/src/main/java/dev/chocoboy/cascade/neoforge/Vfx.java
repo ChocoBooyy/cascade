@@ -13,6 +13,10 @@ public final class Vfx {
     private Vfx() {
     }
 
+    public static VfxSequence at(ServerLevel level) {
+        return new VfxSequence(level);
+    }
+
     public static void burst(ServerLevel level, Vec3 pos) {
         send(level, pos, new EffectPayload(CascadeEffects.BURST, pos, pos, level.getGameTime()));
     }
