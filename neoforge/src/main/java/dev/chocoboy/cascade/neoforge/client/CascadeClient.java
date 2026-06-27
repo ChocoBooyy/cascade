@@ -9,5 +9,6 @@ public final class CascadeClient {
 
     public static void init() {
         NeoForge.EVENT_BUS.register(VfxRenderManager.get());
+        NeoForge.EVENT_BUS.register(ShakeController.get());
     }
 }

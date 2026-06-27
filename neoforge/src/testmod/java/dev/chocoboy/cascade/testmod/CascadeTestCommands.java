@@ -38,6 +38,11 @@ public final class CascadeTestCommands {
                             .burst(player.position().add(0.0, 1.0, 0.0))
                             .play();
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("shake").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    Vfx.shake(player.serverLevel(), player.position(), 3.0f, 12);
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 }
