@@ -2,10 +2,13 @@ package dev.chocoboy.cascade.neoforge.net;
 
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -32,6 +35,19 @@ public final class SpecCodecs {
             EASING, CurveSpec::ease,
             CurveSpec::new);
 
+    private static final StreamCodec<ByteBuf, ModifierSpec.Kind> MODIFIER_KIND =
+            ByteBufCodecs.idMapper(i -> ModifierSpec.Kind.values()[i], Enum::ordinal);
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, ModifierSpec> MODIFIER = StreamCodec.composite(
+            MODIFIER_KIND, ModifierSpec::kind,
+            NetCodecs.VEC3F, ModifierSpec::vec,
+            ByteBufCodecs.FLOAT, ModifierSpec::a,
+            ByteBufCodecs.FLOAT, ModifierSpec::b,
+            ModifierSpec::new);
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, List<ModifierSpec>> MODIFIERS =
+            MODIFIER.apply(ByteBufCodecs.collection(ArrayList::new));
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -43,11 +59,12 @@ public final class SpecCodecs {
                 buf.writeInt(s.colorStart());
                 buf.writeInt(s.colorEnd());
                 EASING.encode(buf, s.colorEase());
+                MODIFIERS.encode(buf, s.modifiers());
             },
             buf -> new EmitterSpec(
                     SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
                     CURVE.decode(buf), CURVE.decode(buf),
-                    buf.readInt(), buf.readInt(), EASING.decode(buf)));
+                    buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf)));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,

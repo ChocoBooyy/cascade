@@ -1,9 +1,13 @@
 package dev.chocoboy.cascade.neoforge;
 
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
+import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -18,6 +22,7 @@ public final class VfxEmitter {
     private int colorStart;
     private int colorEnd;
     private Easings colorEase;
+    private final List<ModifierSpec> modifiers = new ArrayList<>();
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -70,8 +75,26 @@ public final class VfxEmitter {
         return this;
     }
 
+    public VfxEmitter gravity(float x, float y, float z) {
+        return modifier(ModifierSpec.gravity(new Vec3f(x, y, z)));
+    }
+
+    public VfxEmitter drag(float drag) {
+        return modifier(ModifierSpec.drag(drag));
+    }
+
+    public VfxEmitter turbulence(float strength, float frequency) {
+        return modifier(ModifierSpec.turbulence(strength, frequency));
+    }
+
+    public VfxEmitter modifier(ModifierSpec modifier) {
+        modifiers.add(modifier);
+        return this;
+    }
+
     public EmitterSpec spec() {
-        return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase);
+        return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
+                List.copyOf(modifiers));
     }
 
     public void play(ServerLevel level, Vec3 pos) {

@@ -51,9 +51,12 @@ public final class CascadeTestCommands {
                     Vfx.emitter()
                             .shape(ShapeSpec.cone(1.0f, 3.0f))
                             .count(300)
+                            .lifetime(40)
                             .speed(0.12f)
                             .size(0.4f, 0.0f, Easings.EASE_OUT_QUAD)
                             .color(0x66CCFF, 0x0033FF, Easings.LINEAR)
+                            .gravity(0.0f, -0.01f, 0.0f)
+                            .turbulence(0.02f, 0.6f)
                             .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))

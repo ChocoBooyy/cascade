@@ -12,12 +12,18 @@ import java.util.random.RandomGenerator;
 public final class ParticleSystem implements EffectSim {
 
     private final List<Particle> particles = new ArrayList<>();
+    private final List<ParticleModifier> modifiers;
     private final Curve size;
     private final Curve alpha;
     private final ColorCurve color;
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, RandomGenerator rng) {
+        this(shape, count, particleLifetime, speed, size, alpha, color, List.of(), rng);
+    }
+
+    public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
+            Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         if (count < 0) {
             throw new IllegalArgumentException("count < 0");
         }
@@ -27,6 +33,7 @@ public final class ParticleSystem implements EffectSim {
         this.size = Objects.requireNonNull(size, "size");
         this.alpha = Objects.requireNonNull(alpha, "alpha");
         this.color = Objects.requireNonNull(color, "color");
+        this.modifiers = List.copyOf(modifiers);
         Objects.requireNonNull(shape, "shape");
         Objects.requireNonNull(rng, "rng");
         for (int i = 0; i < count; i++) {
@@ -39,6 +46,9 @@ public final class ParticleSystem implements EffectSim {
     public boolean tick() {
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
+            for (int m = 0; m < modifiers.size(); m++) {
+                modifiers.get(m).apply(p);
+            }
             p.pos = p.pos.add(p.vel);
             p.age++;
             if (p.dead()) {

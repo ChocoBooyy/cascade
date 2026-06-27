@@ -4,15 +4,27 @@ import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.ColorCurve;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.random.RandomGenerator;
 
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
-        CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
+        CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+        List<ModifierSpec> modifiers) {
+
+    public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
+            CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, List.of());
+    }
 
     public ParticleSystem build(RandomGenerator rng) {
+        List<ParticleModifier> built = new ArrayList<>(modifiers.size());
+        for (ModifierSpec m : modifiers) {
+            built.add(m.toModifier());
+        }
         return new ParticleSystem(shape.sampler(), count, lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
-                ColorCurve.of(colorStart, colorEnd, colorEase), rng);
+                ColorCurve.of(colorStart, colorEnd, colorEase), built, rng);
     }
 
     public static EmitterSpec defaultBurst() {
