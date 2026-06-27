@@ -30,6 +30,10 @@ public final class Vfx {
         return new VfxEmitter();
     }
 
+    public static VfxBeam beam() {
+        return new VfxBeam();
+    }
+
     public static void burst(ServerLevel level, Vec3 pos) {
         emit(level, pos, EmitterSpec.defaultBurst());
     }
