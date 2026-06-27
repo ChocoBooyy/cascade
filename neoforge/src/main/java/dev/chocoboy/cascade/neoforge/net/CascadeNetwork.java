@@ -14,6 +14,8 @@ public final class CascadeNetwork {
                 .playToClient(EffectPayload.TYPE, EffectPayload.STREAM_CODEC,
                         (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handle(payload)))
                 .playToClient(ShakePayload.TYPE, ShakePayload.STREAM_CODEC,
-                        (payload, context) -> context.enqueueWork(() -> ClientShakeHandler.handle(payload)));
+                        (payload, context) -> context.enqueueWork(() -> ClientShakeHandler.handle(payload)))
+                .playToClient(EmitterPayload.TYPE, EmitterPayload.STREAM_CODEC,
+                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleEmitter(payload)));
     }
 }

@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge.net;
 
+import dev.chocoboy.cascade.engine.math.Vec3f;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -13,6 +14,12 @@ public final class NetCodecs {
             ByteBufCodecs.DOUBLE, Vec3::y,
             ByteBufCodecs.DOUBLE, Vec3::z,
             Vec3::new);
+
+    public static final StreamCodec<ByteBuf, Vec3f> VEC3F = StreamCodec.composite(
+            ByteBufCodecs.FLOAT, Vec3f::x,
+            ByteBufCodecs.FLOAT, Vec3f::y,
+            ByteBufCodecs.FLOAT, Vec3f::z,
+            Vec3f::new);
 
     private NetCodecs() {
     }
