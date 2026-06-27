@@ -10,11 +10,17 @@ import java.util.random.RandomGenerator;
 
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-        List<ModifierSpec> modifiers) {
+        List<ModifierSpec> modifiers, EmissionSpec emission) {
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
-        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, List.of());
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, List.of(), EmissionSpec.burst());
+    }
+
+    public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
+            CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+            List<ModifierSpec> modifiers) {
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, EmissionSpec.burst());
     }
 
     public ParticleSystem build(RandomGenerator rng) {
@@ -22,7 +28,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         for (ModifierSpec m : modifiers) {
             built.add(m.toModifier());
         }
-        return new ParticleSystem(shape.sampler(), count, lifetime, speed,
+        return new ParticleSystem(shape.sampler(), emission.spawner(count), lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
                 ColorCurve.of(colorStart, colorEnd, colorEase), built, rng);
     }

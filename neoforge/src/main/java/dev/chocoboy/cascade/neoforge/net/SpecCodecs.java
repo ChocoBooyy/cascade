@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.neoforge.net;
 
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
+import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
@@ -48,6 +49,15 @@ public final class SpecCodecs {
     private static final StreamCodec<RegistryFriendlyByteBuf, List<ModifierSpec>> MODIFIERS =
             MODIFIER.apply(ByteBufCodecs.collection(ArrayList::new));
 
+    private static final StreamCodec<ByteBuf, EmissionSpec.Mode> EMISSION_MODE =
+            ByteBufCodecs.idMapper(i -> EmissionSpec.Mode.values()[i], Enum::ordinal);
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, EmissionSpec> EMISSION = StreamCodec.composite(
+            EMISSION_MODE, EmissionSpec::mode,
+            ByteBufCodecs.FLOAT, EmissionSpec::rate,
+            ByteBufCodecs.VAR_INT, EmissionSpec::duration,
+            EmissionSpec::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -60,11 +70,12 @@ public final class SpecCodecs {
                 buf.writeInt(s.colorEnd());
                 EASING.encode(buf, s.colorEase());
                 MODIFIERS.encode(buf, s.modifiers());
+                EMISSION.encode(buf, s.emission());
             },
             buf -> new EmitterSpec(
                     SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
                     CURVE.decode(buf), CURVE.decode(buf),
-                    buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf)));
+                    buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf), EMISSION.decode(buf)));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,

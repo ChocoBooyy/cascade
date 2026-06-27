@@ -11,11 +11,20 @@ import java.util.random.RandomGenerator;
 
 public final class ParticleSystem implements EffectSim {
 
+    // hard ceiling so a misconfigured rate emitter cannot grow without bound
+    private static final int CAP = 4000;
+
     private final List<Particle> particles = new ArrayList<>();
     private final List<ParticleModifier> modifiers;
+    private final ShapeSampler shape;
+    private final float speed;
+    private final int particleLifetime;
+    private final Spawner spawner;
+    private final RandomGenerator rng;
     private final Curve size;
     private final Curve alpha;
     private final ColorCurve color;
+    private int tick;
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, RandomGenerator rng) {
@@ -24,19 +33,30 @@ public final class ParticleSystem implements EffectSim {
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count < 0");
-        }
+        this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers, rng);
+    }
+
+    public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
+            Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
+        this.shape = Objects.requireNonNull(shape, "shape");
+        this.spawner = Objects.requireNonNull(spawner, "spawner");
         this.size = Objects.requireNonNull(size, "size");
         this.alpha = Objects.requireNonNull(alpha, "alpha");
         this.color = Objects.requireNonNull(color, "color");
         this.modifiers = List.copyOf(modifiers);
-        Objects.requireNonNull(shape, "shape");
-        Objects.requireNonNull(rng, "rng");
-        for (int i = 0; i < count; i++) {
+        this.rng = Objects.requireNonNull(rng, "rng");
+        this.speed = speed;
+        this.particleLifetime = particleLifetime;
+        // emit the first batch up front so burst systems are populated the moment they are built
+        spawn(spawner.spawnCount(0));
+        tick = 1;
+    }
+
+    private void spawn(int n) {
+        for (int i = 0; i < n && particles.size() < CAP; i++) {
             Vec3f offset = shape.sample(rng);
             particles.add(new Particle(offset, offset.normalize().scale(speed), particleLifetime));
         }
@@ -44,6 +64,7 @@ public final class ParticleSystem implements EffectSim {
 
     @Override
     public boolean tick() {
+        spawn(spawner.spawnCount(tick));
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
             for (int m = 0; m < modifiers.size(); m++) {
@@ -55,12 +76,13 @@ public final class ParticleSystem implements EffectSim {
                 particles.remove(i);
             }
         }
-        return particles.isEmpty();
+        tick++;
+        return isDone();
     }
 
     @Override
     public boolean isDone() {
-        return particles.isEmpty();
+        return spawner.exhausted(tick) && particles.isEmpty();
     }
 
     public List<Particle> particles() {

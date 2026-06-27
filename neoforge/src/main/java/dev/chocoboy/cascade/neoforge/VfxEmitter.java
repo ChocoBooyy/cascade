@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge;
 
+import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
@@ -23,6 +24,7 @@ public final class VfxEmitter {
     private int colorEnd;
     private Easings colorEase;
     private final List<ModifierSpec> modifiers = new ArrayList<>();
+    private EmissionSpec emission = EmissionSpec.burst();
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -92,9 +94,15 @@ public final class VfxEmitter {
         return this;
     }
 
+    // emit perTick particles each tick for durationTicks instead of all at once; count is then ignored
+    public VfxEmitter rate(float perTick, int durationTicks) {
+        this.emission = EmissionSpec.rate(perTick, durationTicks);
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers));
+                List.copyOf(modifiers), emission);
     }
 
     public void play(ServerLevel level, Vec3 pos) {
