@@ -9,17 +9,28 @@ import net.minecraft.world.phys.Vec3;
 
 public final class VfxEmitter {
 
-    private ShapeSpec shape = ShapeSpec.sphere(1.5f);
-    private int count = 120;
-    private int lifetime = 30;
-    private float speed = 0.08f;
-    private CurveSpec size = new CurveSpec(0.25f, 0f, Easings.EASE_OUT_QUAD);
-    private CurveSpec alpha = new CurveSpec(1f, 0f, Easings.LINEAR);
-    private int colorStart = 0xFFCC33;
-    private int colorEnd = 0xFF3300;
-    private Easings colorEase = Easings.LINEAR;
+    private ShapeSpec shape;
+    private int count;
+    private int lifetime;
+    private float speed;
+    private CurveSpec size;
+    private CurveSpec alpha;
+    private int colorStart;
+    private int colorEnd;
+    private Easings colorEase;
 
+    // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
+        EmitterSpec d = EmitterSpec.defaultBurst();
+        this.shape = d.shape();
+        this.count = d.count();
+        this.lifetime = d.lifetime();
+        this.speed = d.speed();
+        this.size = d.size();
+        this.alpha = d.alpha();
+        this.colorStart = d.colorStart();
+        this.colorEnd = d.colorEnd();
+        this.colorEase = d.colorEase();
     }
 
     public VfxEmitter shape(ShapeSpec shape) {
