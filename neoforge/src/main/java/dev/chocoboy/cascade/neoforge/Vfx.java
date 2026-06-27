@@ -1,8 +1,8 @@
 package dev.chocoboy.cascade.neoforge;
 
+import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
-import dev.chocoboy.cascade.neoforge.net.CascadeEffects;
-import dev.chocoboy.cascade.neoforge.net.EffectPayload;
+import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
 import net.minecraft.server.level.ServerLevel;
@@ -35,7 +35,7 @@ public final class Vfx {
     }
 
     public static void beam(ServerLevel level, Vec3 from, Vec3 to) {
-        send(level, from, new EffectPayload(CascadeEffects.BEAM, from, to, level.getGameTime()));
+        beam(level, from, to, BeamSpec.defaultBolt());
     }
 
     static void emit(ServerLevel level, Vec3 pos, EmitterSpec spec) {
@@ -43,7 +43,8 @@ public final class Vfx {
                 new EmitterPayload(spec, pos, level.getGameTime()));
     }
 
-    private static void send(ServerLevel level, Vec3 around, EffectPayload payload) {
-        PacketDistributor.sendToPlayersNear(level, null, around.x, around.y, around.z, RADIUS, payload);
+    static void beam(ServerLevel level, Vec3 from, Vec3 to, BeamSpec spec) {
+        PacketDistributor.sendToPlayersNear(level, null, from.x, from.y, from.z, RADIUS,
+                new BeamPayload(spec, from, to, level.getGameTime()));
     }
 }
