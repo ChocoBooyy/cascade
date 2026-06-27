@@ -1,10 +1,10 @@
 package dev.chocoboy.cascade.neoforge.client;
 
-import dev.chocoboy.cascade.neoforge.net.CascadeEffects;
-import dev.chocoboy.cascade.neoforge.net.EffectPayload;
+import dev.chocoboy.cascade.engine.effect.BeamState;
+import dev.chocoboy.cascade.engine.math.Vec3f;
+import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import java.util.Random;
-import net.minecraft.resources.ResourceLocation;
 
 public final class CascadeClientHandler {
 
@@ -16,10 +16,10 @@ public final class CascadeClientHandler {
                 new ParticleBurstEffect(payload.origin(), payload.spec().build(new Random(payload.seed()))));
     }
 
-    public static void handle(EffectPayload payload) {
-        ResourceLocation id = payload.effect();
-        if (CascadeEffects.BEAM.equals(id)) {
-            VfxRenderManager.get().spawn(BeamEffect.bolt(payload.a(), payload.b(), payload.seed()));
-        }
+    public static void handleBeam(BeamPayload payload) {
+        Vec3f from = new Vec3f((float) payload.from().x, (float) payload.from().y, (float) payload.from().z);
+        Vec3f to = new Vec3f((float) payload.to().x, (float) payload.to().y, (float) payload.to().z);
+        BeamState state = payload.spec().build(from, to, new Random(payload.seed()));
+        VfxRenderManager.get().spawn(new BeamEffect(state, payload.spec().color(), payload.spec().width()));
     }
 }

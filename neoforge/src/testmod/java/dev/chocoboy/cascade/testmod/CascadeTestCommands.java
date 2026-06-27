@@ -56,6 +56,18 @@ public final class CascadeTestCommands {
                             .color(0x66CCFF, 0x0033FF, Easings.LINEAR)
                             .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("custombeam").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    Vec3 from = player.getEyePosition();
+                    Vec3 to = from.add(player.getLookAngle().scale(12.0));
+                    Vfx.beam()
+                            .color(0xFF3366)
+                            .width(0.3f)
+                            .arc(0.7f)
+                            .duration(20)
+                            .play(player.serverLevel(), from, to);
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 }

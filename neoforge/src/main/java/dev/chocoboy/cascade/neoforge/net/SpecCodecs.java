@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge.net;
 
+import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
@@ -47,6 +48,14 @@ public final class SpecCodecs {
                     SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
                     CURVE.decode(buf), CURVE.decode(buf),
                     buf.readInt(), buf.readInt(), EASING.decode(buf)));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
+            ByteBufCodecs.INT, BeamSpec::color,
+            ByteBufCodecs.FLOAT, BeamSpec::width,
+            ByteBufCodecs.FLOAT, BeamSpec::arc,
+            ByteBufCodecs.VAR_INT, BeamSpec::duration,
+            ByteBufCodecs.VAR_INT, BeamSpec::segments,
+            BeamSpec::new);
 
     private SpecCodecs() {
     }

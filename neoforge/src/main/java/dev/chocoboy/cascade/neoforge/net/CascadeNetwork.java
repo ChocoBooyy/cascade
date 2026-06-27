@@ -11,8 +11,8 @@ public final class CascadeNetwork {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         event.registrar("1")
-                .playToClient(EffectPayload.TYPE, EffectPayload.STREAM_CODEC,
-                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handle(payload)))
+                .playToClient(BeamPayload.TYPE, BeamPayload.STREAM_CODEC,
+                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleBeam(payload)))
                 .playToClient(ShakePayload.TYPE, ShakePayload.STREAM_CODEC,
                         (payload, context) -> context.enqueueWork(() -> ClientShakeHandler.handle(payload)))
                 .playToClient(EmitterPayload.TYPE, EmitterPayload.STREAM_CODEC,
