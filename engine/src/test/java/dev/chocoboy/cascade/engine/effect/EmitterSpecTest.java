@@ -40,6 +40,20 @@ class EmitterSpecTest {
     }
 
     @Test
+    void rateEmissionBuildsAContinuousSystem() {
+        EmitterSpec spec = new EmitterSpec(
+                ShapeSpec.point(), 0, 50, 0f,
+                new CurveSpec(0.3f, 0f, Easings.LINEAR),
+                new CurveSpec(1f, 0f, Easings.LINEAR),
+                0xFFFFFF, 0xFFFFFF, Easings.LINEAR,
+                List.of(), EmissionSpec.rate(4f, 3));
+        ParticleSystem sys = spec.build(new Random(1));
+        assertEquals(4, sys.particles().size());
+        sys.tick();
+        assertEquals(8, sys.particles().size());
+    }
+
+    @Test
     void defaultBurstIsTheOriginalPreset() {
         EmitterSpec d = EmitterSpec.defaultBurst();
         assertEquals(120, d.count());
