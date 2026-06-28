@@ -98,6 +98,21 @@ public final class VfxEmitter {
         return modifier(ModifierSpec.turbulence(strength, frequency));
     }
 
+    // pull particles toward a point in emitter-local space; negative strength pushes them away
+    public VfxEmitter attractor(float x, float y, float z, float strength) {
+        return modifier(ModifierSpec.attractor(new Vec3f(x, y, z), strength));
+    }
+
+    // swirl particles around the vertical axis through the given emitter-local point
+    public VfxEmitter vortex(float x, float y, float z, float strength) {
+        return modifier(ModifierSpec.vortex(new Vec3f(x, y, z), strength));
+    }
+
+    // divergence-free curl noise, a smoother fluid-like flow than plain turbulence
+    public VfxEmitter curl(float strength, float frequency) {
+        return modifier(ModifierSpec.curl(strength, frequency));
+    }
+
     public VfxEmitter modifier(ModifierSpec modifier) {
         modifiers.add(modifier);
         return this;
