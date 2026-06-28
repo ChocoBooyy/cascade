@@ -10,7 +10,8 @@ import java.util.random.RandomGenerator;
 
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-        List<ModifierSpec> modifiers, EmissionSpec emission, BlendMode blend, SpriteId sprite) {
+        List<ModifierSpec> modifiers, EmissionSpec emission, BlendMode blend, SpriteId sprite,
+        RotationSpec rotation) {
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
@@ -30,6 +31,13 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
                 BlendMode.ADDITIVE, SpriteId.GLOW);
     }
 
+    public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
+            CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+            List<ModifierSpec> modifiers, EmissionSpec emission, BlendMode blend, SpriteId sprite) {
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
+                blend, sprite, RotationSpec.NONE);
+    }
+
     public ParticleSystem build(RandomGenerator rng) {
         List<ParticleModifier> built = new ArrayList<>(modifiers.size());
         for (ModifierSpec m : modifiers) {
@@ -37,7 +45,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         }
         return new ParticleSystem(shape.sampler(), emission.spawner(count), lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
-                ColorCurve.of(colorStart, colorEnd, colorEase), built, rng);
+                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, rng);
     }
 
     public static EmitterSpec defaultBurst() {

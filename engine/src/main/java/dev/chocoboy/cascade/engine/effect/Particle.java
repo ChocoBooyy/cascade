@@ -8,6 +8,9 @@ public final class Particle {
     public Vec3f vel;
     public int age;
     public final int lifetime;
+    // billboard roll in radians and its per-tick change, so sprites can spin
+    public float rotation;
+    public float spin;
 
     public Particle(Vec3f pos, Vec3f vel, int lifetime) {
         this.pos = pos;
