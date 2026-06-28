@@ -5,7 +5,7 @@ import dev.chocoboy.cascade.engine.math.Vec3f;
 public record ShapeSpec(Kind kind, float radius, float height, Vec3f a, Vec3f b) {
 
     public enum Kind {
-        POINT, LINE, RING, SPHERE, CONE, BOX
+        POINT, LINE, RING, SPHERE, CONE, BOX, DISC, HEMISPHERE
     }
 
     public static ShapeSpec point() {
@@ -32,6 +32,14 @@ public record ShapeSpec(Kind kind, float radius, float height, Vec3f a, Vec3f b)
         return new ShapeSpec(Kind.BOX, 0f, 0f, half, Vec3f.ZERO);
     }
 
+    public static ShapeSpec disc(float radius) {
+        return new ShapeSpec(Kind.DISC, radius, 0f, Vec3f.ZERO, Vec3f.ZERO);
+    }
+
+    public static ShapeSpec hemisphere(float radius) {
+        return new ShapeSpec(Kind.HEMISPHERE, radius, 0f, Vec3f.ZERO, Vec3f.ZERO);
+    }
+
     public ShapeSampler sampler() {
         return switch (kind) {
             case POINT -> new PointSampler();
@@ -40,6 +48,8 @@ public record ShapeSpec(Kind kind, float radius, float height, Vec3f a, Vec3f b)
             case SPHERE -> new SphereSampler(radius);
             case CONE -> new ConeSampler(radius, height);
             case BOX -> new BoxSampler(a);
+            case DISC -> new DiscSampler(radius);
+            case HEMISPHERE -> new HemisphereSampler(radius);
         };
     }
 }

@@ -50,6 +50,18 @@ class VolumetricSamplersTest {
     }
 
     @Test
+    void hemisphereSamplesOnUpperSurface() {
+        float radius = 2.5f;
+        ShapeSampler s = new HemisphereSampler(radius);
+        Random rng = new Random(7);
+        for (int i = 0; i < 100; i++) {
+            Vec3f p = s.sample(rng);
+            assertEquals(radius, p.length(), 1e-3f);
+            assertTrue(p.y() >= -EPS, "upper half");
+        }
+    }
+
+    @Test
     void sameSeedSameSequence() {
         ShapeSampler s = new SphereSampler(1f);
         assertEquals(s.sample(new Random(2)), s.sample(new Random(2)));
