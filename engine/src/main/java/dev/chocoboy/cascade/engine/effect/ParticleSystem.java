@@ -24,6 +24,7 @@ public final class ParticleSystem implements EffectSim {
     private final Curve size;
     private final Curve alpha;
     private final ColorCurve color;
+    private final RotationSpec rotation;
     private int tick;
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
@@ -33,11 +34,13 @@ public final class ParticleSystem implements EffectSim {
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
-        this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers, rng);
+        this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers,
+                RotationSpec.NONE, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
-            Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
+            Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
+            RotationSpec rotation, RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
@@ -47,6 +50,7 @@ public final class ParticleSystem implements EffectSim {
         this.alpha = Objects.requireNonNull(alpha, "alpha");
         this.color = Objects.requireNonNull(color, "color");
         this.modifiers = List.copyOf(modifiers);
+        this.rotation = Objects.requireNonNull(rotation, "rotation");
         this.rng = Objects.requireNonNull(rng, "rng");
         this.speed = speed;
         this.particleLifetime = particleLifetime;
@@ -58,7 +62,10 @@ public final class ParticleSystem implements EffectSim {
     private void spawn(int n) {
         for (int i = 0; i < n && particles.size() < CAP; i++) {
             Vec3f offset = shape.sample(rng);
-            particles.add(new Particle(offset, offset.normalize().scale(speed), particleLifetime));
+            Particle p = new Particle(offset, offset.normalize().scale(speed), particleLifetime);
+            p.rotation = rotation.angleRange() * rng.nextFloat();
+            p.spin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
+            particles.add(p);
         }
     }
 
@@ -71,6 +78,7 @@ public final class ParticleSystem implements EffectSim {
                 modifiers.get(m).apply(p);
             }
             p.pos = p.pos.add(p.vel);
+            p.rotation += p.spin;
             p.age++;
             if (p.dead()) {
                 particles.remove(i);

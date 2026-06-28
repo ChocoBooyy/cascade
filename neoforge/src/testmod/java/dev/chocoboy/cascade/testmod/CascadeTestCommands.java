@@ -22,7 +22,19 @@ public final class CascadeTestCommands {
         event.getDispatcher().register(Commands.literal("vfxtest")
                 .then(Commands.literal("burst").executes(ctx -> {
                     ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vfx.burst(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
+                    Vfx.emitter()
+                            .shape(ShapeSpec.sphere(0.2f))
+                            .count(140)
+                            .lifetime(28)
+                            .speed(0.35f)
+                            .size(0.12f, 0.04f, Easings.LINEAR)
+                            .alpha(1.0f, 0.0f, Easings.LINEAR)
+                            .color(0xFFEE88, 0xFF6600, Easings.LINEAR)
+                            .gravity(0.0f, -0.02f, 0.0f)
+                            .drag(0.04f)
+                            .sprite(SpriteId.SPARK)
+                            .stretch(3.0f)
+                            .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("beam").executes(ctx -> {
@@ -62,6 +74,8 @@ public final class CascadeTestCommands {
                             .rate(6.0f, 60)
                             .sprite(SpriteId.SMOKE)
                             .blend(BlendMode.ALPHA)
+                            .spin(0.06f)
+                            .animate()
                             .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))

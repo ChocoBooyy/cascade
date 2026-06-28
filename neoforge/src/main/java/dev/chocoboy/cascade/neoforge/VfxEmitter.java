@@ -4,6 +4,8 @@ import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
+import dev.chocoboy.cascade.engine.effect.RenderSpec;
+import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
@@ -29,6 +31,9 @@ public final class VfxEmitter {
     private EmissionSpec emission = EmissionSpec.burst();
     private BlendMode blend = BlendMode.ADDITIVE;
     private SpriteId sprite = SpriteId.GLOW;
+    private float stretch;
+    private boolean animate;
+    private RotationSpec rotation = RotationSpec.NONE;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -114,9 +119,27 @@ public final class VfxEmitter {
         return this;
     }
 
+    // random initial roll plus a per-tick spin within the given magnitude, so sprites tumble
+    public VfxEmitter spin(float spinRange) {
+        this.rotation = RotationSpec.spin(spinRange);
+        return this;
+    }
+
+    // elongate fast particles along their velocity into streaks; 0 keeps them round
+    public VfxEmitter stretch(float stretch) {
+        this.stretch = stretch;
+        return this;
+    }
+
+    // play the sprite's animation frames across each particle's life instead of holding the still frame
+    public VfxEmitter animate() {
+        this.animate = true;
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, blend, sprite);
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation);
     }
 
     public void play(ServerLevel level, Vec3 pos) {

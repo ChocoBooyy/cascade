@@ -10,7 +10,8 @@ import java.util.random.RandomGenerator;
 
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-        List<ModifierSpec> modifiers, EmissionSpec emission, BlendMode blend, SpriteId sprite) {
+        List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+        RotationSpec rotation) {
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
@@ -27,7 +28,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
             List<ModifierSpec> modifiers, EmissionSpec emission) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                BlendMode.ADDITIVE, SpriteId.GLOW);
+                RenderSpec.DEFAULT, RotationSpec.NONE);
     }
 
     public ParticleSystem build(RandomGenerator rng) {
@@ -37,7 +38,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         }
         return new ParticleSystem(shape.sampler(), emission.spawner(count), lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
-                ColorCurve.of(colorStart, colorEnd, colorEase), built, rng);
+                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, rng);
     }
 
     public static EmitterSpec defaultBurst() {

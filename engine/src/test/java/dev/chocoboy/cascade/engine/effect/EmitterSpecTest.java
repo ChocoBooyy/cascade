@@ -54,14 +54,32 @@ class EmitterSpecTest {
     }
 
     @Test
+    void spinAdvancesParticleRotationEachTick() {
+        EmitterSpec spec = new EmitterSpec(
+                ShapeSpec.sphere(1f), 4, 50, 0f,
+                new CurveSpec(0.3f, 0f, Easings.LINEAR),
+                new CurveSpec(1f, 0f, Easings.LINEAR),
+                0xFFFFFF, 0xFFFFFF, Easings.LINEAR,
+                List.of(), EmissionSpec.burst(), new RenderSpec(BlendMode.ADDITIVE, SpriteId.SPARK),
+                RotationSpec.spin(0.2f));
+        ParticleSystem sys = spec.build(new Random(7));
+        Particle p = sys.particles().get(0);
+        float before = p.rotation;
+        float spin = p.spin;
+        assertTrue(spin != 0f, "spin should be seeded non-zero");
+        sys.tick();
+        assertEquals(before + spin, p.rotation, 1e-6f);
+    }
+
+    @Test
     void renderDefaultsAreAdditiveGlow() {
         EmitterSpec spec = new EmitterSpec(
                 ShapeSpec.point(), 1, 10, 0f,
                 new CurveSpec(1f, 0f, Easings.LINEAR),
                 new CurveSpec(1f, 0f, Easings.LINEAR),
                 0xFFFFFF, 0xFFFFFF, Easings.LINEAR);
-        assertEquals(BlendMode.ADDITIVE, spec.blend());
-        assertEquals(SpriteId.GLOW, spec.sprite());
+        assertEquals(BlendMode.ADDITIVE, spec.render().blend());
+        assertEquals(SpriteId.GLOW, spec.render().sprite());
     }
 
     @Test
