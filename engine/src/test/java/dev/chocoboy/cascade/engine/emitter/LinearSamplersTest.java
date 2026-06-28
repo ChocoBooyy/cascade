@@ -47,6 +47,18 @@ class LinearSamplersTest {
     }
 
     @Test
+    void discSamplesFillCircle() {
+        float radius = 4f;
+        ShapeSampler s = new DiscSampler(radius);
+        Random rng = new Random(13);
+        for (int i = 0; i < 100; i++) {
+            Vec3f p = s.sample(rng);
+            assertTrue(p.length() <= radius + EPS, "within radius");
+            assertEquals(0f, p.y(), EPS);
+        }
+    }
+
+    @Test
     void sameSeedSameSequence() {
         ShapeSampler s = new RingSampler(2f);
         assertEquals(s.sample(new Random(42)), s.sample(new Random(42)));
