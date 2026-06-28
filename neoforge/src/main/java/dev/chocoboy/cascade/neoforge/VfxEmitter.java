@@ -1,8 +1,10 @@
 package dev.chocoboy.cascade.neoforge;
 
+import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
+import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
@@ -25,6 +27,8 @@ public final class VfxEmitter {
     private Easings colorEase;
     private final List<ModifierSpec> modifiers = new ArrayList<>();
     private EmissionSpec emission = EmissionSpec.burst();
+    private BlendMode blend = BlendMode.ADDITIVE;
+    private SpriteId sprite = SpriteId.GLOW;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -100,9 +104,19 @@ public final class VfxEmitter {
         return this;
     }
 
+    public VfxEmitter blend(BlendMode blend) {
+        this.blend = blend;
+        return this;
+    }
+
+    public VfxEmitter sprite(SpriteId sprite) {
+        this.sprite = sprite;
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission);
+                List.copyOf(modifiers), emission, blend, sprite);
     }
 
     public void play(ServerLevel level, Vec3 pos) {
