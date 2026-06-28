@@ -1,10 +1,13 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import dev.chocoboy.cascade.engine.effect.BeamState;
+import dev.chocoboy.cascade.engine.effect.CollisionProbe;
+import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import java.util.Random;
+import net.minecraft.client.Minecraft;
 
 public final class CascadeClientHandler {
 
@@ -12,9 +15,16 @@ public final class CascadeClientHandler {
     }
 
     public static void handleEmitter(EmitterPayload payload) {
+        ParticleSystem system;
+        if (payload.spec().collision().enabled()) {
+            CollisionProbe probe = new LevelCollisionProbe(Minecraft.getInstance().level, payload.origin());
+            system = payload.spec().build(new Random(payload.seed()), probe);
+        } else {
+            system = payload.spec().build(new Random(payload.seed()));
+        }
         VfxRenderManager.get().spawn(new ParticleBurstEffect(
                 payload.origin(),
-                payload.spec().build(new Random(payload.seed())),
+                system,
                 payload.spec().render()));
     }
 

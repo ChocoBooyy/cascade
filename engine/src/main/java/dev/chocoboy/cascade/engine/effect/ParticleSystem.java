@@ -25,6 +25,8 @@ public final class ParticleSystem implements EffectSim {
     private final Curve alpha;
     private final ColorCurve color;
     private final RotationSpec rotation;
+    private final CollisionSpec collision;
+    private final CollisionProbe probe;
     private int tick;
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
@@ -35,12 +37,12 @@ public final class ParticleSystem implements EffectSim {
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers,
-                RotationSpec.NONE, rng);
+                RotationSpec.NONE, CollisionSpec.NONE, null, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
-            RotationSpec rotation, RandomGenerator rng) {
+            RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
@@ -51,6 +53,8 @@ public final class ParticleSystem implements EffectSim {
         this.color = Objects.requireNonNull(color, "color");
         this.modifiers = List.copyOf(modifiers);
         this.rotation = Objects.requireNonNull(rotation, "rotation");
+        this.collision = Objects.requireNonNull(collision, "collision");
+        this.probe = probe;
         this.rng = Objects.requireNonNull(rng, "rng");
         this.speed = speed;
         this.particleLifetime = particleLifetime;
@@ -77,7 +81,26 @@ public final class ParticleSystem implements EffectSim {
             for (int m = 0; m < modifiers.size(); m++) {
                 modifiers.get(m).apply(p);
             }
-            p.pos = p.pos.add(p.vel);
+            if (collision.enabled() && probe != null) {
+                float px = p.pos.x(), py = p.pos.y(), pz = p.pos.z();
+                float vx = p.vel.x(), vy = p.vel.y(), vz = p.vel.z();
+                boolean hitX = probe.solid(px + vx, py, pz);
+                boolean hitY = probe.solid(px, py + vy, pz);
+                boolean hitZ = probe.solid(px, py, pz + vz);
+                if (hitX) vx = -vx * collision.bounce();
+                if (hitY) vy = -vy * collision.bounce();
+                if (hitZ) vz = -vz * collision.bounce();
+                if (hitX || hitY || hitZ) {
+                    float keep = 1f - collision.friction();
+                    if (!hitX) vx *= keep;
+                    if (!hitY) vy *= keep;
+                    if (!hitZ) vz *= keep;
+                }
+                p.vel = new Vec3f(vx, vy, vz);
+                p.pos = new Vec3f(hitX ? px : px + vx, hitY ? py : py + vy, hitZ ? pz : pz + vz);
+            } else {
+                p.pos = p.pos.add(p.vel);
+            }
             p.rotation += p.spin;
             p.age++;
             if (p.dead()) {
