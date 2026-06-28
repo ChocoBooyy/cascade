@@ -46,13 +46,19 @@ public final class CascadeTestCommands {
                 }))
                 .then(Commands.literal("combo").executes(ctx -> {
                     ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vec3 from = player.getEyePosition();
-                    Vec3 to = from.add(player.getLookAngle().scale(10.0));
-                    Vfx.at(player.serverLevel())
-                            .beam(from, to)
-                            .delay(8)
-                            .burst(player.position().add(0.0, 1.0, 0.0))
-                            .play();
+                    Vfx.emitter()
+                            .shape(ShapeSpec.hemisphere(0.2f))
+                            .count(100)
+                            .lifetime(80)
+                            .speed(0.32f)
+                            .size(0.1f, 0.07f, Easings.LINEAR)
+                            .alpha(1.0f, 0.0f, Easings.LINEAR)
+                            .color(0xFFCC66, 0x885522, Easings.LINEAR)
+                            .gravity(0.0f, -0.03f, 0.0f)
+                            .collide(0.5f, 0.2f)
+                            .sprite(SpriteId.SPARK)
+                            .spin(0.05f)
+                            .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("shake").executes(ctx -> {
