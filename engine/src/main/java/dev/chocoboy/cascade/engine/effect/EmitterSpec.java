@@ -11,7 +11,7 @@ import java.util.random.RandomGenerator;
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
         List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
-        RotationSpec rotation, CollisionSpec collision) {
+        RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter) {
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
@@ -38,6 +38,14 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
                 render, rotation, CollisionSpec.NONE);
     }
 
+    public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
+            CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+            RotationSpec rotation, CollisionSpec collision) {
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
+                render, rotation, collision, null);
+    }
+
     public ParticleSystem build(RandomGenerator rng) {
         return build(rng, null);
     }
@@ -49,7 +57,8 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         }
         return new ParticleSystem(shape.sampler(), emission.spawner(count), lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
-                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, collision, probe, rng);
+                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, collision, probe,
+                subEmitter != null, rng);
     }
 
     public static EmitterSpec defaultBurst() {
