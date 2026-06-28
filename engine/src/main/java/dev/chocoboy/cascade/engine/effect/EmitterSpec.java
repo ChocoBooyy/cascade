@@ -11,7 +11,7 @@ import java.util.random.RandomGenerator;
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
         List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
-        RotationSpec rotation) {
+        RotationSpec rotation, CollisionSpec collision) {
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
@@ -28,17 +28,28 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
             List<ModifierSpec> modifiers, EmissionSpec emission) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                RenderSpec.DEFAULT, RotationSpec.NONE);
+                RenderSpec.DEFAULT, RotationSpec.NONE, CollisionSpec.NONE);
+    }
+
+    public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
+            CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render, RotationSpec rotation) {
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
+                render, rotation, CollisionSpec.NONE);
     }
 
     public ParticleSystem build(RandomGenerator rng) {
+        return build(rng, null);
+    }
+
+    public ParticleSystem build(RandomGenerator rng, CollisionProbe probe) {
         List<ParticleModifier> built = new ArrayList<>(modifiers.size());
         for (ModifierSpec m : modifiers) {
             built.add(m.toModifier());
         }
         return new ParticleSystem(shape.sampler(), emission.spawner(count), lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
-                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, rng);
+                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, collision, probe, rng);
     }
 
     public static EmitterSpec defaultBurst() {
