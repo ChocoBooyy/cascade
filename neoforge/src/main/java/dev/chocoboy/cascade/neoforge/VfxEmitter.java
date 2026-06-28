@@ -4,6 +4,7 @@ import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
+import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
@@ -124,7 +125,7 @@ public final class VfxEmitter {
 
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, blend, sprite, rotation);
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite), rotation);
     }
 
     public void play(ServerLevel level, Vec3 pos) {
