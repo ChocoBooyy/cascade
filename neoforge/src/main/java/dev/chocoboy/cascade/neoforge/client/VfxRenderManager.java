@@ -1,7 +1,6 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Camera;
@@ -58,8 +57,7 @@ public final class VfxRenderManager {
         Camera camera = event.getCamera();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        VertexConsumer vc = buffers.getBuffer(VfxRenderTypes.ADDITIVE);
-        VfxFrame frame = new VfxFrame(pose, vc, camera.rotation(), camera.getPosition());
+        VfxFrame frame = new VfxFrame(pose, buffers, camera.rotation(), camera.getPosition());
         List<RenderedEffect> failed = null;
         try {
             for (RenderedEffect effect : active) {
@@ -74,7 +72,7 @@ public final class VfxRenderManager {
                 }
             }
         } finally {
-            buffers.endBatch(VfxRenderTypes.ADDITIVE);
+            buffers.endBatch();
         }
         if (failed != null) {
             active.removeAll(failed);

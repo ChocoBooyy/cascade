@@ -12,8 +12,11 @@ public final class CascadeClientHandler {
     }
 
     public static void handleEmitter(EmitterPayload payload) {
-        VfxRenderManager.get().spawn(
-                new ParticleBurstEffect(payload.origin(), payload.spec().build(new Random(payload.seed()))));
+        VfxRenderManager.get().spawn(new ParticleBurstEffect(
+                payload.origin(),
+                payload.spec().build(new Random(payload.seed())),
+                payload.spec().blend(),
+                payload.spec().sprite()));
     }
 
     public static void handleBeam(BeamPayload payload) {
