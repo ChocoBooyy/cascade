@@ -54,6 +54,17 @@ class EmitterSpecTest {
     }
 
     @Test
+    void renderDefaultsAreAdditiveGlow() {
+        EmitterSpec spec = new EmitterSpec(
+                ShapeSpec.point(), 1, 10, 0f,
+                new CurveSpec(1f, 0f, Easings.LINEAR),
+                new CurveSpec(1f, 0f, Easings.LINEAR),
+                0xFFFFFF, 0xFFFFFF, Easings.LINEAR);
+        assertEquals(BlendMode.ADDITIVE, spec.blend());
+        assertEquals(SpriteId.GLOW, spec.sprite());
+    }
+
+    @Test
     void defaultBurstIsTheOriginalPreset() {
         EmitterSpec d = EmitterSpec.defaultBurst();
         assertEquals(120, d.count());

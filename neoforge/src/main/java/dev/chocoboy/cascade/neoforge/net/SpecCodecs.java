@@ -1,9 +1,11 @@
 package dev.chocoboy.cascade.neoforge.net;
 
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
+import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
+import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
@@ -58,6 +60,12 @@ public final class SpecCodecs {
             ByteBufCodecs.VAR_INT, EmissionSpec::duration,
             EmissionSpec::new);
 
+    private static final StreamCodec<ByteBuf, BlendMode> BLEND =
+            ByteBufCodecs.idMapper(i -> BlendMode.values()[i], Enum::ordinal);
+
+    private static final StreamCodec<ByteBuf, SpriteId> SPRITE =
+            ByteBufCodecs.idMapper(i -> SpriteId.values()[i], Enum::ordinal);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -71,11 +79,14 @@ public final class SpecCodecs {
                 EASING.encode(buf, s.colorEase());
                 MODIFIERS.encode(buf, s.modifiers());
                 EMISSION.encode(buf, s.emission());
+                BLEND.encode(buf, s.blend());
+                SPRITE.encode(buf, s.sprite());
             },
             buf -> new EmitterSpec(
                     SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
                     CURVE.decode(buf), CURVE.decode(buf),
-                    buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf), EMISSION.decode(buf)));
+                    buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf), EMISSION.decode(buf),
+                    BLEND.decode(buf), SPRITE.decode(buf)));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,

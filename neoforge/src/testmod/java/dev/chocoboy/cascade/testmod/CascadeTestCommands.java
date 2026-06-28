@@ -1,6 +1,8 @@
 package dev.chocoboy.cascade.testmod;
 
 import com.mojang.brigadier.Command;
+import dev.chocoboy.cascade.engine.effect.BlendMode;
+import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
@@ -58,6 +60,8 @@ public final class CascadeTestCommands {
                             .gravity(0.0f, 0.012f, 0.0f)
                             .turbulence(0.02f, 0.5f)
                             .rate(6.0f, 60)
+                            .sprite(SpriteId.SMOKE)
+                            .blend(BlendMode.ALPHA)
                             .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
