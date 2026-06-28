@@ -37,6 +37,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Vec3 cam = frame.cameraPos();
         Quaternionf camRot = frame.cameraRotation();
         float stretch = render.stretch();
+        boolean animate = render.animate();
         // the billboard plane axes in world space, so velocity can be projected onto the quad when streaking
         Vector3f right = camRot.transform(new Vector3f(1f, 0f, 0f));
         Vector3f up = camRot.transform(new Vector3f(0f, 1f, 0f));
@@ -47,6 +48,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
             float hx = size;
             float hy = size;
             float roll = p.rotation;
+            float[] cell = animate ? ParticleAtlas.uv(render.sprite(), frameOf(p)) : uv;
             if (stretch > 0f) {
                 float speed = p.vel.length();
                 if (speed > 1e-5f) {
@@ -60,8 +62,14 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     (float) (origin.x + p.pos.x() - cam.x),
                     (float) (origin.y + p.pos.y() - cam.y),
                     (float) (origin.z + p.pos.z() - cam.z),
-                    hx, hy, roll, uv,
+                    hx, hy, roll, cell,
                     (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, alpha);
         }
+    }
+
+    // map a particle's life fraction onto an atlas frame, clamped to the last frame at end of life
+    private static int frameOf(Particle p) {
+        int frame = (int) (p.life() * ParticleAtlas.FRAMES);
+        return frame >= ParticleAtlas.FRAMES ? ParticleAtlas.FRAMES - 1 : frame;
     }
 }

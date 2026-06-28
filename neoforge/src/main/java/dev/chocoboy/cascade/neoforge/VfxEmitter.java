@@ -32,6 +32,7 @@ public final class VfxEmitter {
     private BlendMode blend = BlendMode.ADDITIVE;
     private SpriteId sprite = SpriteId.GLOW;
     private float stretch;
+    private boolean animate;
     private RotationSpec rotation = RotationSpec.NONE;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
@@ -130,9 +131,15 @@ public final class VfxEmitter {
         return this;
     }
 
+    // play the sprite's animation frames across each particle's life instead of holding the still frame
+    public VfxEmitter animate() {
+        this.animate = true;
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch), rotation);
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation);
     }
 
     public void play(ServerLevel level, Vec3 pos) {
