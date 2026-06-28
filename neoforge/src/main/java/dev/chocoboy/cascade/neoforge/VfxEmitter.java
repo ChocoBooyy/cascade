@@ -31,6 +31,7 @@ public final class VfxEmitter {
     private EmissionSpec emission = EmissionSpec.burst();
     private BlendMode blend = BlendMode.ADDITIVE;
     private SpriteId sprite = SpriteId.GLOW;
+    private float stretch;
     private RotationSpec rotation = RotationSpec.NONE;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
@@ -123,9 +124,15 @@ public final class VfxEmitter {
         return this;
     }
 
+    // elongate fast particles along their velocity into streaks; 0 keeps them round
+    public VfxEmitter stretch(float stretch) {
+        this.stretch = stretch;
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite), rotation);
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch), rotation);
     }
 
     public void play(ServerLevel level, Vec3 pos) {
