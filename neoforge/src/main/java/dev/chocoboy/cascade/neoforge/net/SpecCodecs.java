@@ -5,6 +5,7 @@ import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
+import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
@@ -66,6 +67,11 @@ public final class SpecCodecs {
     private static final StreamCodec<ByteBuf, SpriteId> SPRITE =
             ByteBufCodecs.idMapper(i -> SpriteId.values()[i], Enum::ordinal);
 
+    private static final StreamCodec<RegistryFriendlyByteBuf, RotationSpec> ROTATION = StreamCodec.composite(
+            ByteBufCodecs.FLOAT, RotationSpec::angleRange,
+            ByteBufCodecs.FLOAT, RotationSpec::spinRange,
+            RotationSpec::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -81,12 +87,13 @@ public final class SpecCodecs {
                 EMISSION.encode(buf, s.emission());
                 BLEND.encode(buf, s.blend());
                 SPRITE.encode(buf, s.sprite());
+                ROTATION.encode(buf, s.rotation());
             },
             buf -> new EmitterSpec(
                     SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
                     CURVE.decode(buf), CURVE.decode(buf),
                     buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf), EMISSION.decode(buf),
-                    BLEND.decode(buf), SPRITE.decode(buf)));
+                    BLEND.decode(buf), SPRITE.decode(buf), ROTATION.decode(buf)));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,

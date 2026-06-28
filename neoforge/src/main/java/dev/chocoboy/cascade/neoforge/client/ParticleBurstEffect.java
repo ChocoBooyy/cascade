@@ -40,7 +40,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     (float) (origin.x + p.pos.x() - cam.x),
                     (float) (origin.y + p.pos.y() - cam.y),
                     (float) (origin.z + p.pos.z() - cam.z),
-                    sim.sizeOf(p), uv,
+                    sim.sizeOf(p), p.rotation, uv,
                     (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, alpha);
         }
     }

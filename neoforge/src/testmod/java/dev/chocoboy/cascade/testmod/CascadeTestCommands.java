@@ -62,6 +62,7 @@ public final class CascadeTestCommands {
                             .rate(6.0f, 60)
                             .sprite(SpriteId.SMOKE)
                             .blend(BlendMode.ALPHA)
+                            .spin(0.06f)
                             .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
