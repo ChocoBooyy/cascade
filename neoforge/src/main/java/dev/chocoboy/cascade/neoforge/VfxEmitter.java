@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.neoforge;
 
 import dev.chocoboy.cascade.engine.effect.BlendMode;
+import dev.chocoboy.cascade.engine.effect.CollisionSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
@@ -34,6 +35,7 @@ public final class VfxEmitter {
     private float stretch;
     private boolean animate;
     private RotationSpec rotation = RotationSpec.NONE;
+    private CollisionSpec collision = CollisionSpec.NONE;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -152,9 +154,15 @@ public final class VfxEmitter {
         return this;
     }
 
+    // bounce particles off solid blocks. bounce is the speed kept on a hit, friction sheds sliding speed
+    public VfxEmitter collide(float bounce, float friction) {
+        this.collision = CollisionSpec.bouncy(bounce, friction);
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation);
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation, collision);
     }
 
     public void play(ServerLevel level, Vec3 pos) {

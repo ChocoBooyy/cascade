@@ -2,6 +2,7 @@ package dev.chocoboy.cascade.neoforge.net;
 
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
+import dev.chocoboy.cascade.engine.effect.CollisionSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
@@ -80,6 +81,12 @@ public final class SpecCodecs {
             ByteBufCodecs.FLOAT, RotationSpec::spinRange,
             RotationSpec::new);
 
+    private static final StreamCodec<RegistryFriendlyByteBuf, CollisionSpec> COLLISION = StreamCodec.composite(
+            ByteBufCodecs.BOOL, CollisionSpec::enabled,
+            ByteBufCodecs.FLOAT, CollisionSpec::bounce,
+            ByteBufCodecs.FLOAT, CollisionSpec::friction,
+            CollisionSpec::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -95,12 +102,13 @@ public final class SpecCodecs {
                 EMISSION.encode(buf, s.emission());
                 RENDER.encode(buf, s.render());
                 ROTATION.encode(buf, s.rotation());
+                COLLISION.encode(buf, s.collision());
             },
             buf -> new EmitterSpec(
                     SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
                     CURVE.decode(buf), CURVE.decode(buf),
                     buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf), EMISSION.decode(buf),
-                    RENDER.decode(buf), ROTATION.decode(buf)));
+                    RENDER.decode(buf), ROTATION.decode(buf), COLLISION.decode(buf)));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,
