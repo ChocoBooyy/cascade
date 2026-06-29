@@ -27,6 +27,8 @@ public final class ParticleSystem implements EffectSim {
     private final RotationSpec rotation;
     private final CollisionSpec collision;
     private final CollisionProbe probe;
+    private final boolean emitsOnDeath;
+    private final List<Vec3f> spawnRequests = new ArrayList<>();
     private int tick;
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
@@ -37,12 +39,13 @@ public final class ParticleSystem implements EffectSim {
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers,
-                RotationSpec.NONE, CollisionSpec.NONE, null, rng);
+                RotationSpec.NONE, CollisionSpec.NONE, null, false, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
-            RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, RandomGenerator rng) {
+            RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, boolean emitsOnDeath,
+            RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
@@ -55,6 +58,7 @@ public final class ParticleSystem implements EffectSim {
         this.rotation = Objects.requireNonNull(rotation, "rotation");
         this.collision = Objects.requireNonNull(collision, "collision");
         this.probe = probe;
+        this.emitsOnDeath = emitsOnDeath;
         this.rng = Objects.requireNonNull(rng, "rng");
         this.speed = speed;
         this.particleLifetime = particleLifetime;
@@ -104,6 +108,9 @@ public final class ParticleSystem implements EffectSim {
             p.rotation += p.spin;
             p.age++;
             if (p.dead()) {
+                if (emitsOnDeath) {
+                    spawnRequests.add(p.pos);
+                }
                 particles.remove(i);
             }
         }
@@ -118,6 +125,12 @@ public final class ParticleSystem implements EffectSim {
 
     public List<Particle> particles() {
         return particles;
+    }
+
+    public List<Vec3f> drainSpawnRequests() {
+        List<Vec3f> drained = new ArrayList<>(spawnRequests);
+        spawnRequests.clear();
+        return drained;
     }
 
     public float sizeOf(Particle p) {

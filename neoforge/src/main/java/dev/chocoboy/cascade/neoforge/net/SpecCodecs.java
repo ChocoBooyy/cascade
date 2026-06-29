@@ -9,6 +9,7 @@ import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
+import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
@@ -103,12 +104,42 @@ public final class SpecCodecs {
                 RENDER.encode(buf, s.render());
                 ROTATION.encode(buf, s.rotation());
                 COLLISION.encode(buf, s.collision());
+                SubEmitterSpec sub = s.subEmitter();
+                buf.writeBoolean(sub != null);
+                if (sub != null) {
+                    encodeNested(buf, sub.child());
+                }
             },
-            buf -> new EmitterSpec(
-                    SHAPE.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readFloat(),
-                    CURVE.decode(buf), CURVE.decode(buf),
-                    buf.readInt(), buf.readInt(), EASING.decode(buf), MODIFIERS.decode(buf), EMISSION.decode(buf),
-                    RENDER.decode(buf), ROTATION.decode(buf), COLLISION.decode(buf)));
+            buf -> {
+                ShapeSpec shape = SHAPE.decode(buf);
+                int count = buf.readVarInt();
+                int lifetime = buf.readVarInt();
+                float speed = buf.readFloat();
+                CurveSpec size = CURVE.decode(buf);
+                CurveSpec alpha = CURVE.decode(buf);
+                int colorStart = buf.readInt();
+                int colorEnd = buf.readInt();
+                Easings colorEase = EASING.decode(buf);
+                List<ModifierSpec> modifiers = MODIFIERS.decode(buf);
+                EmissionSpec emission = EMISSION.decode(buf);
+                RenderSpec render = RENDER.decode(buf);
+                RotationSpec rotation = ROTATION.decode(buf);
+                CollisionSpec collision = COLLISION.decode(buf);
+                SubEmitterSpec sub = buf.readBoolean() ? new SubEmitterSpec(decodeNested(buf)) : null;
+                return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
+                        modifiers, emission, render, rotation, collision, sub);
+            });
+
+    // a sub-emitter nests a child EmitterSpec. These hops keep that recursion out of the EMITTER field
+    // initializer itself, which Java forbids from naming the field it is building. Recursion terminates
+    // because real specs nest finitely.
+    private static void encodeNested(RegistryFriendlyByteBuf buf, EmitterSpec child) {
+        EMITTER.encode(buf, child);
+    }
+
+    private static EmitterSpec decodeNested(RegistryFriendlyByteBuf buf) {
+        return EMITTER.decode(buf);
+    }
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,
