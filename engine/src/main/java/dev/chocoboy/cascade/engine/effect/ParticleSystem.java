@@ -98,26 +98,7 @@ public final class ParticleSystem implements EffectSim {
             for (int m = 0; m < modifiers.size(); m++) {
                 modifiers.get(m).apply(p);
             }
-            if (collision.enabled() && probe != null) {
-                float px = p.pos.x(), py = p.pos.y(), pz = p.pos.z();
-                float vx = p.vel.x(), vy = p.vel.y(), vz = p.vel.z();
-                boolean hitX = probe.solid(px + vx, py, pz);
-                boolean hitY = probe.solid(px, py + vy, pz);
-                boolean hitZ = probe.solid(px, py, pz + vz);
-                if (hitX) vx = -vx * collision.bounce();
-                if (hitY) vy = -vy * collision.bounce();
-                if (hitZ) vz = -vz * collision.bounce();
-                if (hitX || hitY || hitZ) {
-                    float keep = 1f - collision.friction();
-                    if (!hitX) vx *= keep;
-                    if (!hitY) vy *= keep;
-                    if (!hitZ) vz *= keep;
-                }
-                p.vel = new Vec3f(vx, vy, vz);
-                p.pos = new Vec3f(hitX ? px : px + vx, hitY ? py : py + vy, hitZ ? pz : pz + vz);
-            } else {
-                p.pos = p.pos.add(p.vel);
-            }
+            integrate(p);
             p.rotation += p.spin;
             if (p.trail != null) {
                 p.trail[p.trailHead] = p.pos;
@@ -139,6 +120,31 @@ public final class ParticleSystem implements EffectSim {
         }
         tick++;
         return isDone();
+    }
+
+    // advance one particle by its velocity, resolving block collisions per axis so it can slide along a
+    // wall instead of stopping dead. bounce is the speed kept on a hit, friction sheds the rest
+    private void integrate(Particle p) {
+        if (!collision.enabled() || probe == null) {
+            p.pos = p.pos.add(p.vel);
+            return;
+        }
+        float px = p.pos.x(), py = p.pos.y(), pz = p.pos.z();
+        float vx = p.vel.x(), vy = p.vel.y(), vz = p.vel.z();
+        boolean hitX = probe.solid(px + vx, py, pz);
+        boolean hitY = probe.solid(px, py + vy, pz);
+        boolean hitZ = probe.solid(px, py, pz + vz);
+        if (hitX) vx = -vx * collision.bounce();
+        if (hitY) vy = -vy * collision.bounce();
+        if (hitZ) vz = -vz * collision.bounce();
+        if (hitX || hitY || hitZ) {
+            float keep = 1f - collision.friction();
+            if (!hitX) vx *= keep;
+            if (!hitY) vy *= keep;
+            if (!hitZ) vz *= keep;
+        }
+        p.vel = new Vec3f(vx, vy, vz);
+        p.pos = new Vec3f(hitX ? px : px + vx, hitY ? py : py + vy, hitZ ? pz : pz + vz);
     }
 
     @Override
