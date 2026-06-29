@@ -21,6 +21,9 @@ public final class VfxRenderManager {
     private static final int MAX_EFFECTS = 256;
 
     private final List<RenderedEffect> active = new ArrayList<>();
+    // effects spawned while a tick pass is running (sub-emitters), held until the pass finishes
+    private final List<RenderedEffect> pending = new ArrayList<>();
+    private boolean ticking;
     private boolean loggedError;
 
     private VfxRenderManager() {
@@ -31,6 +34,13 @@ public final class VfxRenderManager {
     }
 
     public void spawn(RenderedEffect effect) {
+        // a sub-emitter spawns mid-tick; queue it so we do not mutate active while it is being iterated
+        if (ticking) {
+            if (active.size() + pending.size() < MAX_EFFECTS) {
+                pending.add(effect);
+            }
+            return;
+        }
         if (active.size() >= MAX_EFFECTS) {
             active.remove(0);
         }
@@ -39,14 +49,23 @@ public final class VfxRenderManager {
 
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
-        active.removeIf(effect -> {
-            try {
-                return effect.tick();
-            } catch (RuntimeException e) {
-                logOnce("ticking an effect", e);
-                return true;
-            }
-        });
+        ticking = true;
+        try {
+            active.removeIf(effect -> {
+                try {
+                    return effect.tick();
+                } catch (RuntimeException e) {
+                    logOnce("ticking an effect", e);
+                    return true;
+                }
+            });
+        } finally {
+            ticking = false;
+        }
+        if (!pending.isEmpty()) {
+            active.addAll(pending);
+            pending.clear();
+        }
     }
 
     @SubscribeEvent
