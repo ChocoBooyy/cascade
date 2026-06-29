@@ -6,8 +6,6 @@ import net.minecraft.world.entity.player.Player;
 
 public final class ClientShakeHandler {
 
-    private static final double RANGE = 32.0;
-
     private ClientShakeHandler() {
     }
 
@@ -17,7 +15,7 @@ public final class ClientShakeHandler {
             return;
         }
         double dist = player.position().distanceTo(payload.pos());
-        float falloff = (float) Math.max(0.0, 1.0 - dist / RANGE);
+        float falloff = (float) Math.max(0.0, 1.0 - dist / ShakePayload.RADIUS);
         if (falloff <= 0f) {
             return;
         }
