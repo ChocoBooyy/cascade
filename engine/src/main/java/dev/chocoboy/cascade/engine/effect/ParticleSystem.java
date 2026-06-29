@@ -28,6 +28,7 @@ public final class ParticleSystem implements EffectSim {
     private final CollisionSpec collision;
     private final CollisionProbe probe;
     private final boolean emitsOnDeath;
+    private final TrailSpec trail;
     private final List<Vec3f> spawnRequests = new ArrayList<>();
     private int tick;
 
@@ -39,13 +40,13 @@ public final class ParticleSystem implements EffectSim {
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers,
-                RotationSpec.NONE, CollisionSpec.NONE, null, false, rng);
+                RotationSpec.NONE, CollisionSpec.NONE, null, false, TrailSpec.NONE, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
             RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, boolean emitsOnDeath,
-            RandomGenerator rng) {
+            TrailSpec trail, RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
@@ -59,6 +60,7 @@ public final class ParticleSystem implements EffectSim {
         this.collision = Objects.requireNonNull(collision, "collision");
         this.probe = probe;
         this.emitsOnDeath = emitsOnDeath;
+        this.trail = Objects.requireNonNull(trail, "trail");
         this.rng = Objects.requireNonNull(rng, "rng");
         this.speed = speed;
         this.particleLifetime = particleLifetime;
@@ -73,6 +75,9 @@ public final class ParticleSystem implements EffectSim {
             Particle p = new Particle(offset, offset.normalize().scale(speed), particleLifetime);
             p.rotation = rotation.angleRange() * rng.nextFloat();
             p.spin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
+            if (trail.enabled()) {
+                p.trail = new Vec3f[trail.length()];
+            }
             particles.add(p);
         }
     }
@@ -106,6 +111,13 @@ public final class ParticleSystem implements EffectSim {
                 p.pos = p.pos.add(p.vel);
             }
             p.rotation += p.spin;
+            if (p.trail != null) {
+                p.trail[p.trailHead] = p.pos;
+                p.trailHead = (p.trailHead + 1) % p.trail.length;
+                if (p.trailCount < p.trail.length) {
+                    p.trailCount++;
+                }
+            }
             p.age++;
             if (p.dead()) {
                 if (emitsOnDeath) {
