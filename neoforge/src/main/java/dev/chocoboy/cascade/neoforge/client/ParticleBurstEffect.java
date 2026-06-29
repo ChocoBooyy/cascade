@@ -75,18 +75,18 @@ public final class ParticleBurstEffect implements RenderedEffect {
         RenderType type = lit
                 ? (alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA_LIT : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
                 : unlit;
-        VertexConsumer vc = frame.buffers().getBuffer(type);
-        // trails stay on the unlit textured format, so a lit emitter draws its ribbons through a second buffer
-        VertexConsumer trailVc = lit ? frame.buffers().getBuffer(unlit) : vc;
         Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();
         Quaternionf camRot = frame.cameraRotation();
-        Matrix4f m = frame.pose().last().pose();
         float stretch = render.stretch();
         boolean animate = render.animate();
         // the billboard plane axes in world space, so velocity can be projected onto the quad when streaking
         Vector3f right = camRot.transform(new Vector3f(1f, 0f, 0f));
         Vector3f up = camRot.transform(new Vector3f(0f, 1f, 0f));
+
+        // billboards first, then trails. the buffer source shares one builder, so fetching a second render
+        // type while still writing the first would end the buffer we are mid way through
+        VertexConsumer vc = frame.buffers().getBuffer(type);
         for (Particle p : sim.particles()) {
             int color = sim.colorOf(p);
             int alpha = (int) (sim.alphaOf(p) * 255f);
@@ -117,10 +117,22 @@ public final class ParticleBurstEffect implements RenderedEffect {
             } else {
                 Billboards.quad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha);
             }
-            if (p.trail != null && p.trailCount >= 2) {
-                renderTrail(m, trailVc, p, cam, color, sim.alphaOf(p), size);
+        }
+
+        if (hasTrails()) {
+            Matrix4f m = frame.pose().last().pose();
+            VertexConsumer trailVc = frame.buffers().getBuffer(unlit);
+            for (Particle p : sim.particles()) {
+                if (p.trail != null && p.trailCount >= 2) {
+                    renderTrail(m, trailVc, p, cam, sim.colorOf(p), sim.alphaOf(p), sim.sizeOf(p));
+                }
             }
         }
+    }
+
+    // trails are allocated for every particle of a trail enabled system, so the first answers for all
+    private boolean hasTrails() {
+        return !sim.particles().isEmpty() && sim.particles().get(0).trail != null;
     }
 
     // draws the particle's position history as a camera-facing ribbon that tapers from the moving head
