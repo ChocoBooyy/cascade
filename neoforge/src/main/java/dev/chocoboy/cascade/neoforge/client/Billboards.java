@@ -28,4 +28,21 @@ final class Billboards {
         vc.addVertex(m, hx * cs + hy * sn, hx * sn - hy * cs, 0f).setUv(uv[2], uv[3]).setColor(r, g, b, a);
         pose.popPose();
     }
+
+    // same quad on the PARTICLE vertex format, carrying a packed lightmap coord so the particle shader
+    // tints it by world light
+    static void litQuad(PoseStack pose, VertexConsumer vc, Quaternionf camRotation,
+            float x, float y, float z, float hx, float hy, float rotation, float[] uv, int r, int g, int b, int a, int light) {
+        pose.pushPose();
+        pose.translate(x, y, z);
+        pose.mulPose(camRotation);
+        Matrix4f m = pose.last().pose();
+        float cs = (float) Math.cos(rotation);
+        float sn = (float) Math.sin(rotation);
+        vc.addVertex(m, -hx * cs + hy * sn, -hx * sn - hy * cs, 0f).setUv(uv[0], uv[3]).setColor(r, g, b, a).setLight(light);
+        vc.addVertex(m, -hx * cs - hy * sn, -hx * sn + hy * cs, 0f).setUv(uv[0], uv[1]).setColor(r, g, b, a).setLight(light);
+        vc.addVertex(m, hx * cs - hy * sn, hx * sn + hy * cs, 0f).setUv(uv[2], uv[1]).setColor(r, g, b, a).setLight(light);
+        vc.addVertex(m, hx * cs + hy * sn, hx * sn - hy * cs, 0f).setUv(uv[2], uv[3]).setColor(r, g, b, a).setLight(light);
+        pose.popPose();
+    }
 }

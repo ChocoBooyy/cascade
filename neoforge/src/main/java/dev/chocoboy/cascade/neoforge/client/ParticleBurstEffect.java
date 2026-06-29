@@ -12,7 +12,10 @@ import dev.chocoboy.cascade.engine.math.Vec3f;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -66,8 +69,16 @@ public final class ParticleBurstEffect implements RenderedEffect {
     @Override
     public void render(VfxFrame frame) {
         ParticleAtlas.ensureUploaded();
-        RenderType type = render.blend() == BlendMode.ALPHA ? VfxRenderTypes.TEXTURED_ALPHA : VfxRenderTypes.TEXTURED_ADDITIVE;
+        boolean lit = render.lit();
+        boolean alphaBlend = render.blend() == BlendMode.ALPHA;
+        RenderType unlit = alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA : VfxRenderTypes.TEXTURED_ADDITIVE;
+        RenderType type = lit
+                ? (alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA_LIT : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
+                : unlit;
         VertexConsumer vc = frame.buffers().getBuffer(type);
+        // trails stay on the unlit textured format, so a lit emitter draws its ribbons through a second buffer
+        VertexConsumer trailVc = lit ? frame.buffers().getBuffer(unlit) : vc;
+        Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();
         Quaternionf camRot = frame.cameraRotation();
         Matrix4f m = frame.pose().last().pose();
@@ -93,14 +104,21 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     hx = size * (1f + speed * stretch);
                 }
             }
-            Billboards.quad(frame.pose(), vc, camRot,
-                    (float) (origin.x + p.pos.x() - cam.x),
-                    (float) (origin.y + p.pos.y() - cam.y),
-                    (float) (origin.z + p.pos.z() - cam.z),
-                    hx, hy, roll, cell,
-                    (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, alpha);
+            float wx = (float) (origin.x + p.pos.x() - cam.x);
+            float wy = (float) (origin.y + p.pos.y() - cam.y);
+            float wz = (float) (origin.z + p.pos.z() - cam.z);
+            int cr = (color >> 16) & 0xFF;
+            int cg = (color >> 8) & 0xFF;
+            int cb = color & 0xFF;
+            if (lit) {
+                int light = LevelRenderer.getLightColor(level, BlockPos.containing(
+                        origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z()));
+                Billboards.litQuad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha, light);
+            } else {
+                Billboards.quad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha);
+            }
             if (p.trail != null && p.trailCount >= 2) {
-                renderTrail(m, vc, p, cam, color, sim.alphaOf(p), size);
+                renderTrail(m, trailVc, p, cam, color, sim.alphaOf(p), size);
             }
         }
     }
