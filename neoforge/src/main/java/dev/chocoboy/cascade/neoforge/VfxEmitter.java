@@ -9,6 +9,7 @@ import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
+import dev.chocoboy.cascade.engine.effect.TrailSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
@@ -38,6 +39,7 @@ public final class VfxEmitter {
     private RotationSpec rotation = RotationSpec.NONE;
     private CollisionSpec collision = CollisionSpec.NONE;
     private SubEmitterSpec subEmitter;
+    private TrailSpec trail = TrailSpec.NONE;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -168,10 +170,16 @@ public final class VfxEmitter {
         return this;
     }
 
+    // draw a ribbon through each particle's last length positions, for comets and streaking sparks
+    public VfxEmitter trail(int length) {
+        this.trail = TrailSpec.of(length);
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
                 List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation, collision,
-                subEmitter);
+                subEmitter, trail);
     }
 
     public void play(ServerLevel level, Vec3 pos) {
