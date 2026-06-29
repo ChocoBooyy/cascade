@@ -5,6 +5,7 @@ import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -36,6 +37,14 @@ public final class Vfx {
 
     public static void burst(ServerLevel level, Vec3 pos) {
         emit(level, pos, EmitterSpec.defaultBurst());
+    }
+
+    // play an effect authored in a datapack json. Unknown ids are ignored so a missing pack is not fatal
+    public static void play(ServerLevel level, Vec3 pos, ResourceLocation effect) {
+        EmitterSpec spec = CascadeEffects.get(effect);
+        if (spec != null) {
+            emit(level, pos, spec);
+        }
     }
 
     public static void beam(ServerLevel level, Vec3 from, Vec3 to) {
