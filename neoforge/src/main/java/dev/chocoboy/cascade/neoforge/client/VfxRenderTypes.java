@@ -12,6 +12,10 @@ final class VfxRenderTypes {
     private static final RenderStateShard.ShaderStateShard POSITION_TEX_COLOR =
             new RenderStateShard.ShaderStateShard(GameRenderer::getPositionTexColorShader);
 
+    // the vanilla particle shader samples the lightmap, which is what we want for lit particles
+    private static final RenderStateShard.ShaderStateShard PARTICLE =
+            new RenderStateShard.ShaderStateShard(GameRenderer::getParticleShader);
+
     private VfxRenderTypes() {
     }
 
@@ -52,6 +56,33 @@ final class VfxRenderTypes {
                         .setShaderState(POSITION_TEX_COLOR)
                         .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
                         .setTransparencyState(transparency)
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .createCompositeState(false));
+    }
+
+    // lit twins of the textured types, tinted by the world lightmap so particles sit in scene lighting
+    static final RenderType TEXTURED_ADDITIVE_LIT = litTextured("cascade_textured_additive_lit",
+            RenderStateShard.ADDITIVE_TRANSPARENCY);
+
+    static final RenderType TEXTURED_ALPHA_LIT = litTextured("cascade_textured_alpha_lit",
+            RenderStateShard.TRANSLUCENT_TRANSPARENCY);
+
+    // PARTICLE format carries a lightmap coord per vertex; the particle shader samples it
+    private static RenderType litTextured(String name, RenderStateShard.TransparencyStateShard transparency) {
+        return RenderType.create(
+                name,
+                DefaultVertexFormat.PARTICLE,
+                VertexFormat.Mode.QUADS,
+                1536,
+                false,
+                true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(PARTICLE)
+                        .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
+                        .setTransparencyState(transparency)
+                        .setLightmapState(RenderStateShard.LIGHTMAP)
                         .setCullState(RenderStateShard.NO_CULL)
                         .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
                         .setWriteMaskState(RenderStateShard.COLOR_WRITE)

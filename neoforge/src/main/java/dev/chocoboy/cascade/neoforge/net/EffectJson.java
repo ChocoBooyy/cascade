@@ -65,7 +65,8 @@ public final class EffectJson {
             byName(BlendMode.class).optionalFieldOf("blend", BlendMode.ADDITIVE).forGetter(RenderSpec::blend),
             byName(SpriteId.class).optionalFieldOf("sprite", SpriteId.GLOW).forGetter(RenderSpec::sprite),
             Codec.FLOAT.optionalFieldOf("stretch", 0f).forGetter(RenderSpec::stretch),
-            Codec.BOOL.optionalFieldOf("animate", false).forGetter(RenderSpec::animate)
+            Codec.BOOL.optionalFieldOf("animate", false).forGetter(RenderSpec::animate),
+            Codec.BOOL.optionalFieldOf("lit", false).forGetter(RenderSpec::lit)
     ).apply(i, RenderSpec::new));
 
     public static final Codec<RotationSpec> ROTATION = RecordCodecBuilder.create(i -> i.group(
