@@ -55,15 +55,21 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
     }
 
     public ParticleSystem build(RandomGenerator rng) {
-        return build(rng, null);
+        return build(rng, null, 1f);
     }
 
     public ParticleSystem build(RandomGenerator rng, CollisionProbe probe) {
+        return build(rng, probe, 1f);
+    }
+
+    // density (0..1) thins spawn counts so a renderer can honor a quality setting. 1 is unchanged.
+    public ParticleSystem build(RandomGenerator rng, CollisionProbe probe, float density) {
         List<ParticleModifier> built = new ArrayList<>(modifiers.size());
         for (ModifierSpec m : modifiers) {
             built.add(m.toModifier());
         }
-        return new ParticleSystem(shape.sampler(), emission.spawner(count), lifetime, speed,
+        int scaledCount = density >= 1f ? count : Math.max(0, Math.round(count * density));
+        return new ParticleSystem(shape.sampler(), emission.scaledRate(density).spawner(scaledCount), lifetime, speed,
                 size.toCurve(), alpha.toCurve(),
                 ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, collision, probe,
                 subEmitter != null, trail, rng);

@@ -15,13 +15,11 @@ public final class CascadeClientHandler {
     }
 
     public static void handleEmitter(EmitterPayload payload) {
-        ParticleSystem system;
-        if (payload.spec().collision().enabled()) {
-            CollisionProbe probe = new LevelCollisionProbe(Minecraft.getInstance().level, payload.origin());
-            system = payload.spec().build(new Random(payload.seed()), probe);
-        } else {
-            system = payload.spec().build(new Random(payload.seed()));
-        }
+        float density = ParticleQuality.density();
+        CollisionProbe probe = payload.spec().collision().enabled()
+                ? new LevelCollisionProbe(Minecraft.getInstance().level, payload.origin())
+                : null;
+        ParticleSystem system = payload.spec().build(new Random(payload.seed()), probe, density);
         VfxRenderManager.get().spawn(new ParticleBurstEffect(
                 payload.origin(),
                 system,
