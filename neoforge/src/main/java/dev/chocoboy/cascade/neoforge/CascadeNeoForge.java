@@ -16,6 +16,7 @@ public final class CascadeNeoForge {
         CascadeCommon.init();
         modBus.addListener(CascadeNetwork::register);
         NeoForge.EVENT_BUS.register(VfxSequencer.get());
+        NeoForge.EVENT_BUS.addListener(CascadeEffects::onAddReloadListener);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             CascadeClient.init();
         }

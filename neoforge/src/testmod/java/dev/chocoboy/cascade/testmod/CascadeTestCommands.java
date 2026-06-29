@@ -1,12 +1,12 @@
 package dev.chocoboy.cascade.testmod;
 
 import com.mojang.brigadier.Command;
-import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import net.minecraft.commands.Commands;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -78,22 +78,8 @@ public final class CascadeTestCommands {
                 }))
                 .then(Commands.literal("custom").executes(ctx -> {
                     ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vfx.emitter()
-                            .shape(ShapeSpec.hemisphere(0.3f))
-                            .lifetime(50)
-                            .speed(0.03f)
-                            .size(0.25f, 0.7f, Easings.LINEAR)
-                            .alpha(0.6f, 0.0f, Easings.LINEAR)
-                            .color(0x888888, 0x222222, Easings.LINEAR)
-                            .gravity(0.0f, 0.012f, 0.0f)
-                            .curl(0.012f, 0.4f)
-                            .vortex(0.0f, 0.0f, 0.0f, 0.004f)
-                            .rate(6.0f, 60)
-                            .sprite(SpriteId.SMOKE)
-                            .blend(BlendMode.ALPHA)
-                            .spin(0.06f)
-                            .animate()
-                            .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
+                    Vfx.play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0),
+                            ResourceLocation.fromNamespaceAndPath("cascade", "firework"));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("custombeam").executes(ctx -> {

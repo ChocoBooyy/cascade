@@ -1,0 +1,114 @@
+package dev.chocoboy.cascade.neoforge.net;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.chocoboy.cascade.engine.effect.BlendMode;
+import dev.chocoboy.cascade.engine.effect.CollisionSpec;
+import dev.chocoboy.cascade.engine.effect.EmissionSpec;
+import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.ModifierSpec;
+import dev.chocoboy.cascade.engine.effect.RenderSpec;
+import dev.chocoboy.cascade.engine.effect.RotationSpec;
+import dev.chocoboy.cascade.engine.effect.SpriteId;
+import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
+import dev.chocoboy.cascade.engine.effect.TrailSpec;
+import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
+import dev.chocoboy.cascade.engine.math.Vec3f;
+import dev.chocoboy.cascade.engine.tween.CurveSpec;
+import dev.chocoboy.cascade.engine.tween.Easings;
+import java.util.List;
+import java.util.Optional;
+
+// DataFixerUpper codecs, the JSON twin of the network SpecCodecs, so datapacks can author effects.
+// Enums serialize by name for readable JSON; fields with natural defaults are optional so authors
+// only spell out what they change.
+public final class EffectJson {
+
+    private static <E extends Enum<E>> Codec<E> byName(Class<E> type) {
+        return Codec.STRING.xmap(s -> Enum.valueOf(type, s), Enum::name);
+    }
+
+    public static final Codec<Vec3f> VEC3F = RecordCodecBuilder.create(i -> i.group(
+            Codec.FLOAT.fieldOf("x").forGetter(Vec3f::x),
+            Codec.FLOAT.fieldOf("y").forGetter(Vec3f::y),
+            Codec.FLOAT.fieldOf("z").forGetter(Vec3f::z)
+    ).apply(i, Vec3f::new));
+
+    public static final Codec<ShapeSpec> SHAPE = RecordCodecBuilder.create(i -> i.group(
+            byName(ShapeSpec.Kind.class).fieldOf("kind").forGetter(ShapeSpec::kind),
+            Codec.FLOAT.optionalFieldOf("radius", 0f).forGetter(ShapeSpec::radius),
+            Codec.FLOAT.optionalFieldOf("height", 0f).forGetter(ShapeSpec::height),
+            VEC3F.optionalFieldOf("a", Vec3f.ZERO).forGetter(ShapeSpec::a),
+            VEC3F.optionalFieldOf("b", Vec3f.ZERO).forGetter(ShapeSpec::b)
+    ).apply(i, ShapeSpec::new));
+
+    public static final Codec<CurveSpec> CURVE = RecordCodecBuilder.create(i -> i.group(
+            Codec.FLOAT.fieldOf("start").forGetter(CurveSpec::start),
+            Codec.FLOAT.fieldOf("end").forGetter(CurveSpec::end),
+            byName(Easings.class).fieldOf("ease").forGetter(CurveSpec::ease)
+    ).apply(i, CurveSpec::new));
+
+    public static final Codec<ModifierSpec> MODIFIER = RecordCodecBuilder.create(i -> i.group(
+            byName(ModifierSpec.Kind.class).fieldOf("kind").forGetter(ModifierSpec::kind),
+            VEC3F.optionalFieldOf("vec", Vec3f.ZERO).forGetter(ModifierSpec::vec),
+            Codec.FLOAT.optionalFieldOf("a", 0f).forGetter(ModifierSpec::a),
+            Codec.FLOAT.optionalFieldOf("b", 0f).forGetter(ModifierSpec::b)
+    ).apply(i, ModifierSpec::new));
+
+    public static final Codec<EmissionSpec> EMISSION = RecordCodecBuilder.create(i -> i.group(
+            byName(EmissionSpec.Mode.class).fieldOf("mode").forGetter(EmissionSpec::mode),
+            Codec.FLOAT.optionalFieldOf("rate", 0f).forGetter(EmissionSpec::rate),
+            Codec.INT.optionalFieldOf("duration", 0).forGetter(EmissionSpec::duration)
+    ).apply(i, EmissionSpec::new));
+
+    public static final Codec<RenderSpec> RENDER = RecordCodecBuilder.create(i -> i.group(
+            byName(BlendMode.class).optionalFieldOf("blend", BlendMode.ADDITIVE).forGetter(RenderSpec::blend),
+            byName(SpriteId.class).optionalFieldOf("sprite", SpriteId.GLOW).forGetter(RenderSpec::sprite),
+            Codec.FLOAT.optionalFieldOf("stretch", 0f).forGetter(RenderSpec::stretch),
+            Codec.BOOL.optionalFieldOf("animate", false).forGetter(RenderSpec::animate)
+    ).apply(i, RenderSpec::new));
+
+    public static final Codec<RotationSpec> ROTATION = RecordCodecBuilder.create(i -> i.group(
+            Codec.FLOAT.optionalFieldOf("angle_range", 0f).forGetter(RotationSpec::angleRange),
+            Codec.FLOAT.optionalFieldOf("spin_range", 0f).forGetter(RotationSpec::spinRange)
+    ).apply(i, RotationSpec::new));
+
+    public static final Codec<CollisionSpec> COLLISION = RecordCodecBuilder.create(i -> i.group(
+            Codec.BOOL.optionalFieldOf("enabled", false).forGetter(CollisionSpec::enabled),
+            Codec.FLOAT.optionalFieldOf("bounce", 0f).forGetter(CollisionSpec::bounce),
+            Codec.FLOAT.optionalFieldOf("friction", 0f).forGetter(CollisionSpec::friction)
+    ).apply(i, CollisionSpec::new));
+
+    public static final Codec<TrailSpec> TRAIL = RecordCodecBuilder.create(i -> i.group(
+            Codec.BOOL.optionalFieldOf("enabled", false).forGetter(TrailSpec::enabled),
+            Codec.INT.optionalFieldOf("length", 0).forGetter(TrailSpec::length)
+    ).apply(i, TrailSpec::new));
+
+    // Recursive because a sub-emitter wraps a child EmitterSpec. Codec.recursive hands back a self
+    // reference for the sub_emitter field; the child has no default, so it stays an Optional that the
+    // getter wraps and the constructor unwraps with orElse(null).
+    public static final Codec<EmitterSpec> EMITTER = Codec.recursive("EmitterSpec", self -> RecordCodecBuilder.create(i -> i.group(
+            SHAPE.fieldOf("shape").forGetter(EmitterSpec::shape),
+            Codec.INT.fieldOf("count").forGetter(EmitterSpec::count),
+            Codec.INT.fieldOf("lifetime").forGetter(EmitterSpec::lifetime),
+            Codec.FLOAT.fieldOf("speed").forGetter(EmitterSpec::speed),
+            CURVE.fieldOf("size").forGetter(EmitterSpec::size),
+            CURVE.fieldOf("alpha").forGetter(EmitterSpec::alpha),
+            Codec.INT.fieldOf("color_start").forGetter(EmitterSpec::colorStart),
+            Codec.INT.fieldOf("color_end").forGetter(EmitterSpec::colorEnd),
+            byName(Easings.class).fieldOf("color_ease").forGetter(EmitterSpec::colorEase),
+            MODIFIER.listOf().optionalFieldOf("modifiers", List.of()).forGetter(EmitterSpec::modifiers),
+            EMISSION.optionalFieldOf("emission", EmissionSpec.burst()).forGetter(EmitterSpec::emission),
+            RENDER.optionalFieldOf("render", RenderSpec.DEFAULT).forGetter(EmitterSpec::render),
+            ROTATION.optionalFieldOf("rotation", RotationSpec.NONE).forGetter(EmitterSpec::rotation),
+            COLLISION.optionalFieldOf("collision", CollisionSpec.NONE).forGetter(EmitterSpec::collision),
+            self.xmap(SubEmitterSpec::new, SubEmitterSpec::child).optionalFieldOf("sub_emitter").forGetter(s -> Optional.ofNullable(s.subEmitter())),
+            TRAIL.optionalFieldOf("trail", TrailSpec.NONE).forGetter(EmitterSpec::trail)
+    ).apply(i, (shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
+            render, rotation, collision, subEmitter, trail) ->
+            new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers,
+                    emission, render, rotation, collision, subEmitter.orElse(null), trail))));
+
+    private EffectJson() {
+    }
+}
