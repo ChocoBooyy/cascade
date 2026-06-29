@@ -11,6 +11,7 @@ import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
+import dev.chocoboy.cascade.engine.effect.VelocitySpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
@@ -95,6 +96,15 @@ public final class SpecCodecs {
             ByteBufCodecs.VAR_INT, TrailSpec::length,
             TrailSpec::new);
 
+    private static final StreamCodec<ByteBuf, VelocitySpec.Mode> VELOCITY_MODE =
+            ByteBufCodecs.idMapper(i -> VelocitySpec.Mode.values()[i], Enum::ordinal);
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, VelocitySpec> VELOCITY = StreamCodec.composite(
+            VELOCITY_MODE, VelocitySpec::mode,
+            NetCodecs.VEC3F, VelocitySpec::direction,
+            ByteBufCodecs.FLOAT, VelocitySpec::spread,
+            VelocitySpec::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -117,6 +127,7 @@ public final class SpecCodecs {
                     encodeNested(buf, sub.child());
                 }
                 TRAIL.encode(buf, s.trail());
+                VELOCITY.encode(buf, s.velocity());
             },
             buf -> {
                 ShapeSpec shape = SHAPE.decode(buf);
@@ -135,8 +146,9 @@ public final class SpecCodecs {
                 CollisionSpec collision = COLLISION.decode(buf);
                 SubEmitterSpec sub = buf.readBoolean() ? new SubEmitterSpec(decodeNested(buf)) : null;
                 TrailSpec trail = TRAIL.decode(buf);
+                VelocitySpec velocity = VELOCITY.decode(buf);
                 return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                        modifiers, emission, render, rotation, collision, sub, trail);
+                        modifiers, emission, render, rotation, collision, sub, trail, velocity);
             });
 
     // a sub-emitter nests a child EmitterSpec. These hops keep that recursion out of the EMITTER field

@@ -77,7 +77,7 @@ class ParticleSystemTest {
     @Test
     void rateEmissionSpawnsOverTimeAndStaysAliveWhileEmitting() {
         ParticleSystem s = new ParticleSystem(
-                Shapes.sphere(2f), new RateSpawner(3f, 4), 50, 0f,
+                Shapes.sphere(2f), new RateSpawner(3f, 4), 50, 0f, VelocitySpec.RADIAL,
                 Curve.of(1f, 0f, Easings.LINEAR),
                 Curve.of(1f, 0f, Easings.LINEAR),
                 ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),

@@ -21,7 +21,7 @@ class TrailTest {
                 new CurveSpec(1f, 0f, Easings.LINEAR),
                 0xFFFFFF, 0x000000, Easings.LINEAR,
                 List.of(), EmissionSpec.burst(), RenderSpec.DEFAULT,
-                RotationSpec.NONE, CollisionSpec.NONE, null, trail);
+                RotationSpec.NONE, CollisionSpec.NONE, null, trail, VelocitySpec.RADIAL);
     }
 
     @Test

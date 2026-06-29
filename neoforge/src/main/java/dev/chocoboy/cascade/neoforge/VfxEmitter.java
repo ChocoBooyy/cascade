@@ -10,6 +10,7 @@ import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
+import dev.chocoboy.cascade.engine.effect.VelocitySpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
@@ -41,6 +42,7 @@ public final class VfxEmitter {
     private CollisionSpec collision = CollisionSpec.NONE;
     private SubEmitterSpec subEmitter;
     private TrailSpec trail = TrailSpec.NONE;
+    private VelocitySpec velocity = VelocitySpec.RADIAL;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -183,10 +185,28 @@ public final class VfxEmitter {
         return this;
     }
 
+    // fire particles inward toward the shape center instead of outward, for implosions
+    public VfxEmitter implode() {
+        this.velocity = VelocitySpec.inward();
+        return this;
+    }
+
+    // fire particles along a direction within a cone of the given half angle in radians, for jets
+    public VfxEmitter jet(float x, float y, float z, float spread) {
+        this.velocity = VelocitySpec.directional(new Vec3f(x, y, z), spread);
+        return this;
+    }
+
+    // fire particles tangent to the vertical axis so they circle the center, for swirls and discs
+    public VfxEmitter orbit() {
+        this.velocity = VelocitySpec.orbital();
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
                 List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit), rotation, collision,
-                subEmitter, trail);
+                subEmitter, trail, velocity);
     }
 
     public void play(ServerLevel level, Vec3 pos) {

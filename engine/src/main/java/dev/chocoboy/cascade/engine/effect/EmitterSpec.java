@@ -11,7 +11,8 @@ import java.util.random.RandomGenerator;
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
         List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
-        RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail) {
+        RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail,
+        VelocitySpec velocity) {
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase) {
@@ -43,7 +44,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                render, rotation, collision, null, TrailSpec.NONE);
+                render, rotation, collision, null, TrailSpec.NONE, VelocitySpec.RADIAL);
     }
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
@@ -51,7 +52,15 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                render, rotation, collision, subEmitter, TrailSpec.NONE);
+                render, rotation, collision, subEmitter, TrailSpec.NONE, VelocitySpec.RADIAL);
+    }
+
+    public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
+            CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+            RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail) {
+        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
+                render, rotation, collision, subEmitter, trail, VelocitySpec.RADIAL);
     }
 
     public ParticleSystem build(RandomGenerator rng) {
@@ -70,7 +79,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         }
         int scaledCount = density >= 1f ? count : Math.max(0, Math.round(count * density));
         return new ParticleSystem(shape.sampler(), emission.scaledRate(density).spawner(scaledCount), lifetime, speed,
-                size.toCurve(), alpha.toCurve(),
+                velocity, size.toCurve(), alpha.toCurve(),
                 ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, collision, probe,
                 subEmitter != null, trail, rng);
     }

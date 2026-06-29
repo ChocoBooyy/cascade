@@ -21,7 +21,7 @@ class CollisionTest {
 
     private static ParticleSystem withCollision(Particle seed, CollisionSpec collision, CollisionProbe probe) {
         ParticleSystem s = new ParticleSystem(
-                Shapes.point(), new BurstSpawner(0), 20, 0f,
+                Shapes.point(), new BurstSpawner(0), 20, 0f, VelocitySpec.RADIAL,
                 Curve.of(1f, 0f, Easings.LINEAR),
                 Curve.of(1f, 0f, Easings.LINEAR),
                 ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
