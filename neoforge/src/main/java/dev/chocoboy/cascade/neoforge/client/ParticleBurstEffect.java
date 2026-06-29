@@ -61,7 +61,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
         CollisionProbe probe = child.collision().enabled()
                 ? new LevelCollisionProbe(Minecraft.getInstance().level, childOrigin)
                 : null;
-        ParticleSystem childSim = child.build(new Random(), probe);
+        ParticleSystem childSim = child.build(new Random(), probe, ParticleQuality.density());
         VfxRenderManager.get().spawn(
                 new ParticleBurstEffect(childOrigin, childSim, child.render(), child.subEmitter(), depth + 1));
     }
