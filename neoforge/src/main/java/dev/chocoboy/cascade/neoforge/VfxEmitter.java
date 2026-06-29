@@ -36,6 +36,7 @@ public final class VfxEmitter {
     private SpriteId sprite = SpriteId.GLOW;
     private float stretch;
     private boolean animate;
+    private boolean lit;
     private RotationSpec rotation = RotationSpec.NONE;
     private CollisionSpec collision = CollisionSpec.NONE;
     private SubEmitterSpec subEmitter;
@@ -158,6 +159,12 @@ public final class VfxEmitter {
         return this;
     }
 
+    // tint by world light, for smoke and dust that should sit in shadow instead of glowing full bright
+    public VfxEmitter lit() {
+        this.lit = true;
+        return this;
+    }
+
     // bounce particles off solid blocks. bounce is the speed kept on a hit, friction sheds sliding speed
     public VfxEmitter collide(float bounce, float friction) {
         this.collision = CollisionSpec.bouncy(bounce, friction);
@@ -178,7 +185,7 @@ public final class VfxEmitter {
 
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation, collision,
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit), rotation, collision,
                 subEmitter, trail);
     }
 

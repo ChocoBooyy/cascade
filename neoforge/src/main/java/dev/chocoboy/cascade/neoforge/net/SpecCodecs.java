@@ -76,6 +76,7 @@ public final class SpecCodecs {
             SPRITE, RenderSpec::sprite,
             ByteBufCodecs.FLOAT, RenderSpec::stretch,
             ByteBufCodecs.BOOL, RenderSpec::animate,
+            ByteBufCodecs.BOOL, RenderSpec::lit,
             RenderSpec::new);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, RotationSpec> ROTATION = StreamCodec.composite(
