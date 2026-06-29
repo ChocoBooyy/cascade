@@ -41,5 +41,6 @@ public final class CascadeEffects extends SimpleJsonResourceReloadListener {
         files.forEach((id, json) -> EffectJson.EMITTER.parse(JsonOps.INSTANCE, json)
                 .resultOrPartial(error -> LOGGER.error("Cascade effect {} failed to load: {}", id, error))
                 .ifPresent(spec -> EFFECTS.put(id, spec)));
+        LOGGER.info("Cascade loaded {} effect(s)", EFFECTS.size());
     }
 }
