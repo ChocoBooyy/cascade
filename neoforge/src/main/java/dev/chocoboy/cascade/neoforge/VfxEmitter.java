@@ -8,6 +8,7 @@ import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
+import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
@@ -36,6 +37,7 @@ public final class VfxEmitter {
     private boolean animate;
     private RotationSpec rotation = RotationSpec.NONE;
     private CollisionSpec collision = CollisionSpec.NONE;
+    private SubEmitterSpec subEmitter;
 
     // start from the default burst so a caller overrides only what it wants, with one source of truth
     VfxEmitter() {
@@ -160,9 +162,16 @@ public final class VfxEmitter {
         return this;
     }
 
+    // spawn the child system wherever one of this emitter's particles dies, for fireworks and trails
+    public VfxEmitter burstOnDeath(VfxEmitter child) {
+        this.subEmitter = new SubEmitterSpec(child.spec());
+        return this;
+    }
+
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation, collision);
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate), rotation, collision,
+                subEmitter);
     }
 
     public void play(ServerLevel level, Vec3 pos) {

@@ -2,9 +2,16 @@ package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
+import dev.chocoboy.cascade.engine.effect.CollisionProbe;
+import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.Particle;
 import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
+import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
+import dev.chocoboy.cascade.engine.math.Vec3f;
+import java.util.List;
+import java.util.Random;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
@@ -12,21 +19,47 @@ import org.joml.Vector3f;
 
 public final class ParticleBurstEffect implements RenderedEffect {
 
+    // hard ceiling on sub-emitter nesting so a self-referencing spec cannot recurse without bound
+    private static final int MAX_DEPTH = 4;
+
     private final Vec3 origin;
     private final ParticleSystem sim;
     private final RenderSpec render;
+    private final SubEmitterSpec subEmitter;
+    private final int depth;
     private final float[] uv;
 
-    public ParticleBurstEffect(Vec3 origin, ParticleSystem sim, RenderSpec render) {
+    public ParticleBurstEffect(Vec3 origin, ParticleSystem sim, RenderSpec render, SubEmitterSpec subEmitter, int depth) {
         this.origin = origin;
         this.sim = sim;
         this.render = render;
+        this.subEmitter = subEmitter;
+        this.depth = depth;
         this.uv = ParticleAtlas.uv(render.sprite());
     }
 
     @Override
     public boolean tick() {
-        return sim.tick();
+        boolean done = sim.tick();
+        if (subEmitter != null && depth < MAX_DEPTH) {
+            List<Vec3f> deaths = sim.drainSpawnRequests();
+            for (int i = 0; i < deaths.size(); i++) {
+                spawnChild(deaths.get(i));
+            }
+        }
+        return done;
+    }
+
+    // build the child system where a parent particle died and hand it to the manager as its own effect
+    private void spawnChild(Vec3f local) {
+        EmitterSpec child = subEmitter.child();
+        Vec3 childOrigin = origin.add(local.x(), local.y(), local.z());
+        CollisionProbe probe = child.collision().enabled()
+                ? new LevelCollisionProbe(Minecraft.getInstance().level, childOrigin)
+                : null;
+        ParticleSystem childSim = child.build(new Random(), probe);
+        VfxRenderManager.get().spawn(
+                new ParticleBurstEffect(childOrigin, childSim, child.render(), child.subEmitter(), depth + 1));
     }
 
     @Override
