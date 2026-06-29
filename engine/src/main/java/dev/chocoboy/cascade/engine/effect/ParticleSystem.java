@@ -21,6 +21,7 @@ public final class ParticleSystem implements EffectSim {
     private final List<ParticleModifier> modifiers;
     private final ShapeSampler shape;
     private final float speed;
+    private final VelocitySpec velocity;
     private final int particleLifetime;
     private final Spawner spawner;
     private final RandomGenerator rng;
@@ -42,12 +43,12 @@ public final class ParticleSystem implements EffectSim {
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
-        this(shape, new BurstSpawner(count), particleLifetime, speed, size, alpha, color, modifiers,
+        this(shape, new BurstSpawner(count), particleLifetime, speed, VelocitySpec.RADIAL, size, alpha, color, modifiers,
                 RotationSpec.NONE, CollisionSpec.NONE, null, false, TrailSpec.NONE, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
-            Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
+            VelocitySpec velocity, Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
             RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, boolean emitsOnDeath,
             TrailSpec trail, RandomGenerator rng) {
         if (particleLifetime < 1) {
@@ -55,6 +56,7 @@ public final class ParticleSystem implements EffectSim {
         }
         this.shape = Objects.requireNonNull(shape, "shape");
         this.spawner = Objects.requireNonNull(spawner, "spawner");
+        this.velocity = Objects.requireNonNull(velocity, "velocity");
         this.size = Objects.requireNonNull(size, "size");
         this.alpha = Objects.requireNonNull(alpha, "alpha");
         this.color = Objects.requireNonNull(color, "color");
@@ -75,11 +77,12 @@ public final class ParticleSystem implements EffectSim {
     private void spawn(int n) {
         for (int i = 0; i < n && particles.size() < CAP; i++) {
             Vec3f offset = shape.sample(rng);
+            Vec3f vel = initialVelocity(offset);
             Particle p = pool.poll();
             if (p == null) {
-                p = new Particle(offset, offset.normalize().scale(speed), particleLifetime);
+                p = new Particle(offset, vel, particleLifetime);
             } else {
-                p.reset(offset, offset.normalize().scale(speed), particleLifetime);
+                p.reset(offset, vel, particleLifetime);
             }
             p.rotation = rotation.angleRange() * rng.nextFloat();
             p.spin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
@@ -88,6 +91,38 @@ public final class ParticleSystem implements EffectSim {
             }
             particles.add(p);
         }
+    }
+
+    // the launch velocity for a particle at the given shape-local offset. RADIAL consumes no rng, so
+    // existing seeded systems are byte for byte unchanged; only DIRECTIONAL with spread draws from it.
+    private Vec3f initialVelocity(Vec3f offset) {
+        return switch (velocity.mode()) {
+            case RADIAL -> offset.normalize().scale(speed);
+            case INWARD -> offset.normalize().scale(-speed);
+            case ORBITAL -> {
+                Vec3f tangent = new Vec3f(-offset.z(), 0f, offset.x());
+                yield tangent.length() < 1e-6f ? Vec3f.ZERO : tangent.normalize().scale(speed);
+            }
+            case DIRECTIONAL -> directionalVelocity();
+        };
+    }
+
+    private Vec3f directionalVelocity() {
+        Vec3f dir = velocity.direction().length() < 1e-6f ? new Vec3f(0f, 1f, 0f) : velocity.direction().normalize();
+        float spread = velocity.spread();
+        if (spread <= 0f) {
+            return dir.scale(speed);
+        }
+        float cosMax = (float) Math.cos(spread);
+        float cosTheta = cosMax + (1f - cosMax) * rng.nextFloat();
+        float sinTheta = (float) Math.sqrt(Math.max(0f, 1f - cosTheta * cosTheta));
+        float phi = (float) (rng.nextFloat() * 2.0 * Math.PI);
+        // an orthonormal basis around dir, so the cone sample rotates onto the chosen direction
+        Vec3f helper = Math.abs(dir.y()) < 0.99f ? new Vec3f(0f, 1f, 0f) : new Vec3f(1f, 0f, 0f);
+        Vec3f t1 = dir.cross(helper).normalize();
+        Vec3f t2 = dir.cross(t1);
+        Vec3f spreadComp = t1.scale(sinTheta * (float) Math.cos(phi)).add(t2.scale(sinTheta * (float) Math.sin(phi)));
+        return dir.scale(cosTheta).add(spreadComp).scale(speed);
     }
 
     @Override

@@ -20,4 +20,8 @@ public record Vec3f(float x, float y, float z) {
         float len = length();
         return len == 0f ? this : scale(1f / len);
     }
+
+    public Vec3f cross(Vec3f o) {
+        return new Vec3f(y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x);
+    }
 }
