@@ -4,6 +4,7 @@ import dev.chocoboy.cascade.engine.emitter.ShapeSampler;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.ColorCurve;
 import dev.chocoboy.cascade.engine.tween.Curve;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -15,6 +16,8 @@ public final class ParticleSystem implements EffectSim {
     private static final int CAP = 4000;
 
     private final List<Particle> particles = new ArrayList<>();
+    // dead instances kept for reuse so steady-state spawning does not allocate
+    private final ArrayDeque<Particle> pool = new ArrayDeque<>();
     private final List<ParticleModifier> modifiers;
     private final ShapeSampler shape;
     private final float speed;
@@ -72,10 +75,15 @@ public final class ParticleSystem implements EffectSim {
     private void spawn(int n) {
         for (int i = 0; i < n && particles.size() < CAP; i++) {
             Vec3f offset = shape.sample(rng);
-            Particle p = new Particle(offset, offset.normalize().scale(speed), particleLifetime);
+            Particle p = pool.poll();
+            if (p == null) {
+                p = new Particle(offset, offset.normalize().scale(speed), particleLifetime);
+            } else {
+                p.reset(offset, offset.normalize().scale(speed), particleLifetime);
+            }
             p.rotation = rotation.angleRange() * rng.nextFloat();
             p.spin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
-            if (trail.enabled()) {
+            if (trail.enabled() && (p.trail == null || p.trail.length != trail.length())) {
                 p.trail = new Vec3f[trail.length()];
             }
             particles.add(p);
@@ -123,7 +131,10 @@ public final class ParticleSystem implements EffectSim {
                 if (emitsOnDeath) {
                     spawnRequests.add(p.pos);
                 }
-                particles.remove(i);
+                // swap-remove since order does not matter; the moved element sits above i and is already processed
+                particles.set(i, particles.get(particles.size() - 1));
+                particles.remove(particles.size() - 1);
+                pool.push(p);
             }
         }
         tick++;

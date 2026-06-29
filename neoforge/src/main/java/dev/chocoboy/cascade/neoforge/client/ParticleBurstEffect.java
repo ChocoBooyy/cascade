@@ -67,6 +67,16 @@ public final class ParticleBurstEffect implements RenderedEffect {
     }
 
     @Override
+    public Vec3 position() {
+        return origin;
+    }
+
+    @Override
+    public int drawCount() {
+        return sim.particles().size();
+    }
+
+    @Override
     public void render(VfxFrame frame) {
         ParticleAtlas.ensureUploaded();
         boolean lit = render.lit();

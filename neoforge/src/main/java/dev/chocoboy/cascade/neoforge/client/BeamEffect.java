@@ -25,6 +25,21 @@ public final class BeamEffect implements RenderedEffect {
     }
 
     @Override
+    public Vec3 position() {
+        List<Vec3f> spine = sim.spine();
+        if (spine.isEmpty()) {
+            return Vec3.ZERO;
+        }
+        Vec3f p = spine.get(0);
+        return new Vec3(p.x(), p.y(), p.z());
+    }
+
+    @Override
+    public int drawCount() {
+        return sim.spine().size();
+    }
+
+    @Override
     public void render(VfxFrame frame) {
         Vec3 cam = frame.cameraPos();
         Matrix4f m = frame.pose().last().pose();
