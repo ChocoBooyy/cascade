@@ -12,6 +12,10 @@ public record ShakePayload(Vec3 pos, float magnitude, int duration) implements C
     public static final Type<ShakePayload> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath("cascade", "shake"));
 
+    // the shake's reach. the server only sends to players inside it and the client fades to zero at the
+    // edge, so both sides must agree; this is the one type they share, so the constant lives here
+    public static final double RADIUS = 32.0;
+
     public static final StreamCodec<RegistryFriendlyByteBuf, ShakePayload> STREAM_CODEC = StreamCodec.composite(
             NetCodecs.VEC3, ShakePayload::pos,
             ByteBufCodecs.FLOAT, ShakePayload::magnitude,

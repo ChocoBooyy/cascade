@@ -13,13 +13,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Vfx {
 
     private static final double RADIUS = 64.0;
-    private static final double SHAKE_RADIUS = 32.0;
 
     private Vfx() {
     }
 
     public static void shake(ServerLevel level, Vec3 pos, float magnitude, int duration) {
-        PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, SHAKE_RADIUS,
+        PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, ShakePayload.RADIUS,
                 new ShakePayload(pos, magnitude, duration));
     }
 
