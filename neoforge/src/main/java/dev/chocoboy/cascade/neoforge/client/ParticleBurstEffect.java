@@ -134,7 +134,9 @@ public final class ParticleBurstEffect implements RenderedEffect {
             VertexConsumer trailVc = frame.buffers().getBuffer(unlit);
             for (Particle p : sim.particles()) {
                 if (p.trail != null && p.trailCount >= 2) {
-                    renderTrail(m, trailVc, p, cam, sim.colorOf(p), sim.alphaOf(p), sim.sizeOf(p));
+                    int color = sim.colorOf(p);
+                    Billboards.ribbon(m, trailVc, p, origin, cam, uv,
+                            (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, sim.alphaOf(p), sim.sizeOf(p));
                 }
             }
         }
@@ -143,41 +145,6 @@ public final class ParticleBurstEffect implements RenderedEffect {
     // trails are allocated for every particle of a trail enabled system, so the first answers for all
     private boolean hasTrails() {
         return !sim.particles().isEmpty() && sim.particles().get(0).trail != null;
-    }
-
-    // draws the particle's position history as a camera-facing ribbon that tapers from the moving head
-    // back to nothing at the oldest point. The sprite cell is sampled across the width so edges stay soft.
-    private void renderTrail(Matrix4f m, VertexConsumer vc, Particle p, Vec3 cam, int color, float headAlpha, float size) {
-        int r = (color >> 16) & 0xFF;
-        int g = (color >> 8) & 0xFF;
-        int b = color & 0xFF;
-        float uMid = (uv[0] + uv[2]) * 0.5f;
-        float v0 = uv[1];
-        float v1 = uv[3];
-        int last = p.trailCount - 1;
-        for (int i = 0; i < last; i++) {
-            Vec3f lp0 = p.trailPoint(i);
-            Vec3f lp1 = p.trailPoint(i + 1);
-            Vec3 a = new Vec3(origin.x + lp0.x() - cam.x, origin.y + lp0.y() - cam.y, origin.z + lp0.z() - cam.z);
-            Vec3 c = new Vec3(origin.x + lp1.x() - cam.x, origin.y + lp1.y() - cam.y, origin.z + lp1.z() - cam.z);
-            Vec3 seg = c.subtract(a);
-            double len = seg.length();
-            if (len < 1e-6) {
-                continue;
-            }
-            Vec3 dir = seg.scale(1.0 / len);
-            Vec3 side = dir.cross(a.scale(-1.0).normalize()).normalize();
-            float t0 = (float) i / last;
-            float t1 = (float) (i + 1) / last;
-            Vec3 s0 = side.scale(size * t0);
-            Vec3 s1 = side.scale(size * t1);
-            int a0 = (int) (headAlpha * t0 * 255f);
-            int a1 = (int) (headAlpha * t1 * 255f);
-            vc.addVertex(m, (float) (a.x - s0.x), (float) (a.y - s0.y), (float) (a.z - s0.z)).setUv(uMid, v0).setColor(r, g, b, a0);
-            vc.addVertex(m, (float) (a.x + s0.x), (float) (a.y + s0.y), (float) (a.z + s0.z)).setUv(uMid, v1).setColor(r, g, b, a0);
-            vc.addVertex(m, (float) (c.x + s1.x), (float) (c.y + s1.y), (float) (c.z + s1.z)).setUv(uMid, v1).setColor(r, g, b, a1);
-            vc.addVertex(m, (float) (c.x - s1.x), (float) (c.y - s1.y), (float) (c.z - s1.z)).setUv(uMid, v0).setColor(r, g, b, a1);
-        }
     }
 
     // map a particle's life fraction onto an atlas frame, clamped to the last frame at end of life
