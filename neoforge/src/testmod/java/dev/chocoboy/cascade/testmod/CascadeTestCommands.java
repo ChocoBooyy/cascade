@@ -7,10 +7,11 @@ import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import dev.chocoboy.cascade.neoforge.VfxEmitter;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -24,7 +25,7 @@ public final class CascadeTestCommands {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("vfxtest")
                 .then(Commands.literal("burst").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    CommandSourceStack src = ctx.getSource();
                     Vfx.emitter()
                             .shape(ShapeSpec.hemisphere(0.15f))
                             .count(8)
@@ -48,47 +49,57 @@ public final class CascadeTestCommands {
                                     .drag(0.05f)
                                     .sprite(SpriteId.SPARK)
                                     .stretch(1.5f))
-                            .play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0));
+                            .play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("beam").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vec3 from = player.getEyePosition();
-                    Vec3 to = from.add(player.getLookAngle().scale(10.0));
-                    Vfx.beam(player.serverLevel(), from, to);
+                    CommandSourceStack src = ctx.getSource();
+                    Vec3 from = src.getPosition();
+                    Vec3 to = from.add(lookVector(src).scale(10.0));
+                    Vfx.beam(src.getLevel(), from, to);
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("combo").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vec3 base = player.position().add(0.0, 1.0, 0.0);
+                    CommandSourceStack src = ctx.getSource();
+                    Vec3 base = src.getPosition().add(0.0, 1.0, 0.0);
                     // left plume is lit, so it sits in world light; right plume is the full-bright twin
-                    smokePlume(player.serverLevel(), base.add(-1.0, 0.0, 0.0), true);
-                    smokePlume(player.serverLevel(), base.add(1.0, 0.0, 0.0), false);
+                    smokePlume(src.getLevel(), base.add(-1.0, 0.0, 0.0), true);
+                    smokePlume(src.getLevel(), base.add(1.0, 0.0, 0.0), false);
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("shake").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vfx.shake(player.serverLevel(), player.position(), 3.0f, 12);
+                    CommandSourceStack src = ctx.getSource();
+                    Vfx.shake(src.getLevel(), src.getPosition(), 3.0f, 12);
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("custom").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vfx.play(player.serverLevel(), player.position().add(0.0, 1.0, 0.0),
+                    CommandSourceStack src = ctx.getSource();
+                    Vfx.play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0),
                             ResourceLocation.fromNamespaceAndPath("cascade", "firework"));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("custombeam").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vec3 from = player.getEyePosition();
-                    Vec3 to = from.add(player.getLookAngle().scale(12.0));
+                    CommandSourceStack src = ctx.getSource();
+                    Vec3 from = src.getPosition();
+                    Vec3 to = from.add(lookVector(src).scale(12.0));
                     Vfx.beam()
                             .color(0xFF3366)
                             .width(0.3f)
                             .arc(0.7f)
                             .duration(20)
-                            .play(player.serverLevel(), from, to);
+                            .play(src.getLevel(), from, to);
                     return Command.SINGLE_SUCCESS;
                 })));
+    }
+
+    // the command source's facing as a unit vector. A command block defaults to (0,0), which points
+    // due south, so beams still fire from blocks even with no aim
+    private static Vec3 lookVector(CommandSourceStack src) {
+        Vec2 rot = src.getRotation();
+        double pitch = Math.toRadians(rot.x);
+        double yaw = Math.toRadians(rot.y);
+        double xz = Math.cos(pitch);
+        return new Vec3(-xz * Math.sin(yaw), -Math.sin(pitch), xz * Math.cos(yaw));
     }
 
     // a rising grey smoke column, optionally tinted by world light so it darkens in shade
