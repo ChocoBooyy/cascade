@@ -10,6 +10,7 @@ import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
+import dev.chocoboy.cascade.engine.effect.TrailSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
@@ -88,6 +89,11 @@ public final class SpecCodecs {
             ByteBufCodecs.FLOAT, CollisionSpec::friction,
             CollisionSpec::new);
 
+    private static final StreamCodec<RegistryFriendlyByteBuf, TrailSpec> TRAIL = StreamCodec.composite(
+            ByteBufCodecs.BOOL, TrailSpec::enabled,
+            ByteBufCodecs.VAR_INT, TrailSpec::length,
+            TrailSpec::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, EmitterSpec> EMITTER = StreamCodec.of(
             (buf, s) -> {
                 SHAPE.encode(buf, s.shape());
@@ -109,6 +115,7 @@ public final class SpecCodecs {
                 if (sub != null) {
                     encodeNested(buf, sub.child());
                 }
+                TRAIL.encode(buf, s.trail());
             },
             buf -> {
                 ShapeSpec shape = SHAPE.decode(buf);
@@ -126,8 +133,9 @@ public final class SpecCodecs {
                 RotationSpec rotation = ROTATION.decode(buf);
                 CollisionSpec collision = COLLISION.decode(buf);
                 SubEmitterSpec sub = buf.readBoolean() ? new SubEmitterSpec(decodeNested(buf)) : null;
+                TrailSpec trail = TRAIL.decode(buf);
                 return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
-                        modifiers, emission, render, rotation, collision, sub);
+                        modifiers, emission, render, rotation, collision, sub, trail);
             });
 
     // a sub-emitter nests a child EmitterSpec. These hops keep that recursion out of the EMITTER field

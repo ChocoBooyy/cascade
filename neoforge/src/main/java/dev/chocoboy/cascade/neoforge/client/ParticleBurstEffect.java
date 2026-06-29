@@ -14,6 +14,7 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -69,6 +70,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
         VertexConsumer vc = frame.buffers().getBuffer(type);
         Vec3 cam = frame.cameraPos();
         Quaternionf camRot = frame.cameraRotation();
+        Matrix4f m = frame.pose().last().pose();
         float stretch = render.stretch();
         boolean animate = render.animate();
         // the billboard plane axes in world space, so velocity can be projected onto the quad when streaking
@@ -97,6 +99,44 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     (float) (origin.z + p.pos.z() - cam.z),
                     hx, hy, roll, cell,
                     (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, alpha);
+            if (p.trail != null && p.trailCount >= 2) {
+                renderTrail(m, vc, p, cam, color, sim.alphaOf(p), size);
+            }
+        }
+    }
+
+    // draws the particle's position history as a camera-facing ribbon that tapers from the moving head
+    // back to nothing at the oldest point. The sprite cell is sampled across the width so edges stay soft.
+    private void renderTrail(Matrix4f m, VertexConsumer vc, Particle p, Vec3 cam, int color, float headAlpha, float size) {
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        float uMid = (uv[0] + uv[2]) * 0.5f;
+        float v0 = uv[1];
+        float v1 = uv[3];
+        int last = p.trailCount - 1;
+        for (int i = 0; i < last; i++) {
+            Vec3f lp0 = p.trailPoint(i);
+            Vec3f lp1 = p.trailPoint(i + 1);
+            Vec3 a = new Vec3(origin.x + lp0.x() - cam.x, origin.y + lp0.y() - cam.y, origin.z + lp0.z() - cam.z);
+            Vec3 c = new Vec3(origin.x + lp1.x() - cam.x, origin.y + lp1.y() - cam.y, origin.z + lp1.z() - cam.z);
+            Vec3 seg = c.subtract(a);
+            double len = seg.length();
+            if (len < 1e-6) {
+                continue;
+            }
+            Vec3 dir = seg.scale(1.0 / len);
+            Vec3 side = dir.cross(a.scale(-1.0).normalize()).normalize();
+            float t0 = (float) i / last;
+            float t1 = (float) (i + 1) / last;
+            Vec3 s0 = side.scale(size * t0);
+            Vec3 s1 = side.scale(size * t1);
+            int a0 = (int) (headAlpha * t0 * 255f);
+            int a1 = (int) (headAlpha * t1 * 255f);
+            vc.addVertex(m, (float) (a.x - s0.x), (float) (a.y - s0.y), (float) (a.z - s0.z)).setUv(uMid, v0).setColor(r, g, b, a0);
+            vc.addVertex(m, (float) (a.x + s0.x), (float) (a.y + s0.y), (float) (a.z + s0.z)).setUv(uMid, v1).setColor(r, g, b, a0);
+            vc.addVertex(m, (float) (c.x + s1.x), (float) (c.y + s1.y), (float) (c.z + s1.z)).setUv(uMid, v1).setColor(r, g, b, a1);
+            vc.addVertex(m, (float) (c.x - s1.x), (float) (c.y - s1.y), (float) (c.z - s1.z)).setUv(uMid, v0).setColor(r, g, b, a1);
         }
     }
 

@@ -81,7 +81,7 @@ class ParticleSystemTest {
                 Curve.of(1f, 0f, Easings.LINEAR),
                 Curve.of(1f, 0f, Easings.LINEAR),
                 ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                List.of(), RotationSpec.NONE, CollisionSpec.NONE, null, false, new Random(2));
+                List.of(), RotationSpec.NONE, CollisionSpec.NONE, null, false, TrailSpec.NONE, new Random(2));
         assertEquals(3, s.particles().size());
         s.tick();
         assertEquals(6, s.particles().size());
