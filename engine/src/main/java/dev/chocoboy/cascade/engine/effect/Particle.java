@@ -7,7 +7,7 @@ public final class Particle {
     public Vec3f pos;
     public Vec3f vel;
     public int age;
-    public final int lifetime;
+    public int lifetime;
     // billboard roll in radians and its per-tick change, so sprites can spin
     public float rotation;
     public float spin;
@@ -16,9 +16,19 @@ public final class Particle {
     public int trailCount;  // how many slots are filled, up to trail.length
 
     public Particle(Vec3f pos, Vec3f vel, int lifetime) {
+        reset(pos, vel, lifetime);
+    }
+
+    // recycle a dead instance back to spawn state; trail array is left for the caller to reuse
+    public void reset(Vec3f pos, Vec3f vel, int lifetime) {
         this.pos = pos;
         this.vel = vel;
         this.lifetime = lifetime;
+        this.age = 0;
+        this.rotation = 0;
+        this.spin = 0;
+        this.trailHead = 0;
+        this.trailCount = 0;
     }
 
     // oldest-first read so the renderer does not need to know the ring layout
