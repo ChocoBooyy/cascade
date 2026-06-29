@@ -1,0 +1,33 @@
+{
+  "shape": { "kind": "HEMISPHERE", "radius": 0.15 },
+  "count": 8,
+  "lifetime": 25,
+  "speed": 0.45,
+  "size": { "start": 0.12, "end": 0.12, "ease": "LINEAR" },
+  "alpha": { "start": 1.0, "end": 1.0, "ease": "LINEAR" },
+  "color_start": 16777215,
+  "color_end": 16772744,
+  "color_ease": "LINEAR",
+  "modifiers": [
+    { "kind": "GRAVITY", "vec": { "x": 0.0, "y": -0.02, "z": 0.0 } }
+  ],
+  "render": { "blend": "ADDITIVE", "sprite": "SPARK", "stretch": 2.0 },
+  "trail": { "enabled": true, "length": 6 },
+  "sub_emitter": {
+    "shape": { "kind": "SPHERE", "radius": 0.1 },
+    "count": 60,
+    "lifetime": 30,
+    "speed": 0.25,
+    "size": { "start": 0.12, "end": 0.03, "ease": "LINEAR" },
+    "alpha": { "start": 1.0, "end": 0.0, "ease": "LINEAR" },
+    "color_start": 16737962,
+    "color_end": 3368703,
+    "color_ease": "LINEAR",
+    "modifiers": [
+      { "kind": "GRAVITY", "vec": { "x": 0.0, "y": -0.02, "z": 0.0 } },
+      { "kind": "DRAG", "a": 0.05 }
+    ],
+    "render": { "blend": "ADDITIVE", "sprite": "SPARK", "stretch": 1.5 },
+    "trail": { "enabled": true, "length": 5 }
+  }
+}
