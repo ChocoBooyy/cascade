@@ -6,6 +6,7 @@ import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
+import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
 
@@ -33,5 +34,10 @@ public final class CascadeClientHandler {
         Vec3f to = new Vec3f((float) payload.to().x, (float) payload.to().y, (float) payload.to().z);
         BeamState state = payload.spec().build(from, to, new Random(payload.seed()));
         VfxRenderManager.get().spawn(new BeamEffect(state, payload.spec().color(), payload.spec().width()));
+    }
+
+    public static void handleLight(LightPayload payload) {
+        VfxRenderManager.get().spawn(
+                new LightSplat(payload.pos(), payload.color(), payload.radius(), payload.duration()));
     }
 }

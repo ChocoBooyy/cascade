@@ -40,6 +40,10 @@ public final class VfxSequence {
         return run(() -> Vfx.shake(level, pos, magnitude, duration));
     }
 
+    public VfxSequence light(Vec3 pos, int color, float radius, int duration) {
+        return run(() -> Vfx.light(level, pos, color, radius, duration));
+    }
+
     public VfxSequence delay(int ticks) {
         steps.add(Steps.delay(ticks));
         return this;

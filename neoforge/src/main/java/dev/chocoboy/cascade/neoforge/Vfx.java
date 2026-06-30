@@ -4,6 +4,7 @@ import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
+import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -20,6 +21,12 @@ public final class Vfx {
     public static void shake(ServerLevel level, Vec3 pos, float magnitude, int duration) {
         PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, ShakePayload.RADIUS,
                 new ShakePayload(pos, magnitude, duration));
+    }
+
+    // a faked cast light: a glow pooled on the ground under pos, fading over duration ticks
+    public static void light(ServerLevel level, Vec3 pos, int color, float radius, int duration) {
+        PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, RADIUS,
+                new LightPayload(pos, color, radius, duration));
     }
 
     public static VfxSequence at(ServerLevel level) {
