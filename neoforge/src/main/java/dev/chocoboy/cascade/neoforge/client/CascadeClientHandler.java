@@ -5,6 +5,7 @@ import dev.chocoboy.cascade.engine.effect.CollisionProbe;
 import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
+import dev.chocoboy.cascade.neoforge.net.DomePayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import java.util.Random;
@@ -39,5 +40,10 @@ public final class CascadeClientHandler {
     public static void handleLight(LightPayload payload) {
         VfxRenderManager.get().spawn(
                 new LightSplat(payload.pos(), payload.color(), payload.radius(), payload.duration()));
+    }
+
+    public static void handleDome(DomePayload payload) {
+        VfxRenderManager.get().spawn(
+                new DomeField(payload.pos(), payload.radius(), payload.color(), payload.duration()));
     }
 }
