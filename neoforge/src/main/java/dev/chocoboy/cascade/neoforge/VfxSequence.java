@@ -44,6 +44,10 @@ public final class VfxSequence {
         return run(() -> Vfx.light(level, pos, color, radius, duration));
     }
 
+    public VfxSequence dome(Vec3 pos, float radius, int color, int duration) {
+        return run(() -> Vfx.dome(level, pos, radius, color, duration));
+    }
+
     public VfxSequence delay(int ticks) {
         steps.add(Steps.delay(ticks));
         return this;

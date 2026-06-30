@@ -18,6 +18,8 @@ public final class CascadeNetwork {
                 .playToClient(EmitterPayload.TYPE, EmitterPayload.STREAM_CODEC,
                         (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleEmitter(payload)))
                 .playToClient(LightPayload.TYPE, LightPayload.STREAM_CODEC,
-                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleLight(payload)));
+                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleLight(payload)))
+                .playToClient(DomePayload.TYPE, DomePayload.STREAM_CODEC,
+                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleDome(payload)));
     }
 }

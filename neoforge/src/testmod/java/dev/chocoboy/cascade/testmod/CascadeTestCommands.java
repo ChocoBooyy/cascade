@@ -123,16 +123,8 @@ public final class CascadeTestCommands {
     private static void gravityStar(ServerLevel level, Vec3 c) {
         Vfx.at(level)
                 .parallel(
-                        // the zone made visible: a dome of motes sits on the hemisphere surface (speed 0),
-                        // respawning so the shell holds, so the field reads as an actual volume
-                        s -> s.emit(c, Vfx.emitter()
-                                .shape(ShapeSpec.hemisphere(4.5f))
-                                .lifetime(28).speed(0.0f)
-                                .size(0.2f, 0.12f, Easings.LINEAR)
-                                .alpha(0.55f, 0.0f, Easings.LINEAR)
-                                .gradient(Easings.LINEAR, GZ_BRIGHT, GZ_VIOLET)
-                                .rate(46.0f, 74)
-                                .sprite(SpriteId.GLOW)),
+                        // the zone itself: a real translucent dome mesh, not a cloud of particles
+                        s -> s.dome(c, 4.5f, GZ_BRIGHT, 80),
                         // a few motes pulled inward off the shell, so the dome reads as gravity, not decor
                         s -> s.emit(c, Vfx.emitter()
                                 .shape(ShapeSpec.hemisphere(4.5f))
@@ -143,15 +135,6 @@ public final class CascadeTestCommands {
                                 .gradient(Easings.LINEAR, GZ_LAVENDER, GZ_DEEP)
                                 .rate(9.0f, 74)
                                 .sprite(SpriteId.GLOW).stretch(0.8f).trail(4)),
-                        // a shimmering boundary ring where the dome meets the ground
-                        s -> s.emit(c, Vfx.emitter()
-                                .shape(ShapeSpec.ring(4.5f))
-                                .lifetime(24).speed(0.0f)
-                                .size(0.24f, 0.1f, Easings.LINEAR)
-                                .alpha(0.6f, 0.0f, Easings.LINEAR)
-                                .gradient(Easings.LINEAR, GZ_BRIGHT, GZ_VIOLET)
-                                .rate(9.0f, 74)
-                                .sprite(SpriteId.GLOW)),
                         // a soft core orb swells at the center as the field tightens
                         s -> s.emit(c, Vfx.emitter()
                                 .shape(ShapeSpec.sphere(0.3f))
