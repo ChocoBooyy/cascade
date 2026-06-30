@@ -13,6 +13,7 @@ import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
 import dev.chocoboy.cascade.engine.effect.VelocitySpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
+import dev.chocoboy.cascade.engine.tween.ColorSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import io.netty.buffer.ByteBuf;
@@ -43,6 +44,14 @@ public final class SpecCodecs {
             ByteBufCodecs.FLOAT, CurveSpec::end,
             EASING, CurveSpec::ease,
             CurveSpec::new);
+
+    private static final StreamCodec<ByteBuf, List<Integer>> COLOR_STOPS =
+            ByteBufCodecs.INT.apply(ByteBufCodecs.collection(ArrayList::new));
+
+    private static final StreamCodec<RegistryFriendlyByteBuf, ColorSpec> COLOR = StreamCodec.composite(
+            COLOR_STOPS, ColorSpec::stops,
+            EASING, ColorSpec::ease,
+            ColorSpec::new);
 
     private static final StreamCodec<ByteBuf, ModifierSpec.Kind> MODIFIER_KIND =
             ByteBufCodecs.idMapper(i -> ModifierSpec.Kind.values()[i], Enum::ordinal);
@@ -113,9 +122,7 @@ public final class SpecCodecs {
                 buf.writeFloat(s.speed());
                 CURVE.encode(buf, s.size());
                 CURVE.encode(buf, s.alpha());
-                buf.writeInt(s.colorStart());
-                buf.writeInt(s.colorEnd());
-                EASING.encode(buf, s.colorEase());
+                COLOR.encode(buf, s.color());
                 MODIFIERS.encode(buf, s.modifiers());
                 EMISSION.encode(buf, s.emission());
                 RENDER.encode(buf, s.render());
@@ -136,9 +143,7 @@ public final class SpecCodecs {
                 float speed = buf.readFloat();
                 CurveSpec size = CURVE.decode(buf);
                 CurveSpec alpha = CURVE.decode(buf);
-                int colorStart = buf.readInt();
-                int colorEnd = buf.readInt();
-                Easings colorEase = EASING.decode(buf);
+                ColorSpec color = COLOR.decode(buf);
                 List<ModifierSpec> modifiers = MODIFIERS.decode(buf);
                 EmissionSpec emission = EMISSION.decode(buf);
                 RenderSpec render = RENDER.decode(buf);
@@ -147,7 +152,7 @@ public final class SpecCodecs {
                 SubEmitterSpec sub = buf.readBoolean() ? new SubEmitterSpec(decodeNested(buf)) : null;
                 TrailSpec trail = TRAIL.decode(buf);
                 VelocitySpec velocity = VELOCITY.decode(buf);
-                return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
+                return new EmitterSpec(shape, count, lifetime, speed, size, alpha, color,
                         modifiers, emission, render, rotation, collision, sub, trail, velocity);
             });
 

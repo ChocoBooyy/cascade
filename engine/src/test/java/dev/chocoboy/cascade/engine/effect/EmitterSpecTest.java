@@ -87,7 +87,7 @@ class EmitterSpecTest {
         EmitterSpec d = EmitterSpec.defaultBurst();
         assertEquals(120, d.count());
         assertEquals(30, d.lifetime());
-        assertEquals(0xFFCC33, d.colorStart());
-        assertEquals(0xFF3300, d.colorEnd());
+        assertEquals(0xFFCC33, d.color().stops().get(0));
+        assertEquals(0xFF3300, d.color().stops().get(1));
     }
 }

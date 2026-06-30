@@ -2,6 +2,7 @@ package dev.chocoboy.cascade.engine.tween;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ColorCurveTest {
@@ -25,6 +26,16 @@ class ColorCurveTest {
         ColorCurve c = ColorCurve.of(0x102030, 0x405060, Easings.LINEAR);
         assertEquals(0x102030, c.at(-1f));
         assertEquals(0x405060, c.at(2f));
+    }
+
+    @Test
+    void blendsAcrossMultipleStops() {
+        ColorCurve c = ColorCurve.of(List.of(0x000000, 0xFF0000, 0xFFFFFF), Easings.LINEAR);
+        assertEquals(0x000000, c.at(0f));
+        assertEquals(0xFF0000, c.at(0.5f));
+        assertEquals(0xFFFFFF, c.at(1f));
+        // a quarter of the way is the midpoint of the first segment, black to red
+        assertEquals(0x800000, c.at(0.25f));
     }
 
     @Test

@@ -13,6 +13,7 @@ import dev.chocoboy.cascade.engine.effect.TrailSpec;
 import dev.chocoboy.cascade.engine.effect.VelocitySpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
+import dev.chocoboy.cascade.engine.tween.ColorSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.ArrayList;
@@ -28,9 +29,7 @@ public final class VfxEmitter {
     private float speed;
     private CurveSpec size;
     private CurveSpec alpha;
-    private int colorStart;
-    private int colorEnd;
-    private Easings colorEase;
+    private ColorSpec color;
     private final List<ModifierSpec> modifiers = new ArrayList<>();
     private EmissionSpec emission = EmissionSpec.burst();
     private BlendMode blend = BlendMode.ADDITIVE;
@@ -53,9 +52,7 @@ public final class VfxEmitter {
         this.speed = d.speed();
         this.size = d.size();
         this.alpha = d.alpha();
-        this.colorStart = d.colorStart();
-        this.colorEnd = d.colorEnd();
-        this.colorEase = d.colorEase();
+        this.color = d.color();
     }
 
     public VfxEmitter shape(ShapeSpec shape) {
@@ -89,9 +86,13 @@ public final class VfxEmitter {
     }
 
     public VfxEmitter color(int start, int end, Easings ease) {
-        this.colorStart = start;
-        this.colorEnd = end;
-        this.colorEase = ease;
+        this.color = ColorSpec.of(start, end, ease);
+        return this;
+    }
+
+    // blend through several colors over a particle's life instead of just two, for fire and plasma
+    public VfxEmitter gradient(Easings ease, int... colors) {
+        this.color = ColorSpec.gradient(ease, colors);
         return this;
     }
 
@@ -204,7 +205,7 @@ public final class VfxEmitter {
     }
 
     public EmitterSpec spec() {
-        return new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase,
+        return new EmitterSpec(shape, count, lifetime, speed, size, alpha, color,
                 List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit), rotation, collision,
                 subEmitter, trail, velocity);
     }
