@@ -1,7 +1,7 @@
 package dev.chocoboy.cascade.engine.effect;
 
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
-import dev.chocoboy.cascade.engine.tween.ColorCurve;
+import dev.chocoboy.cascade.engine.tween.ColorSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.random.RandomGenerator;
 
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
-        CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
+        CurveSpec size, CurveSpec alpha, ColorSpec color,
         List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
         RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail,
         VelocitySpec velocity) {
@@ -43,24 +43,24 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
             List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision) {
-        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                render, rotation, collision, null, TrailSpec.NONE, VelocitySpec.RADIAL);
+        this(shape, count, lifetime, speed, size, alpha, ColorSpec.of(colorStart, colorEnd, colorEase), modifiers,
+                emission, render, rotation, collision, null, TrailSpec.NONE, VelocitySpec.RADIAL);
     }
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
             List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter) {
-        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                render, rotation, collision, subEmitter, TrailSpec.NONE, VelocitySpec.RADIAL);
+        this(shape, count, lifetime, speed, size, alpha, ColorSpec.of(colorStart, colorEnd, colorEase), modifiers,
+                emission, render, rotation, collision, subEmitter, TrailSpec.NONE, VelocitySpec.RADIAL);
     }
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
             List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail) {
-        this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-                render, rotation, collision, subEmitter, trail, VelocitySpec.RADIAL);
+        this(shape, count, lifetime, speed, size, alpha, ColorSpec.of(colorStart, colorEnd, colorEase), modifiers,
+                emission, render, rotation, collision, subEmitter, trail, VelocitySpec.RADIAL);
     }
 
     public ParticleSystem build(RandomGenerator rng) {
@@ -80,7 +80,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         int scaledCount = density >= 1f ? count : Math.max(0, Math.round(count * density));
         return new ParticleSystem(shape.sampler(), emission.scaledRate(density).spawner(scaledCount), lifetime, speed,
                 velocity, size.toCurve(), alpha.toCurve(),
-                ColorCurve.of(colorStart, colorEnd, colorEase), built, rotation, collision, probe,
+                color.toCurve(), built, rotation, collision, probe,
                 subEmitter != null, trail, rng);
     }
 

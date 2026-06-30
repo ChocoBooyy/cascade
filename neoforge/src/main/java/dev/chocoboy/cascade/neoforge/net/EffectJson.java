@@ -12,8 +12,10 @@ import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
+import dev.chocoboy.cascade.engine.effect.VelocitySpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
+import dev.chocoboy.cascade.engine.tween.ColorSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.List;
@@ -47,6 +49,17 @@ public final class EffectJson {
             Codec.FLOAT.fieldOf("end").forGetter(CurveSpec::end),
             byName(Easings.class).fieldOf("ease").forGetter(CurveSpec::ease)
     ).apply(i, CurveSpec::new));
+
+    public static final Codec<ColorSpec> COLOR = RecordCodecBuilder.create(i -> i.group(
+            Codec.INT.listOf().fieldOf("stops").forGetter(ColorSpec::stops),
+            byName(Easings.class).optionalFieldOf("ease", Easings.LINEAR).forGetter(ColorSpec::ease)
+    ).apply(i, ColorSpec::new));
+
+    public static final Codec<VelocitySpec> VELOCITY = RecordCodecBuilder.create(i -> i.group(
+            byName(VelocitySpec.Mode.class).optionalFieldOf("mode", VelocitySpec.Mode.RADIAL).forGetter(VelocitySpec::mode),
+            VEC3F.optionalFieldOf("direction", Vec3f.ZERO).forGetter(VelocitySpec::direction),
+            Codec.FLOAT.optionalFieldOf("spread", 0f).forGetter(VelocitySpec::spread)
+    ).apply(i, VelocitySpec::new));
 
     public static final Codec<ModifierSpec> MODIFIER = RecordCodecBuilder.create(i -> i.group(
             byName(ModifierSpec.Kind.class).fieldOf("kind").forGetter(ModifierSpec::kind),
@@ -95,20 +108,19 @@ public final class EffectJson {
             Codec.FLOAT.fieldOf("speed").forGetter(EmitterSpec::speed),
             CURVE.fieldOf("size").forGetter(EmitterSpec::size),
             CURVE.fieldOf("alpha").forGetter(EmitterSpec::alpha),
-            Codec.INT.fieldOf("color_start").forGetter(EmitterSpec::colorStart),
-            Codec.INT.fieldOf("color_end").forGetter(EmitterSpec::colorEnd),
-            byName(Easings.class).fieldOf("color_ease").forGetter(EmitterSpec::colorEase),
+            COLOR.fieldOf("color").forGetter(EmitterSpec::color),
             MODIFIER.listOf().optionalFieldOf("modifiers", List.of()).forGetter(EmitterSpec::modifiers),
             EMISSION.optionalFieldOf("emission", EmissionSpec.burst()).forGetter(EmitterSpec::emission),
             RENDER.optionalFieldOf("render", RenderSpec.DEFAULT).forGetter(EmitterSpec::render),
             ROTATION.optionalFieldOf("rotation", RotationSpec.NONE).forGetter(EmitterSpec::rotation),
             COLLISION.optionalFieldOf("collision", CollisionSpec.NONE).forGetter(EmitterSpec::collision),
             self.xmap(SubEmitterSpec::new, SubEmitterSpec::child).optionalFieldOf("sub_emitter").forGetter(s -> Optional.ofNullable(s.subEmitter())),
-            TRAIL.optionalFieldOf("trail", TrailSpec.NONE).forGetter(EmitterSpec::trail)
-    ).apply(i, (shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
-            render, rotation, collision, subEmitter, trail) ->
-            new EmitterSpec(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers,
-                    emission, render, rotation, collision, subEmitter.orElse(null), trail))));
+            TRAIL.optionalFieldOf("trail", TrailSpec.NONE).forGetter(EmitterSpec::trail),
+            VELOCITY.optionalFieldOf("velocity", VelocitySpec.RADIAL).forGetter(EmitterSpec::velocity)
+    ).apply(i, (shape, count, lifetime, speed, size, alpha, color, modifiers, emission,
+            render, rotation, collision, subEmitter, trail, velocity) ->
+            new EmitterSpec(shape, count, lifetime, speed, size, alpha, color, modifiers,
+                    emission, render, rotation, collision, subEmitter.orElse(null), trail, velocity))));
 
     private EffectJson() {
     }
