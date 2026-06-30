@@ -180,6 +180,12 @@ public final class VfxEmitter {
         return this;
     }
 
+    // spawn the child system at the first block contact of each parent particle
+    public VfxEmitter burstOnCollision(VfxEmitter child) {
+        this.subEmitter = new SubEmitterSpec(child.spec(), SubEmitterSpec.Trigger.COLLISION);
+        return this;
+    }
+
     // draw a ribbon through each particle's last length positions, for comets and streaking sparks
     public VfxEmitter trail(int length) {
         this.trail = TrailSpec.of(length);
