@@ -11,6 +11,10 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -102,7 +106,8 @@ public final class CascadeTestCommands {
                 }))
                 .then(Commands.literal("gravitystar").executes(ctx -> {
                     CommandSourceStack src = ctx.getSource();
-                    gravityStar(src.getLevel(), src.getPosition().add(0.0, 0.6, 0.0));
+                    Vec3 impact = onGround(src.getLevel(), src.getPosition(), src.getEntity());
+                    gravityStar(src.getLevel(), impact.add(0.0, 0.6, 0.0));
                     return Command.SINGLE_SUCCESS;
                 })));
     }
@@ -393,6 +398,18 @@ public final class CascadeTestCommands {
         double yaw = Math.toRadians(rot.y);
         double xz = Math.cos(pitch);
         return new Vec3(-xz * Math.sin(yaw), -Math.sin(pitch), xz * Math.cos(yaw));
+    }
+
+    // snap a point down onto the surface beneath it, so an impact effect lands on top of the block instead
+    // of inside terrain or floating. Starts a touch high in case the point already sits on the surface, then
+    // casts down; over a void it falls back to the original point.
+    private static Vec3 onGround(ServerLevel level, Vec3 pos, Entity source) {
+        Vec3 start = pos.add(0.0, 1.0, 0.0);
+        Vec3 end = pos.subtract(0.0, 32.0, 0.0);
+        BlockHitResult hit = level.clip(
+                new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, source));
+        double y = hit.getType() == HitResult.Type.MISS ? pos.y : hit.getLocation().y;
+        return new Vec3(pos.x, y, pos.z);
     }
 
     // a rising grey smoke column, optionally tinted by world light so it darkens in shade
