@@ -94,7 +94,104 @@ public final class CascadeTestCommands {
                     CommandSourceStack src = ctx.getSource();
                     singularity(src.getLevel(), src.getPosition().add(0.0, 2.2, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("gravitywell").executes(ctx -> {
+                    CommandSourceStack src = ctx.getSource();
+                    gravityWell(src.getLevel(), src.getPosition().add(0.0, 2.5, 0.0));
+                    return Command.SINGLE_SUCCESS;
                 })));
+    }
+
+    // a gravity well: a point pulls ambient matter into a tightening spiral for a few seconds, then the
+    // well collapses and detonates. Infall is orbital initial velocity plus a center attractor, so paths
+    // decay inward instead of falling straight in.
+    private static void gravityWell(ServerLevel level, Vec3 c) {
+        Vfx.at(level)
+                .parallel(
+                        // matter spirals in from a wide shell over the whole charge
+                        s -> s.emit(c, Vfx.emitter()
+                                .shape(ShapeSpec.sphere(5.0f))
+                                .lifetime(64).speed(0.30f)
+                                .orbit()
+                                .attractor(0.0f, 0.0f, 0.0f, 0.06f)
+                                .size(0.15f, 0.04f, Easings.EASE_IN_QUAD)
+                                .alpha(0.85f, 0.2f, Easings.LINEAR)
+                                .gradient(Easings.LINEAR, CYAN, VIOLET, DEEP_VIOLET)
+                                .rate(11.0f, 72)
+                                .sprite(SpriteId.SHARD).stretch(2.0f).spin(0.12f).trail(6)),
+                        // a hot core glows brighter at the center as mass piles up
+                        s -> s.emit(c, Vfx.emitter()
+                                .shape(ShapeSpec.sphere(0.3f))
+                                .lifetime(26).speed(0.0f)
+                                .size(0.25f, 0.6f, Easings.EASE_OUT_QUAD)
+                                .alpha(0.9f, 0.0f, Easings.LINEAR)
+                                .gradient(Easings.LINEAR, WHITE, VIOLET)
+                                .rate(3.0f, 72)
+                                .sprite(SpriteId.STAR)),
+                        s -> s.light(c, VIOLET, 4.0f, 80))
+                .delay(74)
+                // collapse: the well yanks the last matter to a point and winks white
+                .emit(c, Vfx.emitter()
+                        .shape(ShapeSpec.sphere(3.0f))
+                        .count(130).lifetime(9).speed(0.55f)
+                        .implode()
+                        .size(0.16f, 0.0f, Easings.EASE_IN_QUAD)
+                        .alpha(1.0f, 0.0f, Easings.LINEAR)
+                        .gradient(Easings.LINEAR, VIOLET, WHITE)
+                        .sprite(SpriteId.SPARK).stretch(2.5f).trail(4))
+                .delay(10)
+                .run(() -> gravityBlast(level, c))
+                .delay(3)
+                // aftermath: blown out debris coasts and lit smoke settles
+                .emit(c, Vfx.emitter()
+                        .shape(ShapeSpec.sphere(2.0f))
+                        .count(120).lifetime(75).speed(0.06f)
+                        .size(0.14f, 0.0f, Easings.LINEAR)
+                        .alpha(0.7f, 0.0f, Easings.LINEAR)
+                        .gradient(Easings.LINEAR, VIOLET, DEEP_VIOLET)
+                        .curl(0.025f, 0.5f)
+                        .sprite(SpriteId.SMOKE).blend(BlendMode.ALPHA).lit())
+                .play();
+    }
+
+    // the collapse blast: a star core, a fast double shockwave, twelve long radial bolts, a wide light
+    // flash, and a hard screen kick. Bigger than the singularity's detonation on purpose.
+    private static void gravityBlast(ServerLevel level, Vec3 c) {
+        Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.4f))
+                .count(220).lifetime(34).speed(0.55f)
+                .size(0.22f, 0.02f, Easings.EASE_OUT_QUAD)
+                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, WHITE, CYAN, VIOLET)
+                .drag(0.05f)
+                .sprite(SpriteId.STAR).stretch(3.5f).trail(6)
+                .play(level, c);
+        Vfx.emitter()
+                .shape(ShapeSpec.ring(0.6f))
+                .count(90).lifetime(20).speed(0.7f)
+                .size(0.3f, 0.0f, Easings.LINEAR)
+                .alpha(0.95f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, CYAN, WHITE)
+                .sprite(SpriteId.RING).stretch(1.5f)
+                .play(level, c);
+        Vfx.emitter()
+                .shape(ShapeSpec.sphere(1.0f))
+                .count(120).lifetime(40).speed(0.32f)
+                .size(0.2f, 0.0f, Easings.LINEAR)
+                .alpha(0.8f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, VIOLET, DEEP_VIOLET)
+                .drag(0.06f)
+                .sprite(SpriteId.SPARK).stretch(2.5f).trail(5)
+                .play(level, c);
+        int beams = 12;
+        for (int i = 0; i < beams; i++) {
+            double angle = Math.PI * 2.0 * i / beams;
+            Vec3 dir = new Vec3(Math.cos(angle), 0.12, Math.sin(angle));
+            Vfx.beam().color(CYAN).width(0.28f).arc(0.6f).duration(12)
+                    .play(level, c, c.add(dir.scale(9.0)));
+        }
+        Vfx.light(level, c, WHITE, 8.0f, 28);
+        Vfx.shake(level, c, 3.0f, 18);
     }
 
     // the showcase: a collapsing singularity that implodes matter into an orbiting disc, then detonates.
