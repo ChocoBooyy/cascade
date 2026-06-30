@@ -32,6 +32,7 @@ public final class ParticleSystem implements EffectSim {
     private final CollisionSpec collision;
     private final CollisionProbe probe;
     private final boolean emitsOnDeath;
+    private final boolean emitsOnCollision;
     private final TrailSpec trail;
     private final List<Vec3f> spawnRequests = new ArrayList<>();
     private int tick;
@@ -44,13 +45,13 @@ public final class ParticleSystem implements EffectSim {
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         this(shape, new BurstSpawner(count), particleLifetime, speed, VelocitySpec.RADIAL, size, alpha, color, modifiers,
-                RotationSpec.NONE, CollisionSpec.NONE, null, false, TrailSpec.NONE, rng);
+                RotationSpec.NONE, CollisionSpec.NONE, null, false, false, TrailSpec.NONE, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
             VelocitySpec velocity, Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
             RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, boolean emitsOnDeath,
-            TrailSpec trail, RandomGenerator rng) {
+            boolean emitsOnCollision, TrailSpec trail, RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
@@ -65,6 +66,7 @@ public final class ParticleSystem implements EffectSim {
         this.collision = Objects.requireNonNull(collision, "collision");
         this.probe = probe;
         this.emitsOnDeath = emitsOnDeath;
+        this.emitsOnCollision = emitsOnCollision;
         this.trail = Objects.requireNonNull(trail, "trail");
         this.rng = Objects.requireNonNull(rng, "rng");
         this.speed = speed;
@@ -133,7 +135,11 @@ public final class ParticleSystem implements EffectSim {
             for (int m = 0; m < modifiers.size(); m++) {
                 modifiers.get(m).apply(p);
             }
-            integrate(p);
+            boolean hit = integrate(p);
+            if (emitsOnCollision && hit && !p.collided) {
+                spawnRequests.add(p.pos);
+                p.collided = true;
+            }
             p.rotation += p.spin;
             if (p.trail != null) {
                 p.trail[p.trailHead] = p.pos;
@@ -159,10 +165,10 @@ public final class ParticleSystem implements EffectSim {
 
     // advance one particle by its velocity, resolving block collisions per axis so it can slide along a
     // wall instead of stopping dead. bounce is the speed kept on a hit, friction sheds the rest
-    private void integrate(Particle p) {
+    private boolean integrate(Particle p) {
         if (!collision.enabled() || probe == null) {
             p.pos = p.pos.add(p.vel);
-            return;
+            return false;
         }
         float px = p.pos.x(), py = p.pos.y(), pz = p.pos.z();
         float vx = p.vel.x(), vy = p.vel.y(), vz = p.vel.z();
@@ -180,6 +186,7 @@ public final class ParticleSystem implements EffectSim {
         }
         p.vel = new Vec3f(vx, vy, vz);
         p.pos = new Vec3f(hitX ? px : px + vx, hitY ? py : py + vy, hitZ ? pz : pz + vz);
+        return hitX || hitY || hitZ;
     }
 
     @Override

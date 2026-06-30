@@ -14,6 +14,7 @@ public final class Particle {
     public Vec3f[] trail;   // null when the system has no trail; otherwise a ring of recent positions
     public int trailHead;   // next write slot
     public int trailCount;  // how many slots are filled, up to trail.length
+    public boolean collided;  // set on first block contact so a collision sub-emitter fires once
 
     public Particle(Vec3f pos, Vec3f vel, int lifetime) {
         reset(pos, vel, lifetime);
@@ -29,6 +30,7 @@ public final class Particle {
         this.spin = 0;
         this.trailHead = 0;
         this.trailCount = 0;
+        this.collided = false;
     }
 
     // oldest-first read so the renderer does not need to know the ring layout

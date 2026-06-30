@@ -78,10 +78,12 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             built.add(m.toModifier());
         }
         int scaledCount = density >= 1f ? count : Math.max(0, Math.round(count * density));
+        boolean onDeath = subEmitter != null && subEmitter.trigger() == SubEmitterSpec.Trigger.DEATH;
+        boolean onCollision = subEmitter != null && subEmitter.trigger() == SubEmitterSpec.Trigger.COLLISION;
         return new ParticleSystem(shape.sampler(), emission.scaledRate(density).spawner(scaledCount), lifetime, speed,
                 velocity, size.toCurve(), alpha.toCurve(),
                 color.toCurve(), built, rotation, collision, probe,
-                subEmitter != null, trail, rng);
+                onDeath, onCollision, trail, rng);
     }
 
     public static EmitterSpec defaultBurst() {
