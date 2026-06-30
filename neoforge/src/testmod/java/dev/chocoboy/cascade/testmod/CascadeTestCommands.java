@@ -123,24 +123,34 @@ public final class CascadeTestCommands {
     private static void gravityStar(ServerLevel level, Vec3 c) {
         Vfx.at(level)
                 .parallel(
-                        // the zone: motes drift straight inward from a dome, slow and steady, no whirl
+                        // the zone made visible: a dome of motes sits on the hemisphere surface (speed 0),
+                        // respawning so the shell holds, so the field reads as an actual volume
                         s -> s.emit(c, Vfx.emitter()
-                                .shape(ShapeSpec.hemisphere(5.0f))
-                                .lifetime(72).speed(0.13f)
+                                .shape(ShapeSpec.hemisphere(4.5f))
+                                .lifetime(28).speed(0.0f)
+                                .size(0.2f, 0.12f, Easings.LINEAR)
+                                .alpha(0.55f, 0.0f, Easings.LINEAR)
+                                .gradient(Easings.LINEAR, GZ_BRIGHT, GZ_VIOLET)
+                                .rate(46.0f, 74)
+                                .sprite(SpriteId.GLOW)),
+                        // a few motes pulled inward off the shell, so the dome reads as gravity, not decor
+                        s -> s.emit(c, Vfx.emitter()
+                                .shape(ShapeSpec.hemisphere(4.5f))
+                                .lifetime(40).speed(0.12f)
                                 .implode()
-                                .size(0.16f, 0.05f, Easings.EASE_IN_QUAD)
-                                .alpha(0.7f, 0.1f, Easings.LINEAR)
-                                .gradient(Easings.LINEAR, GZ_LAVENDER, GZ_VIOLET, GZ_DEEP)
-                                .rate(14.0f, 74)
+                                .size(0.14f, 0.04f, Easings.EASE_IN_QUAD)
+                                .alpha(0.6f, 0.0f, Easings.LINEAR)
+                                .gradient(Easings.LINEAR, GZ_LAVENDER, GZ_DEEP)
+                                .rate(9.0f, 74)
                                 .sprite(SpriteId.GLOW).stretch(0.8f).trail(4)),
-                        // a shimmering boundary ring on the ground that marks the zone edge
+                        // a shimmering boundary ring where the dome meets the ground
                         s -> s.emit(c, Vfx.emitter()
-                                .shape(ShapeSpec.ring(5.0f))
+                                .shape(ShapeSpec.ring(4.5f))
                                 .lifetime(24).speed(0.0f)
                                 .size(0.24f, 0.1f, Easings.LINEAR)
-                                .alpha(0.5f, 0.0f, Easings.LINEAR)
+                                .alpha(0.6f, 0.0f, Easings.LINEAR)
                                 .gradient(Easings.LINEAR, GZ_BRIGHT, GZ_VIOLET)
-                                .rate(7.0f, 74)
+                                .rate(9.0f, 74)
                                 .sprite(SpriteId.GLOW)),
                         // a soft core orb swells at the center as the field tightens
                         s -> s.emit(c, Vfx.emitter()
