@@ -99,7 +99,108 @@ public final class CascadeTestCommands {
                     CommandSourceStack src = ctx.getSource();
                     gravityWell(src.getLevel(), src.getPosition().add(0.0, 2.5, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("gravitystar").executes(ctx -> {
+                    CommandSourceStack src = ctx.getSource();
+                    gravityStar(src.getLevel(), src.getPosition().add(0.0, 0.6, 0.0));
+                    return Command.SINGLE_SUCCESS;
                 })));
+    }
+
+    // Gravity Star: a kunai impact spawns a star of gravity that drags matter into a flat ground spiral,
+    // then collapses into a blast built to read as knockback, a low wide shockwave that throws outward
+    // rather than up. Sits near the ground since it is an impact, not an airburst.
+    private static final int GS_GOLD = 0xFFD84D;
+    private static final int GS_WHITE = 0xFFFFFF;
+    private static final int GS_INDIGO = 0x33246B;
+    private static final int GS_PALE = 0xBFD4FF;
+
+    private static void gravityStar(ServerLevel level, Vec3 c) {
+        Vfx.at(level)
+                .parallel(
+                        // flat spiral infall hugging the ground (disc shape + orbital + attractor)
+                        s -> s.emit(c, Vfx.emitter()
+                                .shape(ShapeSpec.disc(5.0f))
+                                .lifetime(58).speed(0.30f)
+                                .orbit()
+                                .attractor(0.0f, 0.0f, 0.0f, 0.07f)
+                                .size(0.16f, 0.04f, Easings.EASE_IN_QUAD)
+                                .alpha(0.9f, 0.2f, Easings.LINEAR)
+                                .gradient(Easings.LINEAR, GS_PALE, GS_GOLD, GS_INDIGO)
+                                .rate(12.0f, 66)
+                                .sprite(SpriteId.SHARD).stretch(2.2f).spin(0.1f).trail(6)),
+                        // the star itself, a growing spinning core
+                        s -> s.emit(c, Vfx.emitter()
+                                .shape(ShapeSpec.point())
+                                .lifetime(24).speed(0.0f)
+                                .size(0.4f, 0.9f, Easings.EASE_OUT_QUAD)
+                                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                                .gradient(Easings.LINEAR, GS_WHITE, GS_GOLD)
+                                .rate(2.5f, 66)
+                                .sprite(SpriteId.STAR).spin(0.04f)),
+                        s -> s.light(c, GS_GOLD, 4.5f, 74))
+                .delay(68)
+                // collapse to a point, gold winks white
+                .emit(c, Vfx.emitter()
+                        .shape(ShapeSpec.sphere(3.0f))
+                        .count(120).lifetime(9).speed(0.55f)
+                        .implode()
+                        .size(0.16f, 0.0f, Easings.EASE_IN_QUAD)
+                        .alpha(1.0f, 0.0f, Easings.LINEAR)
+                        .gradient(Easings.LINEAR, GS_GOLD, GS_WHITE)
+                        .sprite(SpriteId.SPARK).stretch(2.5f).trail(4))
+                .delay(10)
+                .run(() -> gravityStarBlast(level, c))
+                .delay(3)
+                // aftermath: low dust drifts outward and settles
+                .emit(c, Vfx.emitter()
+                        .shape(ShapeSpec.disc(2.5f))
+                        .count(120).lifetime(70).speed(0.05f)
+                        .size(0.16f, 0.0f, Easings.LINEAR)
+                        .alpha(0.6f, 0.0f, Easings.LINEAR)
+                        .gradient(Easings.LINEAR, GS_PALE, GS_INDIGO)
+                        .curl(0.02f, 0.5f)
+                        .sprite(SpriteId.SMOKE).blend(BlendMode.ALPHA).lit())
+                .play();
+    }
+
+    // the knockback blast: a flat outward sheet plus two ground shockwave rings dominate, so the energy
+    // reads as a horizontal shove. A star flash, ground-hugging bolts, a wide flash and a hard kick finish.
+    private static void gravityStarBlast(ServerLevel level, Vec3 c) {
+        Vfx.emitter()
+                .shape(ShapeSpec.disc(0.5f))
+                .count(220).lifetime(26).speed(0.8f)
+                .size(0.22f, 0.0f, Easings.EASE_OUT_QUAD)
+                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, GS_WHITE, GS_GOLD, GS_INDIGO)
+                .drag(0.06f)
+                .sprite(SpriteId.STAR).stretch(3.5f).trail(6)
+                .play(level, c);
+        Vfx.emitter()
+                .shape(ShapeSpec.ring(0.6f))
+                .count(110).lifetime(20).speed(0.9f)
+                .size(0.32f, 0.0f, Easings.LINEAR)
+                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, GS_PALE, GS_WHITE)
+                .sprite(SpriteId.RING).stretch(1.6f)
+                .play(level, c);
+        Vfx.emitter()
+                .shape(ShapeSpec.ring(1.2f))
+                .count(90).lifetime(28).speed(0.55f)
+                .size(0.4f, 0.0f, Easings.LINEAR)
+                .alpha(0.8f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, GS_GOLD, GS_INDIGO)
+                .sprite(SpriteId.RING).stretch(1.4f)
+                .play(level, c);
+        int beams = 12;
+        for (int i = 0; i < beams; i++) {
+            double angle = Math.PI * 2.0 * i / beams;
+            Vec3 dir = new Vec3(Math.cos(angle), 0.0, Math.sin(angle));
+            Vfx.beam().color(GS_GOLD).width(0.3f).arc(0.4f).duration(12)
+                    .play(level, c, c.add(dir.scale(9.0)));
+        }
+        Vfx.light(level, c, GS_WHITE, 9.0f, 26);
+        Vfx.shake(level, c, 3.4f, 20);
     }
 
     // a gravity well: a point pulls ambient matter into a tightening spiral for a few seconds, then the
