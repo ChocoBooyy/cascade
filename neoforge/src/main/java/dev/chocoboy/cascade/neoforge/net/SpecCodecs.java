@@ -105,6 +105,9 @@ public final class SpecCodecs {
             ByteBufCodecs.VAR_INT, TrailSpec::length,
             TrailSpec::new);
 
+    private static final StreamCodec<ByteBuf, SubEmitterSpec.Trigger> SUB_TRIGGER =
+            ByteBufCodecs.idMapper(i -> SubEmitterSpec.Trigger.values()[i], Enum::ordinal);
+
     private static final StreamCodec<ByteBuf, VelocitySpec.Mode> VELOCITY_MODE =
             ByteBufCodecs.idMapper(i -> VelocitySpec.Mode.values()[i], Enum::ordinal);
 
@@ -131,6 +134,7 @@ public final class SpecCodecs {
                 SubEmitterSpec sub = s.subEmitter();
                 buf.writeBoolean(sub != null);
                 if (sub != null) {
+                    SUB_TRIGGER.encode(buf, sub.trigger());
                     encodeNested(buf, sub.child());
                 }
                 TRAIL.encode(buf, s.trail());
@@ -149,7 +153,11 @@ public final class SpecCodecs {
                 RenderSpec render = RENDER.decode(buf);
                 RotationSpec rotation = ROTATION.decode(buf);
                 CollisionSpec collision = COLLISION.decode(buf);
-                SubEmitterSpec sub = buf.readBoolean() ? new SubEmitterSpec(decodeNested(buf)) : null;
+                SubEmitterSpec sub = null;
+                if (buf.readBoolean()) {
+                    SubEmitterSpec.Trigger trigger = SUB_TRIGGER.decode(buf);
+                    sub = new SubEmitterSpec(decodeNested(buf), trigger);
+                }
                 TrailSpec trail = TRAIL.decode(buf);
                 VelocitySpec velocity = VELOCITY.decode(buf);
                 return new EmitterSpec(shape, count, lifetime, speed, size, alpha, color,
