@@ -20,7 +20,7 @@ final class ParticleAtlas {
     private static final ResourceLocation LOCATION =
             ResourceLocation.fromNamespaceAndPath(CascadeCommon.MOD_ID, "particle_atlas");
 
-    private static final int CELL = 64;
+    private static final int CELL = 128;
     private static final int SPRITES = SpriteId.values().length;
     private static final int WIDTH = CELL * FRAMES;
     private static final int HEIGHT = CELL * SPRITES;
@@ -76,27 +76,75 @@ final class ParticleAtlas {
                 float nx = (px + 0.5f) / (CELL / 2f) - 1f;
                 float ny = (py + 0.5f) / (CELL / 2f) - 1f;
                 float r = (float) Math.sqrt(nx * nx + ny * ny);
-                int a = alpha(sprite, r, px, py, t);
+                int a = alpha(sprite, nx, ny, r, t);
                 image.setPixelRGBA(ox + px, oy + py, (a << 24) | 0x00FFFFFF);
             }
         }
     }
 
-    private static int alpha(SpriteId sprite, float r, int px, int py, float t) {
+    // alpha is shaped in normalized [-1,1] space so it is resolution independent. RGB is white, the vertex
+    // color tints it, so the silhouette is everything: a hot core that saturates and blooms under additive
+    // blend, diffraction spikes, crisp shells, faceted edges.
+    private static int alpha(SpriteId sprite, float nx, float ny, float r, float t) {
         float a = switch (sprite) {
-            case GLOW -> (float) Math.exp(-(r * r) * 4f);
-            case SPARK -> (float) Math.exp(-(r * r) * 16f) * (1f - 0.7f * t);
+            case GLOW -> gauss(r, 18f) + gauss(r, 2.2f) * 0.5f;
+            case SPARK -> {
+                float core = gauss(r, 40f);
+                float spikes = cross(nx, ny, 500f) * 0.5f + diagonal(nx, ny, 500f) * 0.22f;
+                yield core + spikes * (1f - 0.6f * t);
+            }
             case RING -> {
-                float center = 0.2f + 0.6f * t;
-                yield (float) Math.exp(-((r - center) * (r - center)) * 40f) * (1f - 0.4f * t);
+                // a thin, crisp shell that expands across the frames like a shockwave
+                float center = 0.25f + 0.65f * t;
+                yield gauss(r - center, 90f) * (1f - 0.5f * t);
             }
             case SMOKE -> {
-                float disc = Math.max(0f, 1f - r);
+                float disc = Math.max(0f, 1f - r * 0.85f);
                 disc *= disc;
-                float n = 0.5f + 0.5f * Noise.value(px * 0.18f, py * 0.18f, t * 4f);
-                yield disc * (0.4f + 0.6f * n) * (1f - 0.3f * t);
+                float fx = (nx + 1f) * 2.5f;
+                float fy = (ny + 1f) * 2.5f;
+                float turb = 0.6f * (0.5f + 0.5f * Noise.value(fx, fy, t * 3f))
+                        + 0.4f * (0.5f + 0.5f * Noise.value(fx * 2.1f, fy * 2.1f, 5f + t * 3f));
+                yield disc * (0.55f + 0.45f * turb) * (1f - 0.3f * t);
+            }
+            case STAR -> {
+                // a lens flare: bright core, wide halo, and long anamorphic streaks that twinkle out
+                float core = gauss(r, 22f);
+                float halo = gauss(r, 1.6f) * 0.4f;
+                float streaks = cross(nx, ny, 240f) * 0.85f;
+                yield core + halo + streaks * (1f - 0.4f * t);
+            }
+            case SHARD -> {
+                // a faceted crystal: a sharp diamond edge, a soft fill, and a seam highlight down the middle
+                float diamond = Math.abs(nx) + Math.abs(ny);
+                float size = 0.85f;
+                float rim = gauss(diamond - size, 70f);
+                float fill = Math.max(0f, 1f - diamond / size);
+                fill *= fill;
+                float seam = gauss(nx, 120f) * fill;
+                yield (rim * 0.9f + fill * 0.3f + seam * 0.4f) * (1f - 0.3f * t);
             }
         };
         return Math.round(Math.min(1f, Math.max(0f, a)) * 255f);
+    }
+
+    private static float gauss(float d, float hardness) {
+        return (float) Math.exp(-(d * d) * hardness);
+    }
+
+    // a four point flare: thin spikes along the axes that fade out toward the cell edge
+    private static float cross(float nx, float ny, float hardness) {
+        float h = gauss(ny, hardness) * Math.max(0f, 1f - Math.abs(nx) * 0.9f);
+        float v = gauss(nx, hardness) * Math.max(0f, 1f - Math.abs(ny) * 0.9f);
+        return h + v;
+    }
+
+    // the same flare rotated 45 degrees, for the in-between sparkle points
+    private static float diagonal(float nx, float ny, float hardness) {
+        float du = (nx + ny) * 0.70710677f;
+        float dv = (nx - ny) * 0.70710677f;
+        float d1 = gauss(dv, hardness) * Math.max(0f, 1f - Math.abs(du) * 0.9f);
+        float d2 = gauss(du, hardness) * Math.max(0f, 1f - Math.abs(dv) * 0.9f);
+        return d1 + d2;
     }
 }
