@@ -128,7 +128,7 @@ public final class CascadeTestCommands {
                                 .alpha(0.85f, 0.0f, Easings.LINEAR)
                                 .gradient(Easings.LINEAR, CYAN, VIOLET, DEEP_VIOLET)
                                 .rate(8.0f, 34)
-                                .sprite(SpriteId.SPARK).stretch(3.0f).trail(6)),
+                                .sprite(SpriteId.SHARD).stretch(0.6f).spin(0.15f).trail(6)),
                         s -> s.light(c, VIOLET, 3.6f, 46))
                 .delay(40)
                 // collapse: the last matter is sucked to a point and winks white
@@ -166,7 +166,7 @@ public final class CascadeTestCommands {
                 .alpha(1.0f, 0.0f, Easings.LINEAR)
                 .gradient(Easings.LINEAR, WHITE, CYAN, VIOLET)
                 .drag(0.04f)
-                .sprite(SpriteId.SPARK).stretch(3.5f).trail(6)
+                .sprite(SpriteId.STAR).stretch(3.5f).trail(6)
                 .play(level, c);
         Vfx.emitter()
                 .shape(ShapeSpec.ring(0.6f))

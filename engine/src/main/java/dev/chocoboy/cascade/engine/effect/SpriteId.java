@@ -6,5 +6,7 @@ public enum SpriteId {
     GLOW,
     SMOKE,
     SPARK,
-    RING
+    RING,
+    STAR,
+    SHARD
 }
