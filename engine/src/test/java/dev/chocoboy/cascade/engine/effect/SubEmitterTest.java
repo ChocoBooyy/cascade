@@ -59,7 +59,8 @@ class SubEmitterTest {
 
     @Test
     void collisionTriggerRecordsRequestOnFirstContactOnly() {
-        CollisionProbe floor = (x, y, z) -> y < 0f;
+        // threshold above resting height so the particle stays in contact on tick 2
+        CollisionProbe floor = (x, y, z) -> y < 0.1f;
         ParticleSystem s = new ParticleSystem(
                 Shapes.point(), new BurstSpawner(0), 20, 0f,
                 VelocitySpec.RADIAL,

@@ -180,7 +180,7 @@ public final class VfxEmitter {
         return this;
     }
 
-    // spawn the child system at the first block contact of each parent particle
+    // spawn the child system at the first block contact of each parent particle, for impact sparks and splashes
     public VfxEmitter burstOnCollision(VfxEmitter child) {
         this.subEmitter = new SubEmitterSpec(child.spec(), SubEmitterSpec.Trigger.COLLISION);
         return this;
