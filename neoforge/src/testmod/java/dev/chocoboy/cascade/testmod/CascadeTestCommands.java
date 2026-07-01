@@ -133,33 +133,35 @@ public final class CascadeTestCommands {
                 })));
     }
 
-    // two ground hugging smoke fogs side by side for an A/B: left is soft and should fade into the floor,
-    // right is the hard reference that shows a clip line where the billboards sink into the ground
+    // two low billowing smoke clouds that sit on the ground, four blocks apart, snapped to the surface. the
+    // left is soft and should melt into the floor where the billboards cut it; the right is the hard
+    // reference and shows sharp slice lines along the ground. that contact line is the whole demo
     private static void softSmoke(CommandSourceStack src) {
         ServerLevel level = src.getLevel();
-        Vec3 c = src.getPosition();
-        fog(level, c.add(-1.5, 0.0, 0.0), true);
-        fog(level, c.add(1.5, 0.0, 0.0), false);
+        Vec3 ground = onGround(level, src.getPosition(), src.getEntity());
+        fog(level, ground.add(-2.0, 0.0, 0.0), true);
+        fog(level, ground.add(2.0, 0.0, 0.0), false);
     }
 
     private static void fog(ServerLevel level, Vec3 pos, boolean soft) {
         VfxEmitter f = Vfx.emitter()
-                .shape(ShapeSpec.disc(1.2f))
-                .lifetime(90)
-                .speed(0.04f)
-                .size(0.8f, 1.6f, Easings.LINEAR)
-                .alpha(0.5f, 0.0f, Easings.LINEAR)
-                .color(0xBBBBBB, 0x666666, Easings.LINEAR)
-                .gravity(0.0f, 0.004f, 0.0f)
-                .curl(0.01f, 0.4f)
-                .rate(4.0f, 100)
+                .shape(ShapeSpec.disc(0.8f))
+                .lifetime(75)
+                .speed(0.05f)
+                .size(0.9f, 1.7f, Easings.LINEAR)
+                .alpha(0.75f, 0.0f, Easings.LINEAR)
+                .color(0xCCCCCC, 0x555555, Easings.LINEAR)
+                .gravity(0.0f, 0.012f, 0.0f)
+                .curl(0.012f, 0.4f)
+                .rate(5.0f, 120)
                 .sprite(SpriteId.SMOKE)
                 .blend(BlendMode.ALPHA)
                 .lit();
         if (soft) {
             f.soft();
         }
-        f.play(level, pos);
+        // lift the base a touch so the big billboards straddle the surface instead of spawning fully buried
+        f.play(level, pos.add(0.0, 0.4, 0.0));
     }
 
     // Gravity Star: a kunai impact opens a purple gravity zone that draws matter straight inward, a steady
