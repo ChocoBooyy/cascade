@@ -401,13 +401,14 @@ public final class CascadeTestCommands {
         Vec3 c = src.getPosition();
         VfxEmitter spark = Vfx.emitter()
                 .shape(ShapeSpec.sphere(0.2f))
-                .count(8).lifetime(8).speed(0.12f)
-                .size(0.18f, 0f, Easings.EASE_OUT_QUAD)
+                .count(10).lifetime(22).speed(0.1f)
+                .size(0.22f, 0f, Easings.EASE_OUT_QUAD)
                 .alpha(1f, 0f, Easings.LINEAR)
                 .color(0x88E0FF, 0x1144AA, Easings.LINEAR);
+        // sprinkle over time so impacts stagger across a few seconds, otherwise the whole burst lands at once
         Vfx.emitter()
                 .shape(ShapeSpec.cone(0.3f, 1.0f))
-                .count(90).lifetime(45).speed(0.5f)
+                .rate(2f, 70).lifetime(50).speed(0.4f)
                 .size(0.16f, 0.05f, Easings.LINEAR)
                 .alpha(1f, 0f, Easings.LINEAR)
                 .color(0x66CCFF, 0x2266CC, Easings.LINEAR)
