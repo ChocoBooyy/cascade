@@ -174,18 +174,24 @@ public final class ParticleBurstEffect implements RenderedEffect {
             float wx = (float) (origin.x + p.pos.x() - cam.x);
             float wy = (float) (origin.y + p.pos.y() - cam.y);
             float wz = (float) (origin.z + p.pos.z() - cam.z);
+            // block debris always reads scene light, there is no full bright variant like cube and shard have
             int light = level != null ? LevelRenderer.getLightColor(level, BlockPos.containing(
                     origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0xF000F0;
+            // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
+            // of the frame draws on a corrupted stack
             pose.pushPose();
-            pose.translate(wx, wy, wz);
-            pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
-            pose.scale(s, s, s);
-            pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
-            PoseStack.Pose last = pose.last();
-            for (int i = 0; i < quads.size(); i++) {
-                vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
+            try {
+                pose.translate(wx, wy, wz);
+                pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                pose.scale(s, s, s);
+                pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
+                PoseStack.Pose last = pose.last();
+                for (int i = 0; i < quads.size(); i++) {
+                    vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
+                }
+            } finally {
+                pose.popPose();
             }
-            pose.popPose();
         }
     }
 
