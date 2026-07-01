@@ -117,6 +117,10 @@ public final class CascadeTestCommands {
                 .then(Commands.literal("layered").executes(ctx -> {
                     layered(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("debris").executes(ctx -> {
+                    debris(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -447,6 +451,29 @@ public final class CascadeTestCommands {
                 .color(0xFFDD55, 0xFF6622, Easings.LINEAR)
                 .sprite(SpriteId.SPARK).gravity(0f, -0.02f, 0f).trail(5);
         Vfx.effect().add(core).add(smoke).add(sparks).play(level, c);
+    }
+
+    // a burst of solid tumbling cube and shard debris that falls and bounces, proving mesh particles
+    private static void debris(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 c = src.getPosition();
+        VfxEmitter chunks = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(50).lifetime(70).speed(0.4f)
+                .size(0.12f, 0.12f, Easings.LINEAR)
+                .alpha(1f, 1f, Easings.LINEAR)
+                .color(0x9A7B5A, 0x6E5238, Easings.LINEAR)
+                .spin(0.5f).cube().lit()
+                .gravity(0f, -0.03f, 0f).collide(0.3f, 0.4f);
+        VfxEmitter shards = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(24).lifetime(60).speed(0.5f)
+                .size(0.1f, 0.1f, Easings.LINEAR)
+                .alpha(1f, 1f, Easings.LINEAR)
+                .color(0xC8C8D0, 0x8A8A95, Easings.LINEAR)
+                .spin(0.7f).shard().lit()
+                .gravity(0f, -0.03f, 0f).collide(0.2f, 0.5f);
+        Vfx.effect().add(chunks).add(shards).play(level, c);
     }
 
     // the command source's facing as a unit vector. A command block defaults to (0,0), which points

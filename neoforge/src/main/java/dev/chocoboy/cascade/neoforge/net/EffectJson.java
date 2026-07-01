@@ -7,6 +7,7 @@ import dev.chocoboy.cascade.engine.effect.CollisionSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
@@ -80,7 +81,8 @@ public final class EffectJson {
             byName(SpriteId.class).optionalFieldOf("sprite", SpriteId.GLOW).forGetter(RenderSpec::sprite),
             Codec.FLOAT.optionalFieldOf("stretch", 0f).forGetter(RenderSpec::stretch),
             Codec.BOOL.optionalFieldOf("animate", false).forGetter(RenderSpec::animate),
-            Codec.BOOL.optionalFieldOf("lit", false).forGetter(RenderSpec::lit)
+            Codec.BOOL.optionalFieldOf("lit", false).forGetter(RenderSpec::lit),
+            byName(MeshId.class).optionalFieldOf("mesh", MeshId.NONE).forGetter(RenderSpec::mesh)
     ).apply(i, RenderSpec::new));
 
     public static final Codec<RotationSpec> ROTATION = RecordCodecBuilder.create(i -> i.group(

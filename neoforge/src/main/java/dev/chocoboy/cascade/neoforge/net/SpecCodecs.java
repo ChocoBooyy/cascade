@@ -6,6 +6,7 @@ import dev.chocoboy.cascade.engine.effect.CollisionSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
@@ -82,12 +83,16 @@ public final class SpecCodecs {
     private static final StreamCodec<ByteBuf, SpriteId> SPRITE =
             ByteBufCodecs.idMapper(i -> SpriteId.values()[i], Enum::ordinal);
 
+    private static final StreamCodec<ByteBuf, MeshId> MESH =
+            ByteBufCodecs.idMapper(i -> MeshId.values()[i], Enum::ordinal);
+
     private static final StreamCodec<RegistryFriendlyByteBuf, RenderSpec> RENDER = StreamCodec.composite(
             BLEND, RenderSpec::blend,
             SPRITE, RenderSpec::sprite,
             ByteBufCodecs.FLOAT, RenderSpec::stretch,
             ByteBufCodecs.BOOL, RenderSpec::animate,
             ByteBufCodecs.BOOL, RenderSpec::lit,
+            MESH, RenderSpec::mesh,
             RenderSpec::new);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, RotationSpec> ROTATION = StreamCodec.composite(

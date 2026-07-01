@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionProbe;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.Particle;
 import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
@@ -73,11 +74,16 @@ public final class ParticleBurstEffect implements RenderedEffect {
 
     @Override
     public int drawCount() {
-        return sim.particles().size();
+        int n = sim.particles().size();
+        return render.mesh() != MeshId.NONE ? n * 6 : n;
     }
 
     @Override
     public void render(VfxFrame frame) {
+        if (render.mesh() != MeshId.NONE) {
+            renderMesh(frame);
+            return;
+        }
         ParticleAtlas.ensureUploaded();
         boolean lit = render.lit();
         boolean alphaBlend = render.blend() == BlendMode.ALPHA;
@@ -137,6 +143,47 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     int color = sim.colorOf(p);
                     Billboards.ribbon(m, trailVc, p, origin, cam, uv,
                             (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, sim.alphaOf(p), sim.sizeOf(p));
+                }
+            }
+        }
+    }
+
+    private void renderMesh(VfxFrame frame) {
+        boolean lit = render.lit();
+        RenderType type = lit ? VfxRenderTypes.SOLID_LIT : VfxRenderTypes.SOLID;
+        Level level = lit ? Minecraft.getInstance().level : null;
+        Vec3 cam = frame.cameraPos();
+        Matrix4f pose = frame.pose().last().pose();
+        Vector3f scale = MeshGeometry.scaleFor(render.mesh());
+        VertexConsumer vc = frame.buffers().getBuffer(type);
+        Vector3f v = new Vector3f();
+        Quaternionf rot = new Quaternionf();
+        for (Particle p : sim.particles()) {
+            int color = sim.colorOf(p);
+            int a = (int) (sim.alphaOf(p) * 255f);
+            float size = sim.sizeOf(p);
+            int cr = (color >> 16) & 0xFF;
+            int cg = (color >> 8) & 0xFF;
+            int cb = color & 0xFF;
+            double wx = origin.x + p.pos.x() - cam.x;
+            double wy = origin.y + p.pos.y() - cam.y;
+            double wz = origin.z + p.pos.z() - cam.z;
+            rot.rotationYXZ(p.yaw, p.pitch, p.rotation);
+            int light = lit ? LevelRenderer.getLightColor(level, BlockPos.containing(
+                    origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0;
+            for (float[] face : MeshGeometry.CUBE_FACES) {
+                for (int i = 0; i < 4; i++) {
+                    v.set(face[i * 3] * scale.x, face[i * 3 + 1] * scale.y, face[i * 3 + 2] * scale.z);
+                    v.mul(size);
+                    rot.transform(v);
+                    float fx = (float) (wx + v.x);
+                    float fy = (float) (wy + v.y);
+                    float fz = (float) (wz + v.z);
+                    if (lit) {
+                        vc.addVertex(pose, fx, fy, fz).setColor(cr, cg, cb, a).setLight(light);
+                    } else {
+                        vc.addVertex(pose, fx, fy, fz).setColor(cr, cg, cb, a);
+                    }
                 }
             }
         }

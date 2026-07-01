@@ -11,6 +11,11 @@ public final class Particle {
     // billboard roll in radians and its per-tick change, so sprites can spin
     public float rotation;
     public float spin;
+    // mesh tumble: pitch and yaw with their per-tick spins. roll reuses rotation/spin above. zero for billboards
+    public float pitch;
+    public float yaw;
+    public float pitchSpin;
+    public float yawSpin;
     public Vec3f[] trail;   // null when the system has no trail; otherwise a ring of recent positions
     public int trailHead;   // next write slot
     public int trailCount;  // how many slots are filled, up to trail.length
@@ -28,6 +33,10 @@ public final class Particle {
         this.age = 0;
         this.rotation = 0;
         this.spin = 0;
+        this.pitch = 0;
+        this.yaw = 0;
+        this.pitchSpin = 0;
+        this.yawSpin = 0;
         this.trailHead = 0;
         this.trailCount = 0;
         this.collided = false;

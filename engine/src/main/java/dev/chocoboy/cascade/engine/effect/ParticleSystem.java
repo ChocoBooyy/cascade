@@ -33,6 +33,7 @@ public final class ParticleSystem implements EffectSim {
     private final CollisionProbe probe;
     private final boolean emitsOnDeath;
     private final boolean emitsOnCollision;
+    private final boolean tumble;
     private final TrailSpec trail;
     private final List<Vec3f> spawnRequests = new ArrayList<>();
     private int tick;
@@ -45,13 +46,13 @@ public final class ParticleSystem implements EffectSim {
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
             Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
         this(shape, new BurstSpawner(count), particleLifetime, speed, VelocitySpec.RADIAL, size, alpha, color, modifiers,
-                RotationSpec.NONE, CollisionSpec.NONE, null, false, false, TrailSpec.NONE, rng);
+                RotationSpec.NONE, CollisionSpec.NONE, null, false, false, false, TrailSpec.NONE, rng);
     }
 
     public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
             VelocitySpec velocity, Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
             RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, boolean emitsOnDeath,
-            boolean emitsOnCollision, TrailSpec trail, RandomGenerator rng) {
+            boolean emitsOnCollision, boolean tumble, TrailSpec trail, RandomGenerator rng) {
         if (particleLifetime < 1) {
             throw new IllegalArgumentException("lifetime < 1");
         }
@@ -67,6 +68,7 @@ public final class ParticleSystem implements EffectSim {
         this.probe = probe;
         this.emitsOnDeath = emitsOnDeath;
         this.emitsOnCollision = emitsOnCollision;
+        this.tumble = tumble;
         this.trail = Objects.requireNonNull(trail, "trail");
         this.rng = Objects.requireNonNull(rng, "rng");
         this.speed = speed;
@@ -88,6 +90,12 @@ public final class ParticleSystem implements EffectSim {
             }
             p.rotation = rotation.angleRange() * rng.nextFloat();
             p.spin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
+            if (tumble) {
+                p.pitch = (float) (rng.nextFloat() * Math.PI * 2.0);
+                p.yaw = (float) (rng.nextFloat() * Math.PI * 2.0);
+                p.pitchSpin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
+                p.yawSpin = (rng.nextFloat() * 2f - 1f) * rotation.spinRange();
+            }
             if (trail.enabled() && (p.trail == null || p.trail.length != trail.length())) {
                 p.trail = new Vec3f[trail.length()];
             }
@@ -141,6 +149,10 @@ public final class ParticleSystem implements EffectSim {
                 p.collided = true;
             }
             p.rotation += p.spin;
+            if (tumble) {
+                p.pitch += p.pitchSpin;
+                p.yaw += p.yawSpin;
+            }
             if (p.trail != null) {
                 p.trail[p.trailHead] = p.pos;
                 p.trailHead = (p.trailHead + 1) % p.trail.length;

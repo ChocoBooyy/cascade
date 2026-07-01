@@ -25,7 +25,7 @@ class VelocityModesTest {
                 Curve.of(1f, 0f, Easings.LINEAR),
                 Curve.of(1f, 0f, Easings.LINEAR),
                 ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                List.of(), RotationSpec.NONE, CollisionSpec.NONE, null, false, false, TrailSpec.NONE, new Random(1));
+                List.of(), RotationSpec.NONE, CollisionSpec.NONE, null, false, false, false, TrailSpec.NONE, new Random(1));
         return s.particles().get(0);
     }
 
