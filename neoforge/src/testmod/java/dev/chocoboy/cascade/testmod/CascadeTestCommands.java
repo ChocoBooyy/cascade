@@ -144,16 +144,18 @@ public final class CascadeTestCommands {
     }
 
     private static void fog(ServerLevel level, Vec3 pos, boolean soft) {
+        // dark, dense, and kept low so the whole cloud sits near the ground: with the wide fade the soft
+        // one reads as thin and wispy all over, the hard one as a solid dark mass. high contrast on purpose
         VfxEmitter f = Vfx.emitter()
-                .shape(ShapeSpec.disc(0.8f))
-                .lifetime(75)
-                .speed(0.05f)
-                .size(0.9f, 1.7f, Easings.LINEAR)
-                .alpha(0.75f, 0.0f, Easings.LINEAR)
-                .color(0xCCCCCC, 0x555555, Easings.LINEAR)
-                .gravity(0.0f, 0.012f, 0.0f)
-                .curl(0.012f, 0.4f)
-                .rate(5.0f, 120)
+                .shape(ShapeSpec.disc(1.0f))
+                .lifetime(60)
+                .speed(0.04f)
+                .size(0.9f, 1.6f, Easings.LINEAR)
+                .alpha(0.85f, 0.0f, Easings.LINEAR)
+                .color(0x333333, 0x000000, Easings.LINEAR)
+                .gravity(0.0f, 0.006f, 0.0f)
+                .curl(0.01f, 0.4f)
+                .rate(7.0f, 120)
                 .sprite(SpriteId.SMOKE)
                 .blend(BlendMode.ALPHA)
                 .lit();
