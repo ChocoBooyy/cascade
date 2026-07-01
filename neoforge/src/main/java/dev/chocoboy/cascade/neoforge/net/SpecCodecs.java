@@ -86,14 +86,24 @@ public final class SpecCodecs {
     private static final StreamCodec<ByteBuf, MeshId> MESH =
             ByteBufCodecs.idMapper(i -> MeshId.values()[i], Enum::ordinal);
 
-    private static final StreamCodec<RegistryFriendlyByteBuf, RenderSpec> RENDER = StreamCodec.composite(
-            BLEND, RenderSpec::blend,
-            SPRITE, RenderSpec::sprite,
-            ByteBufCodecs.FLOAT, RenderSpec::stretch,
-            ByteBufCodecs.BOOL, RenderSpec::animate,
-            ByteBufCodecs.BOOL, RenderSpec::lit,
-            MESH, RenderSpec::mesh,
-            RenderSpec::new);
+    private static final StreamCodec<RegistryFriendlyByteBuf, RenderSpec> RENDER = StreamCodec.of(
+            (buf, s) -> {
+                BLEND.encode(buf, s.blend());
+                SPRITE.encode(buf, s.sprite());
+                buf.writeFloat(s.stretch());
+                buf.writeBoolean(s.animate());
+                buf.writeBoolean(s.lit());
+                MESH.encode(buf, s.mesh());
+                buf.writeUtf(s.meshModel());
+            },
+            buf -> new RenderSpec(
+                    BLEND.decode(buf),
+                    SPRITE.decode(buf),
+                    buf.readFloat(),
+                    buf.readBoolean(),
+                    buf.readBoolean(),
+                    MESH.decode(buf),
+                    buf.readUtf()));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, RotationSpec> ROTATION = StreamCodec.composite(
             ByteBufCodecs.FLOAT, RotationSpec::angleRange,
