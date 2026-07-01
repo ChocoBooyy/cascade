@@ -3,6 +3,7 @@ package dev.chocoboy.cascade.neoforge.net;
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionSpec;
+import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
@@ -174,6 +175,13 @@ public final class SpecCodecs {
     private static EmitterSpec decodeNested(RegistryFriendlyByteBuf buf) {
         return EMITTER.decode(buf);
     }
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, List<EmitterSpec>> EMITTER_LIST =
+            EMITTER.apply(ByteBufCodecs.collection(ArrayList::new));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, EffectSpec> EFFECT = StreamCodec.composite(
+            EMITTER_LIST, EffectSpec::emitters,
+            EffectSpec::new);
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,

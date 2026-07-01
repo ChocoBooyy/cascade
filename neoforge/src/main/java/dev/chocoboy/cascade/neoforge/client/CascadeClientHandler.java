@@ -2,12 +2,15 @@ package dev.chocoboy.cascade.neoforge.client;
 
 import dev.chocoboy.cascade.engine.effect.BeamState;
 import dev.chocoboy.cascade.engine.effect.CollisionProbe;
+import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ParticleSystem;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.DomePayload;
+import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
+import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
 
@@ -28,6 +31,22 @@ public final class CascadeClientHandler {
                 payload.spec().render(),
                 payload.spec().subEmitter(),
                 0));
+    }
+
+    // build one particle system per layered emitter at the shared origin, each seeded base+index so the
+    // layers differ yet the whole effect replays identically for a given seed
+    public static void handleEffect(EffectPayload payload) {
+        float density = ParticleQuality.density();
+        List<EmitterSpec> emitters = payload.spec().emitters();
+        for (int i = 0; i < emitters.size(); i++) {
+            EmitterSpec spec = emitters.get(i);
+            CollisionProbe probe = spec.collision().enabled()
+                    ? new LevelCollisionProbe(Minecraft.getInstance().level, payload.origin())
+                    : null;
+            ParticleSystem system = spec.build(new Random(payload.seed() + i), probe, density);
+            VfxRenderManager.get().spawn(new ParticleBurstEffect(
+                    payload.origin(), system, spec.render(), spec.subEmitter(), 0));
+        }
     }
 
     public static void handleBeam(BeamPayload payload) {
