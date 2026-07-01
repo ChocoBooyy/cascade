@@ -46,6 +46,10 @@ public final class Vfx {
         return new VfxEmitter();
     }
 
+    public static VfxEffect effect() {
+        return new VfxEffect();
+    }
+
     public static VfxBeam beam() {
         return new VfxBeam();
     }

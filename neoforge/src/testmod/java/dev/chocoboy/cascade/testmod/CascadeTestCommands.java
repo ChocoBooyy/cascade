@@ -113,6 +113,10 @@ public final class CascadeTestCommands {
                 .then(Commands.literal("splash").executes(ctx -> {
                     splash(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("layered").executes(ctx -> {
+                    layered(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -416,6 +420,33 @@ public final class CascadeTestCommands {
                 .collide(0f, 1f)
                 .burstOnCollision(spark)
                 .play(level, c);
+    }
+
+    // three emitters at one origin: a core flash, a lit smoke puff, and a spark spray, proving layered effects
+    private static void layered(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 c = src.getPosition();
+        VfxEmitter core = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(40).lifetime(12).speed(0.05f)
+                .size(0.5f, 0f, Easings.EASE_OUT_QUAD)
+                .alpha(1f, 0f, Easings.LINEAR)
+                .color(0xFFFFFF, 0xFFE08A, Easings.LINEAR);
+        VfxEmitter smoke = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.6f))
+                .count(30).lifetime(50).speed(0.03f)
+                .size(0.6f, 1.4f, Easings.LINEAR)
+                .alpha(0.6f, 0f, Easings.LINEAR)
+                .color(0x555555, 0x222222, Easings.LINEAR)
+                .sprite(SpriteId.SMOKE).blend(BlendMode.ALPHA).lit();
+        VfxEmitter sparks = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.2f))
+                .count(60).lifetime(30).speed(0.4f)
+                .size(0.14f, 0f, Easings.EASE_OUT_QUAD)
+                .alpha(1f, 0f, Easings.LINEAR)
+                .color(0xFFDD55, 0xFF6622, Easings.LINEAR)
+                .sprite(SpriteId.SPARK).gravity(0f, -0.02f, 0f).trail(5);
+        Vfx.effect().add(core).add(smoke).add(sparks).play(level, c);
     }
 
     // the command source's facing as a unit vector. A command block defaults to (0,0), which points
