@@ -62,6 +62,41 @@ final class VfxRenderTypes {
                         .createCompositeState(false));
     }
 
+    // solid double sided geometry for mesh particles. NO_CULL so a winding mistake cannot hide a face.
+    // COLOR_DEPTH_WRITE and LEQUAL depth so cubes occlude correctly and read as solid 3D
+    static final RenderType SOLID = RenderType.create(
+            "cascade_solid",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
+                    .createCompositeState(false));
+
+    private static final RenderStateShard.ShaderStateShard POSITION_COLOR_LIGHTMAP =
+            new RenderStateShard.ShaderStateShard(GameRenderer::getPositionColorLightmapShader);
+
+    // lit twin: POSITION_COLOR_LIGHTMAP carries a lightmap coord per vertex so debris sits in scene light
+    static final RenderType SOLID_LIT = RenderType.create(
+            "cascade_solid_lit",
+            DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_LIGHTMAP)
+                    .setLightmapState(RenderStateShard.LIGHTMAP)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
+                    .createCompositeState(false));
+
     // lit twins of the textured types, tinted by the world lightmap so particles sit in scene lighting
     static final RenderType TEXTURED_ADDITIVE_LIT = litTextured("cascade_textured_additive_lit",
             RenderStateShard.ADDITIVE_TRANSPARENCY);
