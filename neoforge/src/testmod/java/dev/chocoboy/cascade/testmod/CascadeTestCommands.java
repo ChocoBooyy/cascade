@@ -157,8 +157,7 @@ public final class CascadeTestCommands {
                 .curl(0.01f, 0.4f)
                 .rate(7.0f, 120)
                 .sprite(SpriteId.SMOKE)
-                .blend(BlendMode.ALPHA)
-                .lit();
+                .blend(BlendMode.ALPHA);
         if (soft) {
             f.soft();
         }
