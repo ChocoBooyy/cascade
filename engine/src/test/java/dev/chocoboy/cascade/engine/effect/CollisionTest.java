@@ -25,7 +25,7 @@ class CollisionTest {
                 Curve.of(1f, 0f, Easings.LINEAR),
                 Curve.of(1f, 0f, Easings.LINEAR),
                 ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                List.of(), RotationSpec.NONE, collision, probe, false, TrailSpec.NONE, new Random(1));
+                List.of(), RotationSpec.NONE, collision, probe, false, false, TrailSpec.NONE, new Random(1));
         s.particles().add(seed);
         return s;
     }

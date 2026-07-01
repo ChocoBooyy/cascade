@@ -101,26 +101,35 @@ public final class EffectJson {
     // Recursive because a sub-emitter wraps a child EmitterSpec. Codec.recursive hands back a self
     // reference for the sub_emitter field; the child has no default, so it stays an Optional that the
     // getter wraps and the constructor unwraps with orElse(null).
-    public static final Codec<EmitterSpec> EMITTER = Codec.recursive("EmitterSpec", self -> RecordCodecBuilder.create(i -> i.group(
-            SHAPE.fieldOf("shape").forGetter(EmitterSpec::shape),
-            Codec.INT.fieldOf("count").forGetter(EmitterSpec::count),
-            Codec.INT.fieldOf("lifetime").forGetter(EmitterSpec::lifetime),
-            Codec.FLOAT.fieldOf("speed").forGetter(EmitterSpec::speed),
-            CURVE.fieldOf("size").forGetter(EmitterSpec::size),
-            CURVE.fieldOf("alpha").forGetter(EmitterSpec::alpha),
-            COLOR.fieldOf("color").forGetter(EmitterSpec::color),
-            MODIFIER.listOf().optionalFieldOf("modifiers", List.of()).forGetter(EmitterSpec::modifiers),
-            EMISSION.optionalFieldOf("emission", EmissionSpec.burst()).forGetter(EmitterSpec::emission),
-            RENDER.optionalFieldOf("render", RenderSpec.DEFAULT).forGetter(EmitterSpec::render),
-            ROTATION.optionalFieldOf("rotation", RotationSpec.NONE).forGetter(EmitterSpec::rotation),
-            COLLISION.optionalFieldOf("collision", CollisionSpec.NONE).forGetter(EmitterSpec::collision),
-            self.xmap(SubEmitterSpec::new, SubEmitterSpec::child).optionalFieldOf("sub_emitter").forGetter(s -> Optional.ofNullable(s.subEmitter())),
-            TRAIL.optionalFieldOf("trail", TrailSpec.NONE).forGetter(EmitterSpec::trail),
-            VELOCITY.optionalFieldOf("velocity", VelocitySpec.RADIAL).forGetter(EmitterSpec::velocity)
-    ).apply(i, (shape, count, lifetime, speed, size, alpha, color, modifiers, emission,
-            render, rotation, collision, subEmitter, trail, velocity) ->
-            new EmitterSpec(shape, count, lifetime, speed, size, alpha, color, modifiers,
-                    emission, render, rotation, collision, subEmitter.orElse(null), trail, velocity))));
+    public static final Codec<EmitterSpec> EMITTER = Codec.recursive("EmitterSpec", self -> {
+        Codec<SubEmitterSpec.Trigger> subTrigger = Codec.STRING.xmap(
+                s -> SubEmitterSpec.Trigger.valueOf(s.toUpperCase(java.util.Locale.ROOT)),
+                t -> t.name().toLowerCase(java.util.Locale.ROOT));
+        Codec<SubEmitterSpec> subEmitterCodec = RecordCodecBuilder.create(i -> i.group(
+                self.fieldOf("child").forGetter(SubEmitterSpec::child),
+                subTrigger.optionalFieldOf("trigger", SubEmitterSpec.Trigger.DEATH).forGetter(SubEmitterSpec::trigger)
+        ).apply(i, SubEmitterSpec::new));
+        return RecordCodecBuilder.create(i -> i.group(
+                SHAPE.fieldOf("shape").forGetter(EmitterSpec::shape),
+                Codec.INT.fieldOf("count").forGetter(EmitterSpec::count),
+                Codec.INT.fieldOf("lifetime").forGetter(EmitterSpec::lifetime),
+                Codec.FLOAT.fieldOf("speed").forGetter(EmitterSpec::speed),
+                CURVE.fieldOf("size").forGetter(EmitterSpec::size),
+                CURVE.fieldOf("alpha").forGetter(EmitterSpec::alpha),
+                COLOR.fieldOf("color").forGetter(EmitterSpec::color),
+                MODIFIER.listOf().optionalFieldOf("modifiers", List.of()).forGetter(EmitterSpec::modifiers),
+                EMISSION.optionalFieldOf("emission", EmissionSpec.burst()).forGetter(EmitterSpec::emission),
+                RENDER.optionalFieldOf("render", RenderSpec.DEFAULT).forGetter(EmitterSpec::render),
+                ROTATION.optionalFieldOf("rotation", RotationSpec.NONE).forGetter(EmitterSpec::rotation),
+                COLLISION.optionalFieldOf("collision", CollisionSpec.NONE).forGetter(EmitterSpec::collision),
+                subEmitterCodec.optionalFieldOf("sub_emitter").forGetter(s -> Optional.ofNullable(s.subEmitter())),
+                TRAIL.optionalFieldOf("trail", TrailSpec.NONE).forGetter(EmitterSpec::trail),
+                VELOCITY.optionalFieldOf("velocity", VelocitySpec.RADIAL).forGetter(EmitterSpec::velocity)
+        ).apply(i, (shape, count, lifetime, speed, size, alpha, color, modifiers, emission,
+                render, rotation, collision, subEmitter, trail, velocity) ->
+                new EmitterSpec(shape, count, lifetime, speed, size, alpha, color, modifiers,
+                        emission, render, rotation, collision, subEmitter.orElse(null), trail, velocity)));
+    });
 
     private EffectJson() {
     }

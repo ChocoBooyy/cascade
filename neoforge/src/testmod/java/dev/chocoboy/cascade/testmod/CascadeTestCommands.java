@@ -109,6 +109,10 @@ public final class CascadeTestCommands {
                     Vec3 impact = onGround(src.getLevel(), src.getPosition(), src.getEntity());
                     gravityStar(src.getLevel(), impact.add(0.0, 0.6, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("splash").executes(ctx -> {
+                    splash(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -389,6 +393,29 @@ public final class CascadeTestCommands {
         }
         Vfx.light(level, c, WHITE, 6.0f, 24);
         Vfx.shake(level, c, 2.4f, 16);
+    }
+
+    // fountain whose droplets pop into a spark on first block contact, proving collision-triggered sub-emitters
+    private static void splash(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 c = src.getPosition();
+        VfxEmitter spark = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.2f))
+                .count(10).lifetime(22).speed(0.1f)
+                .size(0.22f, 0f, Easings.EASE_OUT_QUAD)
+                .alpha(1f, 0f, Easings.LINEAR)
+                .color(0x88E0FF, 0x1144AA, Easings.LINEAR);
+        // sprinkle over time so impacts stagger across a few seconds, otherwise the whole burst lands at once
+        Vfx.emitter()
+                .shape(ShapeSpec.cone(0.3f, 1.0f))
+                .rate(2f, 70).lifetime(50).speed(0.4f)
+                .size(0.16f, 0.05f, Easings.LINEAR)
+                .alpha(1f, 0f, Easings.LINEAR)
+                .color(0x66CCFF, 0x2266CC, Easings.LINEAR)
+                .gravity(0f, -0.02f, 0f)
+                .collide(0f, 1f)
+                .burstOnCollision(spark)
+                .play(level, c);
     }
 
     // the command source's facing as a unit vector. A command block defaults to (0,0), which points
