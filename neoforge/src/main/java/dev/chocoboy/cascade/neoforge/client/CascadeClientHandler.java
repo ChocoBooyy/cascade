@@ -13,6 +13,7 @@ import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.Vec3;
 
 public final class CascadeClientHandler {
 
@@ -20,17 +21,7 @@ public final class CascadeClientHandler {
     }
 
     public static void handleEmitter(EmitterPayload payload) {
-        float density = ParticleQuality.density();
-        CollisionProbe probe = payload.spec().collision().enabled()
-                ? new LevelCollisionProbe(Minecraft.getInstance().level, payload.origin())
-                : null;
-        ParticleSystem system = payload.spec().build(new Random(payload.seed()), probe, density);
-        VfxRenderManager.get().spawn(new ParticleBurstEffect(
-                payload.origin(),
-                system,
-                payload.spec().render(),
-                payload.spec().subEmitter(),
-                0));
+        spawnEmitter(payload.spec(), payload.origin(), payload.seed(), ParticleQuality.density());
     }
 
     // build one particle system per layered emitter at the shared origin, each seeded base+index so the
@@ -39,13 +30,7 @@ public final class CascadeClientHandler {
         float density = ParticleQuality.density();
         List<EmitterSpec> emitters = payload.spec().emitters();
         for (int i = 0; i < emitters.size(); i++) {
-            EmitterSpec spec = emitters.get(i);
-            CollisionProbe probe = spec.collision().enabled()
-                    ? new LevelCollisionProbe(Minecraft.getInstance().level, payload.origin())
-                    : null;
-            ParticleSystem system = spec.build(new Random(payload.seed() + i), probe, density);
-            VfxRenderManager.get().spawn(new ParticleBurstEffect(
-                    payload.origin(), system, spec.render(), spec.subEmitter(), 0));
+            spawnEmitter(emitters.get(i), payload.origin(), payload.seed() + i, density);
         }
     }
 
@@ -64,5 +49,14 @@ public final class CascadeClientHandler {
     public static void handleDome(DomePayload payload) {
         VfxRenderManager.get().spawn(
                 new DomeField(payload.pos(), payload.radius(), payload.color(), payload.duration()));
+    }
+
+    private static void spawnEmitter(EmitterSpec spec, Vec3 origin, long seed, float density) {
+        CollisionProbe probe = spec.collision().enabled()
+                ? new LevelCollisionProbe(Minecraft.getInstance().level, origin)
+                : null;
+        ParticleSystem system = spec.build(new Random(seed), probe, density);
+        VfxRenderManager.get().spawn(new ParticleBurstEffect(
+                origin, system, spec.render(), spec.subEmitter(), 0));
     }
 }
