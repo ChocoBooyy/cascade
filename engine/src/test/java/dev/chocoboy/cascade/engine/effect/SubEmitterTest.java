@@ -68,7 +68,7 @@ class SubEmitterTest {
                 Curve.of(1f, 0f, Easings.LINEAR),
                 ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
                 List.of(), RotationSpec.NONE, CollisionSpec.bouncy(0f, 0f), floor,
-                false, true, TrailSpec.NONE, new Random(1));
+                false, true, false, TrailSpec.NONE, new Random(1));
         Particle p = new Particle(new Vec3f(0f, 0.05f, 0f), new Vec3f(0f, -0.1f, 0f), 20);
         s.particles().add(p);
 
