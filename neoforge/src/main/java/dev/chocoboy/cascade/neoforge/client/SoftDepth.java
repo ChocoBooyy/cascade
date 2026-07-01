@@ -21,6 +21,9 @@ final class SoftDepth {
             target.resize(main.width, main.height, false);
         }
         target.copyDepthFrom(main);
+        // copyDepthFrom leaves framebuffer 0 bound, so restore the main target. otherwise the rest of the
+        // frame, including our own particle draw on endBatch, renders to the wrong place and never shows
+        main.bindWrite(false);
     }
 
     static int depthTextureId() {
