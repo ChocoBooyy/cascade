@@ -42,6 +42,7 @@ public final class VfxEmitter {
     private boolean lit;
     private MeshId mesh = MeshId.NONE;
     private String meshModel = "";
+    private boolean soft;
     private RotationSpec rotation = RotationSpec.NONE;
     private CollisionSpec collision = CollisionSpec.NONE;
     private SubEmitterSpec subEmitter;
@@ -173,6 +174,12 @@ public final class VfxEmitter {
         return this;
     }
 
+    // fade this particle out where it meets scene geometry, removing the hard clip line. alpha blend only
+    public VfxEmitter soft() {
+        this.soft = true;
+        return this;
+    }
+
     // draw particles as solid tumbling cubes instead of billboards, for chunky debris. pair with a spin.
     // meshes are opaque, so they fade out by shrinking their size curve, not by alpha
     public VfxEmitter cube() {
@@ -238,7 +245,7 @@ public final class VfxEmitter {
 
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, color,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit, mesh, meshModel), rotation, collision,
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit, mesh, meshModel, soft), rotation, collision,
                 subEmitter, trail, velocity);
     }
 

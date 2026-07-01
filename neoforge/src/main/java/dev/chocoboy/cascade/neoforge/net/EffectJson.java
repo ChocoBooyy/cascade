@@ -83,7 +83,8 @@ public final class EffectJson {
             Codec.BOOL.optionalFieldOf("animate", false).forGetter(RenderSpec::animate),
             Codec.BOOL.optionalFieldOf("lit", false).forGetter(RenderSpec::lit),
             byName(MeshId.class).optionalFieldOf("mesh", MeshId.NONE).forGetter(RenderSpec::mesh),
-            Codec.STRING.optionalFieldOf("model", "").forGetter(RenderSpec::meshModel)
+            Codec.STRING.optionalFieldOf("model", "").forGetter(RenderSpec::meshModel),
+            Codec.BOOL.optionalFieldOf("soft", false).forGetter(RenderSpec::soft)
     ).apply(i, RenderSpec::new));
 
     public static final Codec<RotationSpec> ROTATION = RecordCodecBuilder.create(i -> i.group(

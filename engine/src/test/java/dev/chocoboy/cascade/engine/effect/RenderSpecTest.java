@@ -18,4 +18,15 @@ class RenderSpecTest {
         assertEquals(MeshId.BLOCK, r.mesh());
         assertEquals("minecraft:stone", r.meshModel());
     }
+
+    @Test
+    void defaultIsNotSoft() {
+        assertEquals(false, RenderSpec.DEFAULT.soft());
+    }
+
+    @Test
+    void carriesTheSoftFlag() {
+        RenderSpec r = new RenderSpec(BlendMode.ALPHA, SpriteId.SMOKE, 0f, false, true, MeshId.NONE, "", true);
+        assertEquals(true, r.soft());
+    }
 }
