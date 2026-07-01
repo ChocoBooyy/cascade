@@ -126,7 +126,40 @@ public final class CascadeTestCommands {
                 .then(Commands.literal("blockdebris").executes(ctx -> {
                     blockDebris(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("softsmoke").executes(ctx -> {
+                    softSmoke(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
                 })));
+    }
+
+    // two ground hugging smoke fogs side by side for an A/B: left is soft and should fade into the floor,
+    // right is the hard reference that shows a clip line where the billboards sink into the ground
+    private static void softSmoke(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 c = src.getPosition();
+        fog(level, c.add(-1.5, 0.0, 0.0), true);
+        fog(level, c.add(1.5, 0.0, 0.0), false);
+    }
+
+    private static void fog(ServerLevel level, Vec3 pos, boolean soft) {
+        VfxEmitter f = Vfx.emitter()
+                .shape(ShapeSpec.disc(1.2f))
+                .lifetime(90)
+                .speed(0.04f)
+                .size(0.8f, 1.6f, Easings.LINEAR)
+                .alpha(0.5f, 0.0f, Easings.LINEAR)
+                .color(0xBBBBBB, 0x666666, Easings.LINEAR)
+                .gravity(0.0f, 0.004f, 0.0f)
+                .curl(0.01f, 0.4f)
+                .rate(4.0f, 100)
+                .sprite(SpriteId.SMOKE)
+                .blend(BlendMode.ALPHA)
+                .lit();
+        if (soft) {
+            f.soft();
+        }
+        f.play(level, pos);
     }
 
     // Gravity Star: a kunai impact opens a purple gravity zone that draws matter straight inward, a steady
