@@ -4,6 +4,7 @@ import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
@@ -37,6 +38,7 @@ public final class VfxEmitter {
     private float stretch;
     private boolean animate;
     private boolean lit;
+    private MeshId mesh = MeshId.NONE;
     private RotationSpec rotation = RotationSpec.NONE;
     private CollisionSpec collision = CollisionSpec.NONE;
     private SubEmitterSpec subEmitter;
@@ -168,6 +170,18 @@ public final class VfxEmitter {
         return this;
     }
 
+    // draw particles as solid tumbling cubes instead of billboards, for chunky debris. pair with a spin
+    public VfxEmitter cube() {
+        this.mesh = MeshId.CUBE;
+        return this;
+    }
+
+    // draw particles as elongated splinters, for shards and shrapnel. pair with a spin
+    public VfxEmitter shard() {
+        this.mesh = MeshId.SHARD;
+        return this;
+    }
+
     // bounce particles off solid blocks. bounce is the speed kept on a hit, friction sheds sliding speed
     public VfxEmitter collide(float bounce, float friction) {
         this.collision = CollisionSpec.bouncy(bounce, friction);
@@ -212,7 +226,7 @@ public final class VfxEmitter {
 
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, color,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit), rotation, collision,
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit, mesh), rotation, collision,
                 subEmitter, trail, velocity);
     }
 
