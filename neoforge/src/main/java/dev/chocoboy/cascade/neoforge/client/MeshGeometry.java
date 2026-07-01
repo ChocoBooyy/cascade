@@ -26,8 +26,12 @@ final class MeshGeometry {
             { 1, -1, -1,  -1, -1, -1,  -1,  1, -1,   1,  1, -1}
     };
 
-    // per mesh local scale applied before the orientation matrix. CUBE is uniform, SHARD a tall splinter
+    private static final Vector3f CUBE_SCALE = new Vector3f(1f, 1f, 1f);
+    private static final Vector3f SHARD_SCALE = new Vector3f(0.45f, 1.8f, 0.45f);
+
+    // per mesh local scale applied before the orientation matrix. CUBE is uniform, SHARD a tall splinter.
+    // returns a shared constant, so callers must read it not mutate it
     static Vector3f scaleFor(MeshId mesh) {
-        return mesh == MeshId.SHARD ? new Vector3f(0.45f, 1.8f, 0.45f) : new Vector3f(1f, 1f, 1f);
+        return mesh == MeshId.SHARD ? SHARD_SCALE : CUBE_SCALE;
     }
 }

@@ -157,6 +157,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Vector3f scale = MeshGeometry.scaleFor(render.mesh());
         VertexConsumer vc = frame.buffers().getBuffer(type);
         Vector3f v = new Vector3f();
+        Quaternionf rot = new Quaternionf();
         for (Particle p : sim.particles()) {
             int color = sim.colorOf(p);
             int a = (int) (sim.alphaOf(p) * 255f);
@@ -167,7 +168,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
             double wx = origin.x + p.pos.x() - cam.x;
             double wy = origin.y + p.pos.y() - cam.y;
             double wz = origin.z + p.pos.z() - cam.z;
-            Quaternionf rot = new Quaternionf().rotationYXZ(p.yaw, p.pitch, p.rotation);
+            rot.rotationYXZ(p.yaw, p.pitch, p.rotation);
             int light = lit ? LevelRenderer.getLightColor(level, BlockPos.containing(
                     origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0;
             for (float[] face : MeshGeometry.CUBE_FACES) {
