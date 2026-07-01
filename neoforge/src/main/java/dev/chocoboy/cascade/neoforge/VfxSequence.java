@@ -28,6 +28,10 @@ public final class VfxSequence {
         return run(() -> emitter.play(level, pos));
     }
 
+    public VfxSequence effect(Vec3 pos, VfxEffect effect) {
+        return run(() -> effect.play(level, pos));
+    }
+
     public VfxSequence beam(Vec3 from, Vec3 to) {
         return run(() -> Vfx.beam(level, from, to));
     }

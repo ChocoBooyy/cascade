@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionSpec;
+import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.ModifierSpec;
@@ -130,6 +131,19 @@ public final class EffectJson {
                 new EmitterSpec(shape, count, lifetime, speed, size, alpha, color, modifiers,
                         emission, render, rotation, collision, subEmitter.orElse(null), trail, velocity)));
     });
+
+    // an effect is either an explicit {"emitters":[...]} list, or a bare single emitter object for
+    // back compat with effects authored before layering existed. Either tries the list shape first.
+    public static final Codec<EffectSpec> EFFECT = Codec.either(
+            RecordCodecBuilder.<EffectSpec>create(i -> i.group(
+                    EMITTER.listOf().fieldOf("emitters").forGetter(EffectSpec::emitters)
+            ).apply(i, EffectSpec::new)),
+            EMITTER
+    ).xmap(
+            either -> either.map(java.util.function.Function.identity(), e -> EffectSpec.of(e)),
+            effect -> effect.emitters().size() == 1
+                    ? com.mojang.datafixers.util.Either.right(effect.emitters().get(0))
+                    : com.mojang.datafixers.util.Either.left(effect));
 
     private EffectJson() {
     }

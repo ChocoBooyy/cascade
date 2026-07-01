@@ -3,7 +3,7 @@ package dev.chocoboy.cascade.neoforge;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.JsonOps;
-import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.neoforge.net.EffectJson;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,13 +21,13 @@ public final class CascadeEffects extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerFactory.getLogger("Cascade");
-    private static final Map<ResourceLocation, EmitterSpec> EFFECTS = new HashMap<>();
+    private static final Map<ResourceLocation, EffectSpec> EFFECTS = new HashMap<>();
 
     public CascadeEffects() {
         super(GSON, "cascade/effects");
     }
 
-    public static EmitterSpec get(ResourceLocation id) {
+    public static EffectSpec get(ResourceLocation id) {
         return EFFECTS.get(id);
     }
 
@@ -38,7 +38,7 @@ public final class CascadeEffects extends SimpleJsonResourceReloadListener {
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
         EFFECTS.clear();
-        files.forEach((id, json) -> EffectJson.EMITTER.parse(JsonOps.INSTANCE, json)
+        files.forEach((id, json) -> EffectJson.EFFECT.parse(JsonOps.INSTANCE, json)
                 .resultOrPartial(error -> LOGGER.error("Cascade effect {} failed to load: {}", id, error))
                 .ifPresent(spec -> EFFECTS.put(id, spec)));
         LOGGER.info("Cascade loaded {} effect(s)", EFFECTS.size());

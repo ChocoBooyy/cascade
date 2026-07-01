@@ -1,9 +1,11 @@
 package dev.chocoboy.cascade.neoforge;
 
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
+import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.DomePayload;
+import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
@@ -44,6 +46,10 @@ public final class Vfx {
         return new VfxEmitter();
     }
 
+    public static VfxEffect effect() {
+        return new VfxEffect();
+    }
+
     public static VfxBeam beam() {
         return new VfxBeam();
     }
@@ -53,15 +59,20 @@ public final class Vfx {
     }
 
     // play an effect authored in a datapack json. Unknown ids are ignored so a missing pack is not fatal
-    public static void play(ServerLevel level, Vec3 pos, ResourceLocation effect) {
-        EmitterSpec spec = CascadeEffects.get(effect);
+    public static void play(ServerLevel level, Vec3 pos, ResourceLocation id) {
+        EffectSpec spec = CascadeEffects.get(id);
         if (spec != null) {
-            emit(level, pos, spec);
+            effect(level, pos, spec);
         }
     }
 
     public static void beam(ServerLevel level, Vec3 from, Vec3 to) {
         beam(level, from, to, BeamSpec.defaultBolt());
+    }
+
+    static void effect(ServerLevel level, Vec3 pos, EffectSpec spec) {
+        PacketDistributor.sendToPlayersNear(level, null, pos.x, pos.y, pos.z, RADIUS,
+                new EffectPayload(spec, pos, level.getGameTime()));
     }
 
     static void emit(ServerLevel level, Vec3 pos, EmitterSpec spec) {
