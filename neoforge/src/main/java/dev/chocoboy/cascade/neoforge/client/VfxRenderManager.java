@@ -104,6 +104,9 @@ public final class VfxRenderManager {
         if (CascadeShaders.soft() != null) {
             CascadeShaders.soft().setSampler("DepthSampler", SoftDepth.depthTextureId());
         }
+        if (CascadeShaders.softLit() != null) {
+            CascadeShaders.softLit().setSampler("DepthSampler", SoftDepth.depthTextureId());
+        }
 
         int primitives = 0;
         List<RenderedEffect> failed = null;

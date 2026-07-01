@@ -125,6 +125,29 @@ final class VfxRenderTypes {
     static final RenderType TEXTURED_ALPHA_LIT = litTextured("cascade_textured_alpha_lit",
             RenderStateShard.TRANSLUCENT_TRANSPARENCY);
 
+    // soft twin of TEXTURED_ALPHA_LIT: PARTICLE format so the lightmap tints the vertex color, plus the
+    // cascade_soft_lit core shader fades the quad where it nears geometry. LIGHTMAP supplies Sampler2; the
+    // DepthSampler is bound per frame in VfxRenderManager, exactly like the unlit soft type
+    private static final RenderStateShard.ShaderStateShard SOFT_LIT_SHADER =
+            new RenderStateShard.ShaderStateShard(CascadeShaders::softLit);
+
+    static final RenderType TEXTURED_ALPHA_LIT_SOFT = RenderType.create(
+            "cascade_textured_alpha_lit_soft",
+            DefaultVertexFormat.PARTICLE,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            true,
+            RenderType.CompositeState.builder()
+                    .setShaderState(SOFT_LIT_SHADER)
+                    .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                    .setLightmapState(RenderStateShard.LIGHTMAP)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .createCompositeState(false));
+
     // PARTICLE format carries a lightmap coord per vertex; the particle shader samples it
     private static RenderType litTextured(String name, RenderStateShard.TransparencyStateShard transparency) {
         return RenderType.create(

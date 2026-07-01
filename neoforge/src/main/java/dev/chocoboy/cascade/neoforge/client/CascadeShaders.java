@@ -9,6 +9,7 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 public final class CascadeShaders {
 
     private static ShaderInstance soft;
+    private static ShaderInstance softLit;
 
     private CascadeShaders() {
     }
@@ -21,8 +22,16 @@ public final class CascadeShaders {
         soft = instance;
     }
 
-    // build the soft particle core shader and hand it to the loader. neoforge may swap the instance during
-    // load, so the live one is captured in the setSoft callback, not the one passed to registerShader
+    static ShaderInstance softLit() {
+        return softLit;
+    }
+
+    static void setSoftLit(ShaderInstance instance) {
+        softLit = instance;
+    }
+
+    // build the soft particle core shaders and hand them to the loader. neoforge may swap the instance during
+    // load, so the live one is captured in the set callback, not the one passed to registerShader
     static void onRegisterShaders(RegisterShadersEvent event) {
         try {
             event.registerShader(
@@ -30,8 +39,13 @@ public final class CascadeShaders {
                             ResourceLocation.fromNamespaceAndPath("cascade", "cascade_soft"),
                             DefaultVertexFormat.POSITION_TEX_COLOR),
                     CascadeShaders::setSoft);
+            event.registerShader(
+                    new ShaderInstance(event.getResourceProvider(),
+                            ResourceLocation.fromNamespaceAndPath("cascade", "cascade_soft_lit"),
+                            DefaultVertexFormat.PARTICLE),
+                    CascadeShaders::setSoftLit);
         } catch (IOException e) {
-            throw new IllegalStateException("Cascade failed to load the cascade_soft core shader", e);
+            throw new IllegalStateException("Cascade failed to load a soft particle core shader", e);
         }
     }
 }
