@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionProbe;
@@ -15,6 +16,8 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -75,11 +78,18 @@ public final class ParticleBurstEffect implements RenderedEffect {
     @Override
     public int drawCount() {
         int n = sim.particles().size();
+        if (render.mesh() == MeshId.BLOCK) {
+            return n * Math.max(1, BlockMeshCache.quadsFor(render.meshModel()).size());
+        }
         return render.mesh() != MeshId.NONE ? n * 6 : n;
     }
 
     @Override
     public void render(VfxFrame frame) {
+        if (render.mesh() == MeshId.BLOCK) {
+            renderBlockMesh(frame);
+            return;
+        }
         if (render.mesh() != MeshId.NONE) {
             renderMesh(frame);
             return;
@@ -144,6 +154,43 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     Billboards.ribbon(m, trailVc, p, origin, cam, uv,
                             (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, sim.alphaOf(p), sim.sizeOf(p));
                 }
+            }
+        }
+    }
+
+    private void renderBlockMesh(VfxFrame frame) {
+        List<BakedQuad> quads = BlockMeshCache.quadsFor(render.meshModel());
+        if (quads.isEmpty()) {
+            return;
+        }
+        Level level = Minecraft.getInstance().level;
+        Vec3 cam = frame.cameraPos();
+        PoseStack pose = frame.pose();
+        VertexConsumer vc = frame.buffers().getBuffer(RenderType.cutout());
+        Quaternionf rot = new Quaternionf();
+        for (Particle p : sim.particles()) {
+            float size = sim.sizeOf(p);
+            float s = size * 2f;   // block models span a unit cube, size is a half extent, so double it
+            float wx = (float) (origin.x + p.pos.x() - cam.x);
+            float wy = (float) (origin.y + p.pos.y() - cam.y);
+            float wz = (float) (origin.z + p.pos.z() - cam.z);
+            // block debris always reads scene light, there is no full bright variant like cube and shard have
+            int light = level != null ? LevelRenderer.getLightColor(level, BlockPos.containing(
+                    origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0xF000F0;
+            // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
+            // of the frame draws on a corrupted stack
+            pose.pushPose();
+            try {
+                pose.translate(wx, wy, wz);
+                pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                pose.scale(s, s, s);
+                pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
+                PoseStack.Pose last = pose.last();
+                for (int i = 0; i < quads.size(); i++) {
+                    vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
+                }
+            } finally {
+                pose.popPose();
             }
         }
     }

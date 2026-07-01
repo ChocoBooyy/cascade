@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
@@ -120,6 +121,10 @@ public final class CascadeTestCommands {
                 }))
                 .then(Commands.literal("debris").executes(ctx -> {
                     debris(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("blockdebris").executes(ctx -> {
+                    blockDebris(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
                 })));
     }
@@ -474,6 +479,29 @@ public final class CascadeTestCommands {
                 .spin(0.7f).shard().lit()
                 .gravity(0f, -0.03f, 0f).collide(0.2f, 0.5f);
         Vfx.effect().add(chunks).add(shards).play(level, c);
+    }
+
+    // a burst of real block model chunks (stone and dirt) that tumble, fall, and bounce, block break debris
+    private static void blockDebris(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 c = src.getPosition();
+        VfxEmitter stone = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(40).lifetime(70).speed(0.4f)
+                .size(0.14f, 0.14f, Easings.LINEAR)
+                .alpha(1f, 1f, Easings.LINEAR)
+                .color(0xFFFFFF, 0xFFFFFF, Easings.LINEAR)
+                .spin(0.5f).block(Blocks.STONE).lit()
+                .gravity(0f, -0.03f, 0f).collide(0.3f, 0.4f);
+        VfxEmitter dirt = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(30).lifetime(60).speed(0.45f)
+                .size(0.13f, 0.13f, Easings.LINEAR)
+                .alpha(1f, 1f, Easings.LINEAR)
+                .color(0xFFFFFF, 0xFFFFFF, Easings.LINEAR)
+                .spin(0.6f).block(Blocks.DIRT).lit()
+                .gravity(0f, -0.03f, 0f).collide(0.2f, 0.5f);
+        Vfx.effect().add(stone).add(dirt).play(level, c);
     }
 
     // the command source's facing as a unit vector. A command block defaults to (0,0), which points

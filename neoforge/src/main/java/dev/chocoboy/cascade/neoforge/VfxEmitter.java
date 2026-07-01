@@ -19,7 +19,9 @@ import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
 public final class VfxEmitter {
@@ -39,6 +41,7 @@ public final class VfxEmitter {
     private boolean animate;
     private boolean lit;
     private MeshId mesh = MeshId.NONE;
+    private String meshModel = "";
     private RotationSpec rotation = RotationSpec.NONE;
     private CollisionSpec collision = CollisionSpec.NONE;
     private SubEmitterSpec subEmitter;
@@ -183,6 +186,14 @@ public final class VfxEmitter {
         return this;
     }
 
+    // draw particles as falling chunks of a real block model, for block-break debris. pair with a spin.
+    // opaque like cube and shard, so fade by the size curve, not alpha
+    public VfxEmitter block(Block block) {
+        this.mesh = MeshId.BLOCK;
+        this.meshModel = BuiltInRegistries.BLOCK.getKey(block).toString();
+        return this;
+    }
+
     // bounce particles off solid blocks. bounce is the speed kept on a hit, friction sheds sliding speed
     public VfxEmitter collide(float bounce, float friction) {
         this.collision = CollisionSpec.bouncy(bounce, friction);
@@ -227,7 +238,7 @@ public final class VfxEmitter {
 
     public EmitterSpec spec() {
         return new EmitterSpec(shape, count, lifetime, speed, size, alpha, color,
-                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit, mesh), rotation, collision,
+                List.copyOf(modifiers), emission, new RenderSpec(blend, sprite, stretch, animate, lit, mesh, meshModel), rotation, collision,
                 subEmitter, trail, velocity);
     }
 
