@@ -167,6 +167,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Vec3 cam = frame.cameraPos();
         PoseStack pose = frame.pose();
         VertexConsumer vc = frame.buffers().getBuffer(RenderType.cutout());
+        Quaternionf rot = new Quaternionf();
         for (Particle p : sim.particles()) {
             float size = sim.sizeOf(p);
             float s = size * 2f;   // block models span a unit cube, size is a half extent, so double it
@@ -177,7 +178,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
                     origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0xF000F0;
             pose.pushPose();
             pose.translate(wx, wy, wz);
-            pose.mulPose(new Quaternionf().rotationYXZ(p.yaw, p.pitch, p.rotation));
+            pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
             pose.scale(s, s, s);
             pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
             PoseStack.Pose last = pose.last();
