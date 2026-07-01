@@ -97,7 +97,9 @@ public final class ParticleBurstEffect implements RenderedEffect {
         ParticleAtlas.ensureUploaded();
         boolean lit = render.lit();
         boolean alphaBlend = render.blend() == BlendMode.ALPHA;
-        RenderType unlit = alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA : VfxRenderTypes.TEXTURED_ADDITIVE;
+        RenderType unlit = alphaBlend
+                ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA)
+                : VfxRenderTypes.TEXTURED_ADDITIVE;
         RenderType type = lit
                 ? (alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA_LIT : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
                 : unlit;

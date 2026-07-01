@@ -44,6 +44,27 @@ final class VfxRenderTypes {
     static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha",
             RenderStateShard.TRANSLUCENT_TRANSPARENCY);
 
+    // soft twin of TEXTURED_ALPHA: same alpha blend, but the cascade_soft core shader fades the quad out
+    // where it nears scene geometry, reading the depth copy bound each frame, so smoke has no hard clip line
+    private static final RenderStateShard.ShaderStateShard SOFT_SHADER =
+            new RenderStateShard.ShaderStateShard(CascadeShaders::soft);
+
+    static final RenderType TEXTURED_ALPHA_SOFT = RenderType.create(
+            "cascade_textured_alpha_soft",
+            DefaultVertexFormat.POSITION_TEX_COLOR,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            true,
+            RenderType.CompositeState.builder()
+                    .setShaderState(SOFT_SHADER)
+                    .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .createCompositeState(false));
+
     private static RenderType textured(String name, RenderStateShard.TransparencyStateShard transparency) {
         return RenderType.create(
                 name,
