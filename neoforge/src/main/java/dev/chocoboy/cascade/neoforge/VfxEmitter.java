@@ -170,13 +170,14 @@ public final class VfxEmitter {
         return this;
     }
 
-    // draw particles as solid tumbling cubes instead of billboards, for chunky debris. pair with a spin
+    // draw particles as solid tumbling cubes instead of billboards, for chunky debris. pair with a spin.
+    // meshes are opaque, so they fade out by shrinking their size curve, not by alpha
     public VfxEmitter cube() {
         this.mesh = MeshId.CUBE;
         return this;
     }
 
-    // draw particles as elongated splinters, for shards and shrapnel. pair with a spin
+    // draw particles as elongated splinters, for shards and shrapnel. pair with a spin. opaque like cube
     public VfxEmitter shard() {
         this.mesh = MeshId.SHARD;
         return this;
