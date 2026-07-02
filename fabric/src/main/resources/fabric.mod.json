@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "cascade",
+  "version": "${version}",
+  "name": "Cascade",
+  "description": "A client-side VFX and sequencing library.",
+  "authors": [ "chocoboy" ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [ "dev.chocoboy.cascade.fabric.CascadeFabric" ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

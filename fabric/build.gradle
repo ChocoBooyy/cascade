@@ -1,0 +1,28 @@
+plugins {
+    id 'java-library'
+    id 'fabric-loom' version '1.7.4'
+}
+
+base {
+    archivesName = "${mod_id}-fabric"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    // mojmap so the shared :common source (official names) compiles unchanged on this loader too
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+}
+
+processResources {
+    def props = [version: project.version]
+    inputs.properties(props)
+    filesMatching('fabric.mod.json') {
+        expand props
+    }
+}
