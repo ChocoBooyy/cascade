@@ -12,6 +12,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
@@ -125,6 +126,10 @@ public final class CascadeTestCommands {
                 }))
                 .then(Commands.literal("blockdebris").executes(ctx -> {
                     blockDebris(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("itemdebris").executes(ctx -> {
+                    itemDebris(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("softsmoke").executes(ctx -> {
@@ -539,6 +544,29 @@ public final class CascadeTestCommands {
                 .spin(0.6f).block(Blocks.DIRT).lit()
                 .gravity(0f, -0.03f, 0f).collide(0.2f, 0.5f);
         Vfx.effect().add(stone).add(dirt).play(level, c);
+    }
+
+    // a burst of real item model debris (nuggets and sticks) that tumble, fall, and bounce
+    private static void itemDebris(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 c = src.getPosition();
+        VfxEmitter nuggets = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(36).lifetime(70).speed(0.4f)
+                .size(0.12f, 0.12f, Easings.LINEAR)
+                .alpha(1f, 1f, Easings.LINEAR)
+                .color(0xFFFFFF, 0xFFFFFF, Easings.LINEAR)
+                .spin(0.6f).item(Items.IRON_NUGGET).lit()
+                .gravity(0f, -0.03f, 0f).collide(0.3f, 0.4f);
+        VfxEmitter sticks = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.3f))
+                .count(20).lifetime(60).speed(0.45f)
+                .size(0.13f, 0.13f, Easings.LINEAR)
+                .alpha(1f, 1f, Easings.LINEAR)
+                .color(0xFFFFFF, 0xFFFFFF, Easings.LINEAR)
+                .spin(0.7f).item(Items.STICK).lit()
+                .gravity(0f, -0.03f, 0f).collide(0.2f, 0.5f);
+        Vfx.effect().add(nuggets).add(sticks).play(level, c);
     }
 
     // the command source's facing as a unit vector. A command block defaults to (0,0), which points
