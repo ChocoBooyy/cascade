@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
 // dedicated server and never compiles these, which is how the soft particle sampler bugs slipped through.
 class ShaderAssetTest {
 
-    private static final Path CORE = locate("src/main/resources/assets/cascade/shaders/core");
+    // the core shaders live in :common now, shared by both loaders
+    private static final Path CORE = coreDir();
     // the render code that calls setSampler lives in :common now, so scan both loader and shared sources
     private static final List<Path> JAVA_ROOTS = javaRoots();
 
@@ -200,6 +201,17 @@ class ShaderAssetTest {
             return direct;
         }
         return Path.of("neoforge").resolve(relative);
+    }
+
+    // the shared core shaders under :common, wherever the cwd sits
+    private static Path coreDir() {
+        String rel = "src/main/resources/assets/cascade/shaders/core";
+        for (Path candidate : List.of(Path.of("../common/" + rel), Path.of("common/" + rel))) {
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+        }
+        return Path.of("../common/" + rel);
     }
 
     // this loader's sources plus the shared :common sources, wherever the cwd sits
