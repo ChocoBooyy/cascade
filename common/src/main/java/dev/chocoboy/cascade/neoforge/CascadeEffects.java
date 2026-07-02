@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 // loads datapack-authored effects from data/<namespace>/cascade/effects/*.json into a named registry,
 // so Vfx.play can fire an effect by id. Server side, reloaded with the rest of the datapacks. Each loader
 // registers an instance with its own reload-listener hook
-public final class CascadeEffects extends SimpleJsonResourceReloadListener {
+public class CascadeEffects extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerFactory.getLogger("Cascade");

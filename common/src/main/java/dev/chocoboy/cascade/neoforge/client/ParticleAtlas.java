@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 // Frame 0 is the still sprite; the later frames animate it (smoke boils and thins, the spark twinkles
 // out, the ring expands like a shockwave) so a system can flipbook across them over a particle's life.
 // Built once, lazily, on the render thread the first time a particle wants it.
-final class ParticleAtlas {
+public final class ParticleAtlas {
 
     static final int FRAMES = 4;
 
@@ -34,7 +34,7 @@ final class ParticleAtlas {
     }
 
     // the texture id, for binding a render type. Pure constant, safe at class load.
-    static ResourceLocation textureId() {
+    public static ResourceLocation textureId() {
         return LOCATION;
     }
 

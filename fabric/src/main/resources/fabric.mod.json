@@ -8,8 +8,10 @@
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": [ "dev.chocoboy.cascade.fabric.CascadeFabric" ]
+    "main": [ "dev.chocoboy.cascade.fabric.CascadeFabric" ],
+    "client": [ "dev.chocoboy.cascade.fabric.client.CascadeFabricClient" ]
   },
+  "accessWidener": "cascade.accesswidener",
   "depends": {
     "fabricloader": ">=0.16",
     "minecraft": "~1.21.1",
