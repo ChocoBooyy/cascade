@@ -12,6 +12,7 @@ java {
 }
 
 repositories {
+    mavenCentral()
     maven { url 'https://maven.parchmentmc.org' }
 }
 
@@ -62,6 +63,16 @@ dependencies {
     engineJava project(path: ':engine', configuration: 'engineJava')
 
     testmodImplementation sourceSets.main.output
+
+    // the shader asset lint reads json+glsl as text, so it stays off the modding classpath
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 tasks.named('compileJava', JavaCompile) {
