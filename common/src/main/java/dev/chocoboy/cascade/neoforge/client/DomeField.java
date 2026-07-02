@@ -53,7 +53,7 @@ public final class DomeField implements RenderedEffect {
         int b = color & 0xFF;
         Vec3 cam = frame.cameraPos();
         Matrix4f m = frame.pose().last().pose();
-        VertexConsumer vc = frame.buffers().getBuffer(VfxRenderTypes.ADDITIVE);
+        VertexConsumer vc = frame.buffers().getBuffer(CascadeRenderTypes.additive());
         for (int i = 0; i < RINGS; i++) {
             float lat0 = HALF_PI * i / RINGS;
             float lat1 = HALF_PI * (i + 1) / RINGS;

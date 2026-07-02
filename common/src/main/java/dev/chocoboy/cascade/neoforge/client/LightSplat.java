@@ -78,7 +78,7 @@ public final class LightSplat implements RenderedEffect {
         int b = color & 0xFF;
         int a = (int) (fade * 255f);
         Matrix4f m = frame.pose().last().pose();
-        VertexConsumer vc = frame.buffers().getBuffer(VfxRenderTypes.TEXTURED_ADDITIVE);
+        VertexConsumer vc = frame.buffers().getBuffer(CascadeRenderTypes.texturedAdditive());
         vc.addVertex(m, x0, y, z0).setUv(uv[0], uv[1]).setColor(r, g, b, a);
         vc.addVertex(m, x0, y, z1).setUv(uv[0], uv[3]).setColor(r, g, b, a);
         vc.addVertex(m, x1, y, z1).setUv(uv[2], uv[3]).setColor(r, g, b, a);

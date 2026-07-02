@@ -26,8 +26,10 @@ import org.junit.jupiter.api.Test;
 // dedicated server and never compiles these, which is how the soft particle sampler bugs slipped through.
 class ShaderAssetTest {
 
-    private static final Path CORE = locate("src/main/resources/assets/cascade/shaders/core");
-    private static final Path JAVA = locate("src/main/java");
+    // the core shaders live in :common now, shared by both loaders
+    private static final Path CORE = coreDir();
+    // the render code that calls setSampler lives in :common now, so scan both loader and shared sources
+    private static final List<Path> JAVA_ROOTS = javaRoots();
 
     // uniform <type> <name>;  (also matches "uniform sampler2D DepthSampler;")
     private static final Pattern UNIFORM = Pattern.compile("\\buniform\\s+(\\w+)\\s+(\\w+)\\s*;");
@@ -163,11 +165,15 @@ class ShaderAssetTest {
     }
 
     private List<Path> javaSources() {
-        try (Stream<Path> s = Files.walk(JAVA)) {
-            return s.filter(p -> p.toString().endsWith(".java")).toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        List<Path> out = new ArrayList<>();
+        for (Path root : JAVA_ROOTS) {
+            try (Stream<Path> s = Files.walk(root)) {
+                s.filter(p -> p.toString().endsWith(".java")).forEach(out::add);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
+        return out;
     }
 
     private static JsonObject parse(Path json) {
@@ -195,5 +201,29 @@ class ShaderAssetTest {
             return direct;
         }
         return Path.of("neoforge").resolve(relative);
+    }
+
+    // the shared core shaders under :common, wherever the cwd sits
+    private static Path coreDir() {
+        String rel = "src/main/resources/assets/cascade/shaders/core";
+        for (Path candidate : List.of(Path.of("../common/" + rel), Path.of("common/" + rel))) {
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+        }
+        return Path.of("../common/" + rel);
+    }
+
+    // this loader's sources plus the shared :common sources, wherever the cwd sits
+    private static List<Path> javaRoots() {
+        List<Path> roots = new ArrayList<>();
+        roots.add(locate("src/main/java"));
+        for (Path candidate : List.of(Path.of("../common/src/main/java"), Path.of("common/src/main/java"))) {
+            if (Files.exists(candidate)) {
+                roots.add(candidate);
+                break;
+            }
+        }
+        return roots;
     }
 }

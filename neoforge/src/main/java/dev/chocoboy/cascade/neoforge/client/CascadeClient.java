@@ -9,9 +9,10 @@ public final class CascadeClient {
     }
 
     public static void init(IEventBus modBus) {
-        NeoForge.EVENT_BUS.register(VfxRenderManager.get());
+        CascadeRenderTypes.install(new NeoRenderTypes());
+        NeoForge.EVENT_BUS.register(new VfxRenderBridge());
         NeoForge.EVENT_BUS.register(ShakeController.get());
         // core shaders register on the mod bus, not the game bus, so the soft particle shader loads with the rest
-        modBus.addListener(CascadeShaders::onRegisterShaders);
+        modBus.addListener(CascadeShaderReg::onRegisterShaders);
     }
 }

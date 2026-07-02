@@ -236,7 +236,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
 
     private void renderMesh(VfxFrame frame) {
         boolean lit = render.lit();
-        RenderType type = lit ? VfxRenderTypes.SOLID_LIT : VfxRenderTypes.SOLID;
+        RenderType type = lit ? CascadeRenderTypes.solidLit() : CascadeRenderTypes.solid();
         Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();
         Matrix4f pose = frame.pose().last().pose();
@@ -277,9 +277,9 @@ public final class ParticleBurstEffect implements RenderedEffect {
     // the unlit textured type. trails always draw with this, and it is the fallback for an unlit billboard pass
     private RenderType unlitType() {
         if (render.blend() != BlendMode.ALPHA) {
-            return VfxRenderTypes.TEXTURED_ADDITIVE;
+            return CascadeRenderTypes.texturedAdditive();
         }
-        return render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA;
+        return render.soft() ? CascadeRenderTypes.texturedAlphaSoft() : CascadeRenderTypes.texturedAlpha();
     }
 
     // the textured type for the billboard pass, lit or unlit
@@ -288,9 +288,9 @@ public final class ParticleBurstEffect implements RenderedEffect {
             return unlitType();
         }
         if (render.blend() != BlendMode.ALPHA) {
-            return VfxRenderTypes.TEXTURED_ADDITIVE_LIT;
+            return CascadeRenderTypes.texturedAdditiveLit();
         }
-        return render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT : VfxRenderTypes.TEXTURED_ALPHA_LIT;
+        return render.soft() ? CascadeRenderTypes.texturedAlphaLitSoft() : CascadeRenderTypes.texturedAlphaLit();
     }
 
     // scene light at the particle's world cell

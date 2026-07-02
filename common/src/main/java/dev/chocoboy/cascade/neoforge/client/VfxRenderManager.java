@@ -4,16 +4,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.joml.Quaternionf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// holds and draws the live effects. loader-agnostic: each loader feeds it a client tick and a render pass
+// with the frame's camera. it never touches a loader api, so both neoforge and fabric drive the same code
 public final class VfxRenderManager {
 
     private static final VfxRenderManager INSTANCE = new VfxRenderManager();
@@ -57,8 +55,7 @@ public final class VfxRenderManager {
         active.add(effect);
     }
 
-    @SubscribeEvent
-    public void onClientTick(ClientTickEvent.Post event) {
+    public void clientTick() {
         ticking = true;
         try {
             active.removeIf(effect -> {
@@ -78,16 +75,13 @@ public final class VfxRenderManager {
         }
     }
 
-    @SubscribeEvent
-    public void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || active.isEmpty()) {
+    // draw the visible effects for this frame. the loader supplies the frame's pose, shared buffer source
+    // and camera, since it reads those from its own render event
+    public void render(PoseStack pose, MultiBufferSource.BufferSource buffers, Quaternionf camRot, Vec3 camPos) {
+        if (active.isEmpty()) {
             return;
         }
-        Camera camera = event.getCamera();
-        PoseStack pose = event.getPoseStack();
-        Vec3 camPos = camera.getPosition();
-        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        VfxFrame frame = new VfxFrame(pose, buffers, camera.rotation(), camPos);
+        VfxFrame frame = new VfxFrame(pose, buffers, camRot, camPos);
 
         // cull beyond range, then draw nearest first so the per-frame budget keeps the closest effects
         List<RenderedEffect> visible = new ArrayList<>();

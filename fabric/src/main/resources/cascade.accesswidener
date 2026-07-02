@@ -1,0 +1,18 @@
+accessWidener	v2	named
+
+# custom render types touch render state that vanilla keeps protected. neoforge widens these on its own,
+# so this only exists on the fabric side and never reaches consumers of the shared api
+accessible	class	net/minecraft/client/renderer/RenderType$CompositeState
+accessible	class	net/minecraft/client/renderer/RenderType$CompositeState$CompositeStateBuilder
+accessible	class	net/minecraft/client/renderer/RenderStateShard$ShaderStateShard
+accessible	class	net/minecraft/client/renderer/RenderStateShard$TransparencyStateShard
+accessible	class	net/minecraft/client/renderer/RenderStateShard$TextureStateShard
+
+accessible	field	net/minecraft/client/renderer/RenderStateShard	POSITION_COLOR_SHADER	Lnet/minecraft/client/renderer/RenderStateShard$ShaderStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	ADDITIVE_TRANSPARENCY	Lnet/minecraft/client/renderer/RenderStateShard$TransparencyStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	TRANSLUCENT_TRANSPARENCY	Lnet/minecraft/client/renderer/RenderStateShard$TransparencyStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	NO_CULL	Lnet/minecraft/client/renderer/RenderStateShard$CullStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	LEQUAL_DEPTH_TEST	Lnet/minecraft/client/renderer/RenderStateShard$DepthTestStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	COLOR_WRITE	Lnet/minecraft/client/renderer/RenderStateShard$WriteMaskStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	COLOR_DEPTH_WRITE	Lnet/minecraft/client/renderer/RenderStateShard$WriteMaskStateShard;
+accessible	field	net/minecraft/client/renderer/RenderStateShard	LIGHTMAP	Lnet/minecraft/client/renderer/RenderStateShard$LightmapStateShard;

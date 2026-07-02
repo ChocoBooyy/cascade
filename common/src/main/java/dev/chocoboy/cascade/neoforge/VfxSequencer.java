@@ -3,11 +3,10 @@ package dev.chocoboy.cascade.neoforge;
 import dev.chocoboy.cascade.engine.seq.Timeline;
 import java.util.ArrayList;
 import java.util.List;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// advances scheduled timelines. loader-agnostic: each loader calls tick once per server tick
 public final class VfxSequencer {
 
     private static final VfxSequencer INSTANCE = new VfxSequencer();
@@ -27,8 +26,7 @@ public final class VfxSequencer {
         active.add(timeline);
     }
 
-    @SubscribeEvent
-    public void onServerTick(ServerTickEvent.Post event) {
+    public void tick() {
         active.removeIf(timeline -> {
             try {
                 return timeline.tick();

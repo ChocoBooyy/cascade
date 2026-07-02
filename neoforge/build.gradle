@@ -18,6 +18,12 @@ repositories {
 
 sourceSets {
     testmod
+    // package the shared assets (core shaders) that live in :common, the resource twin of the java source-merge
+    main {
+        resources {
+            srcDir project(':common').file('src/main/resources')
+        }
+    }
 }
 
 neoForge {

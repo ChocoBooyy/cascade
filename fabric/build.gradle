@@ -1,0 +1,63 @@
+plugins {
+    id 'java-library'
+    id 'fabric-loom' version '1.7.4'
+}
+
+base {
+    archivesName = "${mod_id}-fabric"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/cascade.accesswidener")
+}
+
+sourceSets {
+    // package the shared assets (core shaders) that live in :common, the resource twin of the java source-merge
+    main {
+        resources {
+            srcDir project(':common').file('src/main/resources')
+        }
+    }
+}
+
+configurations {
+    commonJava {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+    engineJava {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    // mojmap so the shared :common source (official names) compiles unchanged on this loader too
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    commonJava project(path: ':common', configuration: 'commonJava')
+    engineJava project(path: ':engine', configuration: 'engineJava')
+}
+
+// compile the shared engine and common sources straight into the fabric jar, the same source-merge the
+// neoforge module uses, so both loaders ship one copy of the core
+tasks.named('compileJava', JavaCompile) {
+    dependsOn(configurations.commonJava, configurations.engineJava)
+    source(configurations.commonJava)
+    source(configurations.engineJava)
+}
+
+processResources {
+    def props = [version: project.version]
+    inputs.properties(props)
+    filesMatching('fabric.mod.json') {
+        expand props
+    }
+}
