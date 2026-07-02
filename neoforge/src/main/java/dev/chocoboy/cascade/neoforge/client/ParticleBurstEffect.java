@@ -85,6 +85,11 @@ public final class ParticleBurstEffect implements RenderedEffect {
     }
 
     @Override
+    public boolean soft() {
+        return render.soft();
+    }
+
+    @Override
     public void render(VfxFrame frame) {
         if (render.mesh() == MeshId.BLOCK) {
             renderBlockMesh(frame);
@@ -97,9 +102,13 @@ public final class ParticleBurstEffect implements RenderedEffect {
         ParticleAtlas.ensureUploaded();
         boolean lit = render.lit();
         boolean alphaBlend = render.blend() == BlendMode.ALPHA;
-        RenderType unlit = alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA : VfxRenderTypes.TEXTURED_ADDITIVE;
+        RenderType unlit = alphaBlend
+                ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA)
+                : VfxRenderTypes.TEXTURED_ADDITIVE;
         RenderType type = lit
-                ? (alphaBlend ? VfxRenderTypes.TEXTURED_ALPHA_LIT : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
+                ? (alphaBlend
+                    ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT : VfxRenderTypes.TEXTURED_ALPHA_LIT)
+                    : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
                 : unlit;
         Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();

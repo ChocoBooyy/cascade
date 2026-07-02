@@ -126,7 +126,44 @@ public final class CascadeTestCommands {
                 .then(Commands.literal("blockdebris").executes(ctx -> {
                     blockDebris(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("softsmoke").executes(ctx -> {
+                    softSmoke(ctx.getSource());
+                    return Command.SINGLE_SUCCESS;
                 })));
+    }
+
+    // two low billowing smoke clouds that sit on the ground, four blocks apart, snapped to the surface. the
+    // left is soft and should melt into the floor where the billboards cut it; the right is the hard
+    // reference and shows sharp slice lines along the ground. that contact line is the whole demo
+    private static void softSmoke(CommandSourceStack src) {
+        ServerLevel level = src.getLevel();
+        Vec3 ground = onGround(level, src.getPosition(), src.getEntity());
+        fog(level, ground.add(-2.0, 0.0, 0.0), true);
+        fog(level, ground.add(2.0, 0.0, 0.0), false);
+    }
+
+    private static void fog(ServerLevel level, Vec3 pos, boolean soft) {
+        // dark, dense, and kept low so the whole cloud sits near the ground: with the wide fade the soft
+        // one reads as thin and wispy all over, the hard one as a solid dark mass. high contrast on purpose
+        VfxEmitter f = Vfx.emitter()
+                .shape(ShapeSpec.disc(1.0f))
+                .lifetime(60)
+                .speed(0.04f)
+                .size(0.9f, 1.6f, Easings.LINEAR)
+                .alpha(0.85f, 0.0f, Easings.LINEAR)
+                .color(0x333333, 0x000000, Easings.LINEAR)
+                .gravity(0.0f, 0.006f, 0.0f)
+                .curl(0.01f, 0.4f)
+                .rate(7.0f, 120)
+                .sprite(SpriteId.SMOKE)
+                .blend(BlendMode.ALPHA)
+                .lit();
+        if (soft) {
+            f.soft();
+        }
+        // lift the base a touch so the big billboards straddle the surface instead of spawning fully buried
+        f.play(level, pos.add(0.0, 0.4, 0.0));
     }
 
     // Gravity Star: a kunai impact opens a purple gravity zone that draws matter straight inward, a steady

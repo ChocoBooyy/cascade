@@ -14,4 +14,9 @@ public interface RenderedEffect {
 
     // primitive count this effect would draw, so a per-frame budget can drop the farthest work
     int drawCount();
+
+    // whether this effect samples the scene depth copy, so the manager only refreshes it when one is visible
+    default boolean soft() {
+        return false;
+    }
 }

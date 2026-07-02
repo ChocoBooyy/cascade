@@ -8,21 +8,27 @@ package dev.chocoboy.cascade.engine.effect;
 // bright), so smoke and dust can sit in shadow while glows stay bright. mesh selects the geometry mode:
 // NONE is the default camera-facing billboard; CUBE and SHARD render a solid tumbling mesh instead.
 // meshModel names a block for the BLOCK mesh and is an opaque string the engine never reads.
+// soft fades the particle out where it meets scene geometry instead of clipping hard against it.
 public record RenderSpec(BlendMode blend, SpriteId sprite, float stretch, boolean animate, boolean lit,
-        MeshId mesh, String meshModel) {
+        MeshId mesh, String meshModel, boolean soft) {
 
     public static final RenderSpec DEFAULT =
-            new RenderSpec(BlendMode.ADDITIVE, SpriteId.GLOW, 0f, false, false, MeshId.NONE, "");
+            new RenderSpec(BlendMode.ADDITIVE, SpriteId.GLOW, 0f, false, false, MeshId.NONE, "", false);
 
     public RenderSpec(BlendMode blend, SpriteId sprite) {
-        this(blend, sprite, 0f, false, false, MeshId.NONE, "");
+        this(blend, sprite, 0f, false, false, MeshId.NONE, "", false);
     }
 
     public RenderSpec(BlendMode blend, SpriteId sprite, float stretch, boolean animate, boolean lit) {
-        this(blend, sprite, stretch, animate, lit, MeshId.NONE, "");
+        this(blend, sprite, stretch, animate, lit, MeshId.NONE, "", false);
     }
 
     public RenderSpec(BlendMode blend, SpriteId sprite, float stretch, boolean animate, boolean lit, MeshId mesh) {
-        this(blend, sprite, stretch, animate, lit, mesh, "");
+        this(blend, sprite, stretch, animate, lit, mesh, "", false);
+    }
+
+    public RenderSpec(BlendMode blend, SpriteId sprite, float stretch, boolean animate, boolean lit,
+            MeshId mesh, String meshModel) {
+        this(blend, sprite, stretch, animate, lit, mesh, meshModel, false);
     }
 }

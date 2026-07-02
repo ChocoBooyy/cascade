@@ -98,6 +98,25 @@ public final class VfxRenderManager {
         }
         visible.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(camPos)));
 
+        // only refresh the scene depth copy when a soft effect is actually on screen, so ordinary effects
+        // never pay for the blit. soft effects sample it to fade where they meet geometry
+        boolean anySoft = false;
+        for (int i = 0; i < visible.size(); i++) {
+            if (visible.get(i).soft()) {
+                anySoft = true;
+                break;
+            }
+        }
+        if (anySoft) {
+            SoftDepth.copyFromMain();
+            if (CascadeShaders.soft() != null) {
+                CascadeShaders.soft().setSampler("DepthSampler", SoftDepth.depthTextureId());
+            }
+            if (CascadeShaders.softLit() != null) {
+                CascadeShaders.softLit().setSampler("DepthSampler", SoftDepth.depthTextureId());
+            }
+        }
+
         int primitives = 0;
         List<RenderedEffect> failed = null;
         try {

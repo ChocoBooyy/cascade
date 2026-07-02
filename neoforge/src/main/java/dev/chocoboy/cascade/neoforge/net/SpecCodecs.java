@@ -95,6 +95,7 @@ public final class SpecCodecs {
                 buf.writeBoolean(s.lit());
                 MESH.encode(buf, s.mesh());
                 buf.writeUtf(s.meshModel());
+                buf.writeBoolean(s.soft());
             },
             buf -> new RenderSpec(
                     BLEND.decode(buf),
@@ -103,7 +104,8 @@ public final class SpecCodecs {
                     buf.readBoolean(),
                     buf.readBoolean(),
                     MESH.decode(buf),
-                    buf.readUtf()));
+                    buf.readUtf(),
+                    buf.readBoolean()));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, RotationSpec> ROTATION = StreamCodec.composite(
             ByteBufCodecs.FLOAT, RotationSpec::angleRange,
