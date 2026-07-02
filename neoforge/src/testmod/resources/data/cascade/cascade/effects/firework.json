@@ -7,7 +7,7 @@
   "alpha": { "start": 1.0, "end": 1.0, "ease": "LINEAR" },
   "color": { "stops": [16777215, 16772744], "ease": "LINEAR" },
   "modifiers": [
-    { "kind": "GRAVITY", "vec": { "x": 0.0, "y": -0.02, "z": 0.0 } }
+    { "type": "gravity", "accel": { "x": 0.0, "y": -0.02, "z": 0.0 } }
   ],
   "render": { "blend": "ADDITIVE", "sprite": "SPARK", "stretch": 2.0 },
   "trail": { "enabled": true, "length": 6 },
@@ -20,8 +20,8 @@
     "alpha": { "start": 1.0, "end": 0.0, "ease": "LINEAR" },
     "color": { "stops": [16737962, 3368703], "ease": "LINEAR" },
     "modifiers": [
-      { "kind": "GRAVITY", "vec": { "x": 0.0, "y": -0.02, "z": 0.0 } },
-      { "kind": "DRAG", "a": 0.05 }
+      { "type": "gravity", "accel": { "x": 0.0, "y": -0.02, "z": 0.0 } },
+      { "type": "drag", "drag": 0.05 }
     ],
     "render": { "blend": "ADDITIVE", "sprite": "SPARK", "stretch": 1.5 },
     "trail": { "enabled": true, "length": 5 }
