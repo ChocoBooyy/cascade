@@ -1,0 +1,49 @@
+{
+    "targets": [
+        "bright",
+        "swap"
+    ],
+    "passes": [
+        {
+            "name": "cascade:bloom_bright",
+            "intarget": "minecraft:main",
+            "outtarget": "bright",
+            "uniforms": [
+                { "name": "Threshold", "values": [ 0.7 ] }
+            ]
+        },
+        {
+            "name": "box_blur",
+            "intarget": "bright",
+            "outtarget": "swap",
+            "use_linear_filter": true,
+            "uniforms": [
+                { "name": "BlurDir", "values": [ 1.0, 0.0 ] },
+                { "name": "Radius", "values": [ 8.0 ] }
+            ]
+        },
+        {
+            "name": "box_blur",
+            "intarget": "swap",
+            "outtarget": "bright",
+            "use_linear_filter": true,
+            "uniforms": [
+                { "name": "BlurDir", "values": [ 0.0, 1.0 ] },
+                { "name": "Radius", "values": [ 8.0 ] }
+            ]
+        },
+        {
+            "name": "cascade:bloom_composite",
+            "intarget": "minecraft:main",
+            "outtarget": "swap",
+            "auxtargets": [
+                { "name": "BloomSampler", "id": "bright" }
+            ]
+        },
+        {
+            "name": "blit",
+            "intarget": "swap",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}

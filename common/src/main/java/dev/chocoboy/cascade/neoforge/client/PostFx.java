@@ -8,16 +8,17 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
-// D1 spike: run a post-process chain on the main framebuffer after the level renders, to prove the
-// injection point and target binding work before building a real bloom chain. the spike chain is a
-// full-screen blur (vanilla blur program), so a working pipeline is unmistakable on screen.
-final class PostFx {
+// Bloom over the frame after the level renders: bright pixels above a luminance threshold are blurred
+// and added back, so hot vfx glow. Opt in and off by default; when off the frame is untouched and
+// nothing here allocates or runs.
+public final class PostFx {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     // PostChain wants the full resource path, the way vanilla passes shaders/post/<name>.json
     private static final ResourceLocation CHAIN =
-            ResourceLocation.fromNamespaceAndPath("cascade", "shaders/post/bloom_spike.json");
+            ResourceLocation.fromNamespaceAndPath("cascade", "shaders/post/bloom.json");
 
+    private static boolean enabled;
     private static PostChain chain;
     private static boolean failed;
     private static int width;
@@ -26,8 +27,16 @@ final class PostFx {
     private PostFx() {
     }
 
-    static void process(float partialTick) {
-        if (failed) {
+    public static void setEnabled(boolean on) {
+        enabled = on;
+    }
+
+    public static boolean enabled() {
+        return enabled;
+    }
+
+    public static void process(float partialTick) {
+        if (!enabled || failed) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
