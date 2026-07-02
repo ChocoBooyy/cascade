@@ -85,6 +85,11 @@ public final class ParticleBurstEffect implements RenderedEffect {
     }
 
     @Override
+    public boolean soft() {
+        return render.soft();
+    }
+
+    @Override
     public void render(VfxFrame frame) {
         if (render.mesh() == MeshId.BLOCK) {
             renderBlockMesh(frame);
