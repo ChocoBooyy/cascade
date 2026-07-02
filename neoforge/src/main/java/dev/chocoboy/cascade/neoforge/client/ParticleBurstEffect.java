@@ -98,29 +98,19 @@ public final class ParticleBurstEffect implements RenderedEffect {
 
     @Override
     public void render(VfxFrame frame) {
-        if (render.mesh() == MeshId.ITEM) {
-            renderItemMesh(frame);
-            return;
+        switch (render.mesh()) {
+            case ITEM -> renderItemMesh(frame);
+            case BLOCK -> renderBlockMesh(frame);
+            case CUBE, SHARD -> renderMesh(frame);
+            case NONE -> renderBillboards(frame);
         }
-        if (render.mesh() == MeshId.BLOCK) {
-            renderBlockMesh(frame);
-            return;
-        }
-        if (render.mesh() != MeshId.NONE) {
-            renderMesh(frame);
-            return;
-        }
+    }
+
+    private void renderBillboards(VfxFrame frame) {
         ParticleAtlas.ensureUploaded();
         boolean lit = render.lit();
-        boolean alphaBlend = render.blend() == BlendMode.ALPHA;
-        RenderType unlit = alphaBlend
-                ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA)
-                : VfxRenderTypes.TEXTURED_ADDITIVE;
-        RenderType type = lit
-                ? (alphaBlend
-                    ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT : VfxRenderTypes.TEXTURED_ALPHA_LIT)
-                    : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
-                : unlit;
+        RenderType type = billboardType();
+        RenderType unlit = unlitType();
         Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();
         Quaternionf camRot = frame.cameraRotation();
@@ -282,6 +272,25 @@ public final class ParticleBurstEffect implements RenderedEffect {
                 }
             }
         }
+    }
+
+    // the unlit textured type. trails always draw with this, and it is the fallback for an unlit billboard pass
+    private RenderType unlitType() {
+        if (render.blend() != BlendMode.ALPHA) {
+            return VfxRenderTypes.TEXTURED_ADDITIVE;
+        }
+        return render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA;
+    }
+
+    // the textured type for the billboard pass, lit or unlit
+    private RenderType billboardType() {
+        if (!render.lit()) {
+            return unlitType();
+        }
+        if (render.blend() != BlendMode.ALPHA) {
+            return VfxRenderTypes.TEXTURED_ADDITIVE_LIT;
+        }
+        return render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT : VfxRenderTypes.TEXTURED_ALPHA_LIT;
     }
 
     // scene light at the particle's world cell
