@@ -82,11 +82,11 @@ public final class ParticleBurstEffect implements RenderedEffect {
     @Override
     public int drawCount() {
         int n = sim.particles().size();
-        if (render.mesh() == MeshId.BLOCK) {
-            return n * Math.max(1, BlockMeshCache.quadsFor(render.meshModel()).size());
-        }
         if (render.mesh() == MeshId.ITEM) {
             return n * 4;
+        }
+        if (render.mesh() == MeshId.BLOCK) {
+            return n * Math.max(1, BlockMeshCache.quadsFor(render.meshModel()).size());
         }
         return render.mesh() != MeshId.NONE ? n * 6 : n;
     }
