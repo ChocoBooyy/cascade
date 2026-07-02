@@ -98,29 +98,19 @@ public final class ParticleBurstEffect implements RenderedEffect {
 
     @Override
     public void render(VfxFrame frame) {
-        if (render.mesh() == MeshId.ITEM) {
-            renderItemMesh(frame);
-            return;
+        switch (render.mesh()) {
+            case ITEM -> renderItemMesh(frame);
+            case BLOCK -> renderBlockMesh(frame);
+            case CUBE, SHARD -> renderMesh(frame);
+            case NONE -> renderBillboards(frame);
         }
-        if (render.mesh() == MeshId.BLOCK) {
-            renderBlockMesh(frame);
-            return;
-        }
-        if (render.mesh() != MeshId.NONE) {
-            renderMesh(frame);
-            return;
-        }
+    }
+
+    private void renderBillboards(VfxFrame frame) {
         ParticleAtlas.ensureUploaded();
         boolean lit = render.lit();
-        boolean alphaBlend = render.blend() == BlendMode.ALPHA;
-        RenderType unlit = alphaBlend
-                ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA)
-                : VfxRenderTypes.TEXTURED_ADDITIVE;
-        RenderType type = lit
-                ? (alphaBlend
-                    ? (render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT : VfxRenderTypes.TEXTURED_ALPHA_LIT)
-                    : VfxRenderTypes.TEXTURED_ADDITIVE_LIT)
-                : unlit;
+        RenderType type = billboardType();
+        RenderType unlit = unlitType();
         Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();
         Quaternionf camRot = frame.cameraRotation();
@@ -157,8 +147,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
             int cg = (color >> 8) & 0xFF;
             int cb = color & 0xFF;
             if (lit) {
-                int light = LevelRenderer.getLightColor(level, BlockPos.containing(
-                        origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z()));
+                int light = lightAt(level, p);
                 Billboards.litQuad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha, light);
             } else {
                 Billboards.quad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha);
@@ -195,8 +184,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
             float wy = (float) (origin.y + p.pos.y() - cam.y);
             float wz = (float) (origin.z + p.pos.z() - cam.z);
             // block debris always reads scene light, there is no full bright variant like cube and shard have
-            int light = level != null ? LevelRenderer.getLightColor(level, BlockPos.containing(
-                    origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0xF000F0;
+            int light = level != null ? lightAt(level, p) : 0xF000F0;
             // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
             // of the frame draws on a corrupted stack
             pose.pushPose();
@@ -232,8 +220,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
             float wx = (float) (origin.x + p.pos.x() - cam.x);
             float wy = (float) (origin.y + p.pos.y() - cam.y);
             float wz = (float) (origin.z + p.pos.z() - cam.z);
-            int light = level != null ? LevelRenderer.getLightColor(level, BlockPos.containing(
-                    origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0xF000F0;
+            int light = level != null ? lightAt(level, p) : 0xF000F0;
             pose.pushPose();
             try {
                 pose.translate(wx, wy, wz);
@@ -268,8 +255,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
             double wy = origin.y + p.pos.y() - cam.y;
             double wz = origin.z + p.pos.z() - cam.z;
             rot.rotationYXZ(p.yaw, p.pitch, p.rotation);
-            int light = lit ? LevelRenderer.getLightColor(level, BlockPos.containing(
-                    origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0;
+            int light = lit ? lightAt(level, p) : 0;
             for (float[] face : MeshGeometry.CUBE_FACES) {
                 for (int i = 0; i < 4; i++) {
                     v.set(face[i * 3] * scale.x, face[i * 3 + 1] * scale.y, face[i * 3 + 2] * scale.z);
@@ -286,6 +272,31 @@ public final class ParticleBurstEffect implements RenderedEffect {
                 }
             }
         }
+    }
+
+    // the unlit textured type. trails always draw with this, and it is the fallback for an unlit billboard pass
+    private RenderType unlitType() {
+        if (render.blend() != BlendMode.ALPHA) {
+            return VfxRenderTypes.TEXTURED_ADDITIVE;
+        }
+        return render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_SOFT : VfxRenderTypes.TEXTURED_ALPHA;
+    }
+
+    // the textured type for the billboard pass, lit or unlit
+    private RenderType billboardType() {
+        if (!render.lit()) {
+            return unlitType();
+        }
+        if (render.blend() != BlendMode.ALPHA) {
+            return VfxRenderTypes.TEXTURED_ADDITIVE_LIT;
+        }
+        return render.soft() ? VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT : VfxRenderTypes.TEXTURED_ALPHA_LIT;
+    }
+
+    // scene light at the particle's world cell
+    private int lightAt(Level level, Particle p) {
+        return LevelRenderer.getLightColor(level, BlockPos.containing(
+                origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z()));
     }
 
     // trails are allocated for every particle of a trail enabled system, so the first answers for all
