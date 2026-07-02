@@ -36,6 +36,9 @@ public final class ParticleSystem implements EffectSim {
     private final boolean tumble;
     private final TrailSpec trail;
     private final List<Vec3f> spawnRequests = new ArrayList<>();
+    // non-flock systems leave this false and never build a neighbor index, so their output is unchanged
+    private final boolean neighborAware;
+    private final float cellSize;
     private int tick;
 
     public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
@@ -63,6 +66,17 @@ public final class ParticleSystem implements EffectSim {
         this.alpha = Objects.requireNonNull(alpha, "alpha");
         this.color = Objects.requireNonNull(color, "color");
         this.modifiers = List.copyOf(modifiers);
+        // cell size is the max flock radius so a single 3x3x3 block covers every query
+        boolean aware = false;
+        float cell = 0f;
+        for (ParticleModifier m : this.modifiers) {
+            if (m instanceof NeighborAware na) {
+                aware = true;
+                cell = Math.max(cell, na.queryRadius());
+            }
+        }
+        this.neighborAware = aware;
+        this.cellSize = cell;
         this.rotation = Objects.requireNonNull(rotation, "rotation");
         this.collision = Objects.requireNonNull(collision, "collision");
         this.probe = probe;
@@ -138,10 +152,22 @@ public final class ParticleSystem implements EffectSim {
     @Override
     public boolean tick() {
         spawn(spawner.spawnCount(tick));
+        // start-of-tick snapshot so flock steering sees a stable neighborhood, order independent
+        SpatialHash hash = null;
+        if (neighborAware) {
+            hash = new SpatialHash(cellSize);
+            for (int i = 0; i < particles.size(); i++) {
+                Particle p = particles.get(i);
+                hash.add(p.pos, p.vel);
+            }
+        }
         for (int i = particles.size() - 1; i >= 0; i--) {
             Particle p = particles.get(i);
             for (int m = 0; m < modifiers.size(); m++) {
                 modifiers.get(m).apply(p);
+                if (hash != null && modifiers.get(m) instanceof NeighborAware na) {
+                    na.steer(p, hash);
+                }
             }
             boolean hit = integrate(p);
             if (emitsOnCollision && hit && !p.collided) {

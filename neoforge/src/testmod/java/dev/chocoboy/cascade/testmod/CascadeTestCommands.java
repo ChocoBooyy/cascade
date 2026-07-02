@@ -140,6 +140,11 @@ public final class CascadeTestCommands {
                     CommandSourceStack src = ctx.getSource();
                     component(src.getLevel(), src.getPosition().add(0.0, 1.5, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("boids").executes(ctx -> {
+                    CommandSourceStack src = ctx.getSource();
+                    boids(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -187,6 +192,21 @@ public final class CascadeTestCommands {
                 .color(0x66FF88, 0x1188AA, Easings.LINEAR)
                 .component(new ContainSpec(2.5f))
                 .sprite(SpriteId.SPARK).stretch(1.5f).trail(4)
+                .play(level, pos);
+    }
+
+    // a swarm that flocks: each mote steers off its neighbors (separation, alignment, cohesion) while a weak
+    // pull to the center keeps the murmuration bounded so it swirls in place instead of drifting off
+    private static void boids(ServerLevel level, Vec3 pos) {
+        Vfx.emitter()
+                .shape(ShapeSpec.sphere(2.5f))
+                .count(80).lifetime(400).speed(0.06f)
+                .size(0.12f, 0.12f, Easings.LINEAR)
+                .alpha(1.0f, 1.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, 0x33EEFF, 0x2277FF, 0x1133AA)
+                .flock(3.0f, 0.02f, 0.015f, 0.012f, 0.14f)
+                .attractor(0.0f, 0.0f, 0.0f, 0.004f)
+                .sprite(SpriteId.GLOW).stretch(1.5f).trail(5)
                 .play(level, pos);
     }
 
