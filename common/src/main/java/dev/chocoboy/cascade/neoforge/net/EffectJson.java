@@ -1,26 +1,36 @@
 package dev.chocoboy.cascade.neoforge.net;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.chocoboy.cascade.engine.effect.AttractorSpec;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionSpec;
+import dev.chocoboy.cascade.engine.effect.ComponentSpec;
+import dev.chocoboy.cascade.engine.effect.CurlSpec;
+import dev.chocoboy.cascade.engine.effect.DragSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.GravitySpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
-import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
+import dev.chocoboy.cascade.engine.effect.TurbulenceSpec;
 import dev.chocoboy.cascade.engine.effect.VelocitySpec;
+import dev.chocoboy.cascade.engine.effect.VortexSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.ColorSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 // DataFixerUpper codecs, the JSON twin of the network SpecCodecs, so datapacks can author effects.
@@ -63,12 +73,59 @@ public final class EffectJson {
             Codec.FLOAT.optionalFieldOf("spread", 0f).forGetter(VelocitySpec::spread)
     ).apply(i, VelocitySpec::new));
 
-    public static final Codec<ModifierSpec> MODIFIER = RecordCodecBuilder.create(i -> i.group(
-            byName(ModifierSpec.Kind.class).fieldOf("kind").forGetter(ModifierSpec::kind),
-            VEC3F.optionalFieldOf("vec", Vec3f.ZERO).forGetter(ModifierSpec::vec),
-            Codec.FLOAT.optionalFieldOf("a", 0f).forGetter(ModifierSpec::a),
-            Codec.FLOAT.optionalFieldOf("b", 0f).forGetter(ModifierSpec::b)
-    ).apply(i, ModifierSpec::new));
+    private static final MapCodec<GravitySpec> GRAVITY = RecordCodecBuilder.mapCodec(i -> i.group(
+            VEC3F.fieldOf("accel").forGetter(GravitySpec::accel)
+    ).apply(i, GravitySpec::new));
+
+    private static final MapCodec<DragSpec> DRAG = RecordCodecBuilder.mapCodec(i -> i.group(
+            Codec.FLOAT.fieldOf("drag").forGetter(DragSpec::drag)
+    ).apply(i, DragSpec::new));
+
+    private static final MapCodec<TurbulenceSpec> TURBULENCE = RecordCodecBuilder.mapCodec(i -> i.group(
+            Codec.FLOAT.fieldOf("strength").forGetter(TurbulenceSpec::strength),
+            Codec.FLOAT.fieldOf("frequency").forGetter(TurbulenceSpec::frequency)
+    ).apply(i, TurbulenceSpec::new));
+
+    private static final MapCodec<AttractorSpec> ATTRACTOR = RecordCodecBuilder.mapCodec(i -> i.group(
+            VEC3F.fieldOf("center").forGetter(AttractorSpec::center),
+            Codec.FLOAT.fieldOf("strength").forGetter(AttractorSpec::strength)
+    ).apply(i, AttractorSpec::new));
+
+    private static final MapCodec<VortexSpec> VORTEX = RecordCodecBuilder.mapCodec(i -> i.group(
+            VEC3F.fieldOf("center").forGetter(VortexSpec::center),
+            Codec.FLOAT.fieldOf("strength").forGetter(VortexSpec::strength)
+    ).apply(i, VortexSpec::new));
+
+    private static final MapCodec<CurlSpec> CURL = RecordCodecBuilder.mapCodec(i -> i.group(
+            Codec.FLOAT.fieldOf("strength").forGetter(CurlSpec::strength),
+            Codec.FLOAT.fieldOf("frequency").forGetter(CurlSpec::frequency)
+    ).apply(i, CurlSpec::new));
+
+    private static final Map<String, MapCodec<? extends ComponentSpec>> COMPONENTS = new HashMap<>();
+
+    static {
+        COMPONENTS.put("gravity", GRAVITY);
+        COMPONENTS.put("drag", DRAG);
+        COMPONENTS.put("turbulence", TURBULENCE);
+        COMPONENTS.put("attractor", ATTRACTOR);
+        COMPONENTS.put("vortex", VORTEX);
+        COMPONENTS.put("curl", CURL);
+    }
+
+    // consumers call this at init so their component type resolves when a datapack names it
+    public static void register(String typeId, MapCodec<? extends ComponentSpec> codec) {
+        COMPONENTS.put(typeId, codec);
+    }
+
+    public static final Codec<ComponentSpec> COMPONENT = Codec.STRING.<ComponentSpec>partialDispatch(
+            "type",
+            spec -> DataResult.success(spec.typeId()),
+            type -> {
+                MapCodec<? extends ComponentSpec> codec = COMPONENTS.get(type);
+                return codec != null
+                        ? DataResult.success(codec)
+                        : DataResult.error(() -> "unknown component " + type);
+            });
 
     public static final Codec<EmissionSpec> EMISSION = RecordCodecBuilder.create(i -> i.group(
             byName(EmissionSpec.Mode.class).fieldOf("mode").forGetter(EmissionSpec::mode),
@@ -122,7 +179,7 @@ public final class EffectJson {
                 CURVE.fieldOf("size").forGetter(EmitterSpec::size),
                 CURVE.fieldOf("alpha").forGetter(EmitterSpec::alpha),
                 COLOR.fieldOf("color").forGetter(EmitterSpec::color),
-                MODIFIER.listOf().optionalFieldOf("modifiers", List.of()).forGetter(EmitterSpec::modifiers),
+                COMPONENT.listOf().optionalFieldOf("modifiers", List.of()).forGetter(EmitterSpec::modifiers),
                 EMISSION.optionalFieldOf("emission", EmissionSpec.burst()).forGetter(EmitterSpec::emission),
                 RENDER.optionalFieldOf("render", RenderSpec.DEFAULT).forGetter(EmitterSpec::render),
                 ROTATION.optionalFieldOf("rotation", RotationSpec.NONE).forGetter(EmitterSpec::rotation),

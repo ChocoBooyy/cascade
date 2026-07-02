@@ -10,7 +10,7 @@ import java.util.random.RandomGenerator;
 
 public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
         CurveSpec size, CurveSpec alpha, ColorSpec color,
-        List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+        List<ComponentSpec> modifiers, EmissionSpec emission, RenderSpec render,
         RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail,
         VelocitySpec velocity) {
 
@@ -21,27 +21,27 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-            List<ModifierSpec> modifiers) {
+            List<ComponentSpec> modifiers) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, EmissionSpec.burst());
     }
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-            List<ModifierSpec> modifiers, EmissionSpec emission) {
+            List<ComponentSpec> modifiers, EmissionSpec emission) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
                 RenderSpec.DEFAULT, RotationSpec.NONE, CollisionSpec.NONE);
     }
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render, RotationSpec rotation) {
+            List<ComponentSpec> modifiers, EmissionSpec emission, RenderSpec render, RotationSpec rotation) {
         this(shape, count, lifetime, speed, size, alpha, colorStart, colorEnd, colorEase, modifiers, emission,
                 render, rotation, CollisionSpec.NONE);
     }
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+            List<ComponentSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision) {
         this(shape, count, lifetime, speed, size, alpha, ColorSpec.of(colorStart, colorEnd, colorEase), modifiers,
                 emission, render, rotation, collision, null, TrailSpec.NONE, VelocitySpec.RADIAL);
@@ -49,7 +49,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+            List<ComponentSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter) {
         this(shape, count, lifetime, speed, size, alpha, ColorSpec.of(colorStart, colorEnd, colorEase), modifiers,
                 emission, render, rotation, collision, subEmitter, TrailSpec.NONE, VelocitySpec.RADIAL);
@@ -57,7 +57,7 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
 
     public EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
             CurveSpec size, CurveSpec alpha, int colorStart, int colorEnd, Easings colorEase,
-            List<ModifierSpec> modifiers, EmissionSpec emission, RenderSpec render,
+            List<ComponentSpec> modifiers, EmissionSpec emission, RenderSpec render,
             RotationSpec rotation, CollisionSpec collision, SubEmitterSpec subEmitter, TrailSpec trail) {
         this(shape, count, lifetime, speed, size, alpha, ColorSpec.of(colorStart, colorEnd, colorEase), modifiers,
                 emission, render, rotation, collision, subEmitter, trail, VelocitySpec.RADIAL);
@@ -74,8 +74,8 @@ public record EmitterSpec(ShapeSpec shape, int count, int lifetime, float speed,
     // density (0..1) thins spawn counts so a renderer can honor a quality setting. 1 is unchanged.
     public ParticleSystem build(RandomGenerator rng, CollisionProbe probe, float density) {
         List<ParticleModifier> built = new ArrayList<>(modifiers.size());
-        for (ModifierSpec m : modifiers) {
-            built.add(m.toModifier());
+        for (ComponentSpec c : modifiers) {
+            built.add(c.toModifier());
         }
         int scaledCount = density >= 1f ? count : Math.max(0, Math.round(count * density));
         boolean onDeath = subEmitter != null && subEmitter.trigger() == SubEmitterSpec.Trigger.DEATH;

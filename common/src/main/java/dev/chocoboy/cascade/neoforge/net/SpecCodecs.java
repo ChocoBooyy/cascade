@@ -3,11 +3,11 @@ package dev.chocoboy.cascade.neoforge.net;
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionSpec;
+import dev.chocoboy.cascade.engine.effect.ComponentSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
-import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
@@ -54,19 +54,6 @@ public final class SpecCodecs {
             COLOR_STOPS, ColorSpec::stops,
             EASING, ColorSpec::ease,
             ColorSpec::new);
-
-    private static final StreamCodec<ByteBuf, ModifierSpec.Kind> MODIFIER_KIND =
-            ByteBufCodecs.idMapper(i -> ModifierSpec.Kind.values()[i], Enum::ordinal);
-
-    private static final StreamCodec<RegistryFriendlyByteBuf, ModifierSpec> MODIFIER = StreamCodec.composite(
-            MODIFIER_KIND, ModifierSpec::kind,
-            NetCodecs.VEC3F, ModifierSpec::vec,
-            ByteBufCodecs.FLOAT, ModifierSpec::a,
-            ByteBufCodecs.FLOAT, ModifierSpec::b,
-            ModifierSpec::new);
-
-    private static final StreamCodec<RegistryFriendlyByteBuf, List<ModifierSpec>> MODIFIERS =
-            MODIFIER.apply(ByteBufCodecs.collection(ArrayList::new));
 
     private static final StreamCodec<ByteBuf, EmissionSpec.Mode> EMISSION_MODE =
             ByteBufCodecs.idMapper(i -> EmissionSpec.Mode.values()[i], Enum::ordinal);
@@ -144,7 +131,7 @@ public final class SpecCodecs {
                 CURVE.encode(buf, s.size());
                 CURVE.encode(buf, s.alpha());
                 COLOR.encode(buf, s.color());
-                MODIFIERS.encode(buf, s.modifiers());
+                ComponentCodecs.LIST.encode(buf, s.modifiers());
                 EMISSION.encode(buf, s.emission());
                 RENDER.encode(buf, s.render());
                 ROTATION.encode(buf, s.rotation());
@@ -166,7 +153,7 @@ public final class SpecCodecs {
                 CurveSpec size = CURVE.decode(buf);
                 CurveSpec alpha = CURVE.decode(buf);
                 ColorSpec color = COLOR.decode(buf);
-                List<ModifierSpec> modifiers = MODIFIERS.decode(buf);
+                List<ComponentSpec> modifiers = ComponentCodecs.LIST.decode(buf);
                 EmissionSpec emission = EMISSION.decode(buf);
                 RenderSpec render = RENDER.decode(buf);
                 RotationSpec rotation = ROTATION.decode(buf);

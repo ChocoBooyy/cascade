@@ -1,17 +1,23 @@
 package dev.chocoboy.cascade.neoforge;
 
+import dev.chocoboy.cascade.engine.effect.AttractorSpec;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionSpec;
+import dev.chocoboy.cascade.engine.effect.ComponentSpec;
+import dev.chocoboy.cascade.engine.effect.CurlSpec;
+import dev.chocoboy.cascade.engine.effect.DragSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.GravitySpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
-import dev.chocoboy.cascade.engine.effect.ModifierSpec;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
+import dev.chocoboy.cascade.engine.effect.TurbulenceSpec;
 import dev.chocoboy.cascade.engine.effect.VelocitySpec;
+import dev.chocoboy.cascade.engine.effect.VortexSpec;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.ColorSpec;
@@ -34,7 +40,7 @@ public final class VfxEmitter {
     private CurveSpec size;
     private CurveSpec alpha;
     private ColorSpec color;
-    private final List<ModifierSpec> modifiers = new ArrayList<>();
+    private final List<ComponentSpec> modifiers = new ArrayList<>();
     private EmissionSpec emission = EmissionSpec.burst();
     private BlendMode blend = BlendMode.ADDITIVE;
     private SpriteId sprite = SpriteId.GLOW;
@@ -104,34 +110,34 @@ public final class VfxEmitter {
     }
 
     public VfxEmitter gravity(float x, float y, float z) {
-        return modifier(ModifierSpec.gravity(new Vec3f(x, y, z)));
+        return component(new GravitySpec(new Vec3f(x, y, z)));
     }
 
     public VfxEmitter drag(float drag) {
-        return modifier(ModifierSpec.drag(drag));
+        return component(new DragSpec(drag));
     }
 
     public VfxEmitter turbulence(float strength, float frequency) {
-        return modifier(ModifierSpec.turbulence(strength, frequency));
+        return component(new TurbulenceSpec(strength, frequency));
     }
 
     // pull particles toward a point in emitter-local space; negative strength pushes them away
     public VfxEmitter attractor(float x, float y, float z, float strength) {
-        return modifier(ModifierSpec.attractor(new Vec3f(x, y, z), strength));
+        return component(new AttractorSpec(new Vec3f(x, y, z), strength));
     }
 
     // swirl particles around the vertical axis through the given emitter-local point
     public VfxEmitter vortex(float x, float y, float z, float strength) {
-        return modifier(ModifierSpec.vortex(new Vec3f(x, y, z), strength));
+        return component(new VortexSpec(new Vec3f(x, y, z), strength));
     }
 
     // divergence-free curl noise, a smoother fluid-like flow than plain turbulence
     public VfxEmitter curl(float strength, float frequency) {
-        return modifier(ModifierSpec.curl(strength, frequency));
+        return component(new CurlSpec(strength, frequency));
     }
 
-    public VfxEmitter modifier(ModifierSpec modifier) {
-        modifiers.add(modifier);
+    public VfxEmitter component(ComponentSpec component) {
+        modifiers.add(component);
         return this;
     }
 

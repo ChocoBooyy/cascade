@@ -30,7 +30,7 @@ class EmitterSpecTest {
                 new CurveSpec(0.3f, 0f, Easings.LINEAR),
                 new CurveSpec(1f, 0f, Easings.LINEAR),
                 0xFFFFFF, 0xFFFFFF, Easings.LINEAR,
-                List.of(ModifierSpec.gravity(new Vec3f(0f, -0.1f, 0f))));
+                List.of(new GravitySpec(new Vec3f(0f, -0.1f, 0f))));
         ParticleSystem sys = spec.build(new Random(1));
         Particle p = sys.particles().get(0);
         float startY = p.pos.y();

@@ -148,6 +148,12 @@ public final class ParticleSystem implements EffectSim {
                 spawnRequests.add(p.pos);
                 p.collided = true;
             }
+            // second pass for modifiers that react to the integrated position, not just velocity
+            for (int m = 0; m < modifiers.size(); m++) {
+                if (modifiers.get(m) instanceof PostUpdate post) {
+                    post.postUpdate(p);
+                }
+            }
             p.rotation += p.spin;
             if (tumble) {
                 p.pitch += p.pitchSpin;
