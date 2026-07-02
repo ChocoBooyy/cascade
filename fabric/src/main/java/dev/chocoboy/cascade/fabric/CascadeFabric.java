@@ -10,9 +10,14 @@ import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
 
 public final class CascadeFabric implements ModInitializer {
@@ -24,6 +29,20 @@ public final class CascadeFabric implements ModInitializer {
         registerPayloads();
         ServerTickEvents.END_SERVER_TICK.register(server -> VfxSequencer.get().tick());
         ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new FabricEffectsReload());
+        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            registerDevCommand();
+        }
+    }
+
+    // dev-only parity check for the fabric port: /cascadefab fires a burst at the player. guarded so it
+    // never reaches a shipped build
+    private static void registerDevCommand() {
+        CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) ->
+                dispatcher.register(Commands.literal("cascadefab").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    Vfx.burst((ServerLevel) player.level(), player.position().add(0.0, 1.0, 0.0));
+                    return 1;
+                })));
     }
 
     private static void registerPayloads() {
