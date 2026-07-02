@@ -13,6 +13,7 @@ import dev.chocoboy.cascade.engine.effect.DragSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.FlockSpec;
 import dev.chocoboy.cascade.engine.effect.GravitySpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
@@ -101,6 +102,14 @@ public final class EffectJson {
             Codec.FLOAT.fieldOf("frequency").forGetter(CurlSpec::frequency)
     ).apply(i, CurlSpec::new));
 
+    private static final MapCodec<FlockSpec> FLOCK = RecordCodecBuilder.mapCodec(i -> i.group(
+            Codec.FLOAT.fieldOf("radius").forGetter(FlockSpec::radius),
+            Codec.FLOAT.fieldOf("separation").forGetter(FlockSpec::separation),
+            Codec.FLOAT.fieldOf("alignment").forGetter(FlockSpec::alignment),
+            Codec.FLOAT.fieldOf("cohesion").forGetter(FlockSpec::cohesion),
+            Codec.FLOAT.fieldOf("maxSpeed").forGetter(FlockSpec::maxSpeed)
+    ).apply(i, FlockSpec::new));
+
     private static final Map<String, MapCodec<? extends ComponentSpec>> COMPONENTS = new HashMap<>();
 
     static {
@@ -110,6 +119,7 @@ public final class EffectJson {
         COMPONENTS.put("attractor", ATTRACTOR);
         COMPONENTS.put("vortex", VORTEX);
         COMPONENTS.put("curl", CURL);
+        COMPONENTS.put("flock", FLOCK);
     }
 
     // consumers call this at init so their component type resolves when a datapack names it

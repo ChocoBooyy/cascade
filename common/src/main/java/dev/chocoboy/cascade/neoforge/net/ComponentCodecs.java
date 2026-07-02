@@ -4,6 +4,7 @@ import dev.chocoboy.cascade.engine.effect.AttractorSpec;
 import dev.chocoboy.cascade.engine.effect.ComponentSpec;
 import dev.chocoboy.cascade.engine.effect.CurlSpec;
 import dev.chocoboy.cascade.engine.effect.DragSpec;
+import dev.chocoboy.cascade.engine.effect.FlockSpec;
 import dev.chocoboy.cascade.engine.effect.GravitySpec;
 import dev.chocoboy.cascade.engine.effect.TurbulenceSpec;
 import dev.chocoboy.cascade.engine.effect.VortexSpec;
@@ -44,6 +45,13 @@ public final class ComponentCodecs {
                 ByteBufCodecs.FLOAT, CurlSpec::strength,
                 ByteBufCodecs.FLOAT, CurlSpec::frequency,
                 CurlSpec::new));
+        register("flock", StreamCodec.composite(
+                ByteBufCodecs.FLOAT, FlockSpec::radius,
+                ByteBufCodecs.FLOAT, FlockSpec::separation,
+                ByteBufCodecs.FLOAT, FlockSpec::alignment,
+                ByteBufCodecs.FLOAT, FlockSpec::cohesion,
+                ByteBufCodecs.FLOAT, FlockSpec::maxSpeed,
+                FlockSpec::new));
     }
 
     // consumers call this at init, before any effect crosses the wire, to add their own kinds

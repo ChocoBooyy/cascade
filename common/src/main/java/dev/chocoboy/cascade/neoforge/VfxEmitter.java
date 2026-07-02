@@ -8,6 +8,7 @@ import dev.chocoboy.cascade.engine.effect.CurlSpec;
 import dev.chocoboy.cascade.engine.effect.DragSpec;
 import dev.chocoboy.cascade.engine.effect.EmissionSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.FlockSpec;
 import dev.chocoboy.cascade.engine.effect.GravitySpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
@@ -134,6 +135,11 @@ public final class VfxEmitter {
     // divergence-free curl noise, a smoother fluid-like flow than plain turbulence
     public VfxEmitter curl(float strength, float frequency) {
         return component(new CurlSpec(strength, frequency));
+    }
+
+    // boids flocking: neighbors within radius separate, align headings, and cohere, capped at maxSpeed
+    public VfxEmitter flock(float radius, float separation, float alignment, float cohesion, float maxSpeed) {
+        return component(new FlockSpec(radius, separation, alignment, cohesion, maxSpeed));
     }
 
     public VfxEmitter component(ComponentSpec component) {

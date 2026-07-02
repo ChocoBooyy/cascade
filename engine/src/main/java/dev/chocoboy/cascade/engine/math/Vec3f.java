@@ -8,6 +8,18 @@ public record Vec3f(float x, float y, float z) {
         return new Vec3f(x + o.x, y + o.y, z + o.z);
     }
 
+    public Vec3f sub(Vec3f o) {
+        return new Vec3f(x - o.x, y - o.y, z - o.z);
+    }
+
+    public float dot(Vec3f o) {
+        return x * o.x + y * o.y + z * o.z;
+    }
+
+    public float lengthSq() {
+        return x * x + y * y + z * z;
+    }
+
     public Vec3f scale(float s) {
         return new Vec3f(x * s, y * s, z * s);
     }
