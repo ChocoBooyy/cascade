@@ -135,6 +135,11 @@ public final class CascadeTestCommands {
                 .then(Commands.literal("softsmoke").executes(ctx -> {
                     softSmoke(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("component").executes(ctx -> {
+                    CommandSourceStack src = ctx.getSource();
+                    component(src.getLevel(), src.getPosition().add(0.0, 1.5, 0.0));
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -169,6 +174,20 @@ public final class CascadeTestCommands {
         }
         // lift the base a touch so the big billboards straddle the surface instead of spawning fully buried
         f.play(level, pos.add(0.0, 0.4, 0.0));
+    }
+
+    // a fast outward burst caught on an invisible sphere by a third-party contain component, proving custom
+    // components register and run without any engine change. particles rush out then pile up on the shell
+    private static void component(ServerLevel level, Vec3 pos) {
+        Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.2f))
+                .count(120).lifetime(50).speed(0.3f)
+                .size(0.14f, 0.06f, Easings.LINEAR)
+                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                .color(0x66FF88, 0x1188AA, Easings.LINEAR)
+                .component(new ContainSpec(2.5f))
+                .sprite(SpriteId.SPARK).stretch(1.5f).trail(4)
+                .play(level, pos);
     }
 
     // Gravity Star: a kunai impact opens a purple gravity zone that draws matter straight inward, a steady

@@ -28,6 +28,7 @@ import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.ColorSpec;
 import dev.chocoboy.cascade.engine.tween.CurveSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -100,13 +101,21 @@ public final class EffectJson {
             Codec.FLOAT.fieldOf("frequency").forGetter(CurlSpec::frequency)
     ).apply(i, CurlSpec::new));
 
-    private static final Map<String, MapCodec<? extends ComponentSpec>> COMPONENTS = Map.of(
-            "gravity", GRAVITY,
-            "drag", DRAG,
-            "turbulence", TURBULENCE,
-            "attractor", ATTRACTOR,
-            "vortex", VORTEX,
-            "curl", CURL);
+    private static final Map<String, MapCodec<? extends ComponentSpec>> COMPONENTS = new HashMap<>();
+
+    static {
+        COMPONENTS.put("gravity", GRAVITY);
+        COMPONENTS.put("drag", DRAG);
+        COMPONENTS.put("turbulence", TURBULENCE);
+        COMPONENTS.put("attractor", ATTRACTOR);
+        COMPONENTS.put("vortex", VORTEX);
+        COMPONENTS.put("curl", CURL);
+    }
+
+    // consumers call this at init so their component type resolves when a datapack names it
+    public static void register(String typeId, MapCodec<? extends ComponentSpec> codec) {
+        COMPONENTS.put(typeId, codec);
+    }
 
     public static final Codec<ComponentSpec> COMPONENT = Codec.STRING.<ComponentSpec>partialDispatch(
             "type",

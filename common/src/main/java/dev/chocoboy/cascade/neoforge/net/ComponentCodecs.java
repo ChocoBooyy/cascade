@@ -46,8 +46,9 @@ public final class ComponentCodecs {
                 CurlSpec::new));
     }
 
+    // consumers call this at init, before any effect crosses the wire, to add their own kinds
     @SuppressWarnings("unchecked")
-    private static <T extends ComponentSpec> void register(String type, StreamCodec<RegistryFriendlyByteBuf, T> codec) {
+    public static <T extends ComponentSpec> void register(String type, StreamCodec<RegistryFriendlyByteBuf, T> codec) {
         CODECS.put(type, (StreamCodec<RegistryFriendlyByteBuf, ComponentSpec>) codec);
     }
 

@@ -1,14 +1,20 @@
 package dev.chocoboy.cascade.neoforge;
 
+import com.mojang.serialization.MapCodec;
 import dev.chocoboy.cascade.engine.effect.BeamSpec;
+import dev.chocoboy.cascade.engine.effect.ComponentSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
+import dev.chocoboy.cascade.neoforge.net.ComponentCodecs;
 import dev.chocoboy.cascade.neoforge.net.DomePayload;
+import dev.chocoboy.cascade.neoforge.net.EffectJson;
 import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
@@ -25,6 +31,13 @@ public final class Vfx {
     // the loader installs its send strategy at init, before any effect can be played
     public static void sender(NetworkSender networkSender) {
         sender = networkSender;
+    }
+
+    // register a custom component on both client and server at init, so it resolves on both ends of the wire
+    public static void registerComponent(String typeId, StreamCodec<RegistryFriendlyByteBuf, ? extends ComponentSpec> network,
+            MapCodec<? extends ComponentSpec> json) {
+        ComponentCodecs.register(typeId, network);
+        EffectJson.register(typeId, json);
     }
 
     public static void shake(ServerLevel level, Vec3 pos, float magnitude, int duration) {
