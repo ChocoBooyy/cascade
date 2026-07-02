@@ -11,12 +11,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // loads datapack-authored effects from data/<namespace>/cascade/effects/*.json into a named registry,
-// so Vfx.play can fire an effect by id. Server side, reloaded with the rest of the datapacks.
+// so Vfx.play can fire an effect by id. Server side, reloaded with the rest of the datapacks. Each loader
+// registers an instance with its own reload-listener hook
 public final class CascadeEffects extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
@@ -29,10 +29,6 @@ public final class CascadeEffects extends SimpleJsonResourceReloadListener {
 
     public static EffectSpec get(ResourceLocation id) {
         return EFFECTS.get(id);
-    }
-
-    public static void onAddReloadListener(AddReloadListenerEvent event) {
-        event.addListener(new CascadeEffects());
     }
 
     @Override

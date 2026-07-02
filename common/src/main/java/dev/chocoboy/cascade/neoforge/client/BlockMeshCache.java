@@ -12,7 +12,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.model.data.ModelData;
 
 // resolves a block id to the flat list of its baked model quads, cached per id. The model and atlas are
 // client state, so this stays out of the engine. Unknown ids yield no quads, so a bad id draws nothing
@@ -37,10 +36,10 @@ final class BlockMeshCache {
         BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
         List<BakedQuad> quads = new ArrayList<>();
         RANDOM.setSeed(42L);
-        quads.addAll(model.getQuads(state, null, RANDOM, ModelData.EMPTY, null));
+        quads.addAll(model.getQuads(state, null, RANDOM));
         for (Direction dir : Direction.values()) {
             RANDOM.setSeed(42L);
-            quads.addAll(model.getQuads(state, dir, RANDOM, ModelData.EMPTY, null));
+            quads.addAll(model.getQuads(state, dir, RANDOM));
         }
         return quads;
     }

@@ -43,7 +43,7 @@ public final class BeamEffect implements RenderedEffect {
     public void render(VfxFrame frame) {
         Vec3 cam = frame.cameraPos();
         Matrix4f m = frame.pose().last().pose();
-        VertexConsumer vc = frame.buffers().getBuffer(VfxRenderTypes.ADDITIVE);
+        VertexConsumer vc = frame.buffers().getBuffer(CascadeRenderTypes.additive());
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
