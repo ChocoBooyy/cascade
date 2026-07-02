@@ -78,8 +78,15 @@ public final class VfxRenderManager {
     // draw the visible effects for this frame. the loader supplies the frame's pose, shared buffer source
     // and camera, since it reads those from its own render event
     public void render(PoseStack pose, MultiBufferSource.BufferSource buffers, Quaternionf camRot, Vec3 camPos) {
+        render(pose, buffers, camRot, camPos, true);
+    }
+
+    // the bloom capture pass re-renders the same frame into an offscreen target and must not refresh the
+    // soft depth copy: copyFromMain rebinds the main target mid-pass, which would send the capture draw there
+    boolean render(PoseStack pose, MultiBufferSource.BufferSource buffers, Quaternionf camRot, Vec3 camPos,
+            boolean refreshSoftDepth) {
         if (active.isEmpty()) {
-            return;
+            return false;
         }
         VfxFrame frame = new VfxFrame(pose, buffers, camRot, camPos);
 
@@ -101,7 +108,7 @@ public final class VfxRenderManager {
                 break;
             }
         }
-        if (anySoft) {
+        if (anySoft && refreshSoftDepth) {
             SoftDepth.copyFromMain();
             if (CascadeShaders.soft() != null) {
                 CascadeShaders.soft().setSampler("DepthSampler", SoftDepth.depthTextureId());
@@ -135,6 +142,7 @@ public final class VfxRenderManager {
         if (failed != null) {
             active.removeAll(failed);
         }
+        return !visible.isEmpty();
     }
 
     private void logOnce(String what, RuntimeException e) {

@@ -33,6 +33,9 @@ public final class CascadeFabricClient implements ClientModInitializer {
             Camera cam = context.camera();
             VfxRenderManager.get().render(context.matrixStack(),
                     Minecraft.getInstance().renderBuffers().bufferSource(), cam.rotation(), cam.getPosition());
+            // the bloom capture re-renders here, in the same stage, so the frame's matrices still match
+            PostFx.captureVfx(context.matrixStack(),
+                    Minecraft.getInstance().renderBuffers().bufferSource(), cam.rotation(), cam.getPosition());
         });
         WorldRenderEvents.END.register(context ->
                 PostFx.process(context.tickCounter().getGameTimeDeltaPartialTick(false)));

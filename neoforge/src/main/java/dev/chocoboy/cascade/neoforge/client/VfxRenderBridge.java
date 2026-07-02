@@ -21,6 +21,8 @@ public final class VfxRenderBridge {
             Camera camera = event.getCamera();
             MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
             VfxRenderManager.get().render(event.getPoseStack(), buffers, camera.rotation(), camera.getPosition());
+            // the bloom capture re-renders here, in the same stage, so the frame's matrices still match
+            PostFx.captureVfx(event.getPoseStack(), buffers, camera.rotation(), camera.getPosition());
             return;
         }
         // run post fx after the whole level, so it captures particles too
