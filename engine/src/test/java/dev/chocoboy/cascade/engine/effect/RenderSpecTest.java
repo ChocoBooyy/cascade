@@ -20,6 +20,13 @@ class RenderSpecTest {
     }
 
     @Test
+    void carriesAnItemMesh() {
+        RenderSpec r = new RenderSpec(BlendMode.ADDITIVE, SpriteId.GLOW, 0f, false, true, MeshId.ITEM, "minecraft:stick", false);
+        assertEquals(MeshId.ITEM, r.mesh());
+        assertEquals("minecraft:stick", r.meshModel());
+    }
+
+    @Test
     void defaultIsNotSoft() {
         assertEquals(false, RenderSpec.DEFAULT.soft());
     }

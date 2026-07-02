@@ -15,10 +15,14 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -78,6 +82,9 @@ public final class ParticleBurstEffect implements RenderedEffect {
     @Override
     public int drawCount() {
         int n = sim.particles().size();
+        if (render.mesh() == MeshId.ITEM) {
+            return n * 4;
+        }
         if (render.mesh() == MeshId.BLOCK) {
             return n * Math.max(1, BlockMeshCache.quadsFor(render.meshModel()).size());
         }
@@ -91,6 +98,10 @@ public final class ParticleBurstEffect implements RenderedEffect {
 
     @Override
     public void render(VfxFrame frame) {
+        if (render.mesh() == MeshId.ITEM) {
+            renderItemMesh(frame);
+            return;
+        }
         if (render.mesh() == MeshId.BLOCK) {
             renderBlockMesh(frame);
             return;
@@ -198,6 +209,38 @@ public final class ParticleBurstEffect implements RenderedEffect {
                 for (int i = 0; i < quads.size(); i++) {
                     vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
                 }
+            } finally {
+                pose.popPose();
+            }
+        }
+    }
+
+    private void renderItemMesh(VfxFrame frame) {
+        ItemStack stack = ItemMeshCache.stackFor(render.meshModel());
+        if (stack.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Level level = mc.level;
+        Vec3 cam = frame.cameraPos();
+        PoseStack pose = frame.pose();
+        MultiBufferSource buffers = frame.buffers();
+        ItemRenderer items = mc.getItemRenderer();
+        Quaternionf rot = new Quaternionf();
+        for (Particle p : sim.particles()) {
+            float s = sim.sizeOf(p) * 3f;   // GROUND transform already shrinks the model, so scale up to match
+            float wx = (float) (origin.x + p.pos.x() - cam.x);
+            float wy = (float) (origin.y + p.pos.y() - cam.y);
+            float wz = (float) (origin.z + p.pos.z() - cam.z);
+            int light = level != null ? LevelRenderer.getLightColor(level, BlockPos.containing(
+                    origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z())) : 0xF000F0;
+            pose.pushPose();
+            try {
+                pose.translate(wx, wy, wz);
+                pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                pose.scale(s, s, s);
+                items.renderStatic(stack, ItemDisplayContext.GROUND, light, OverlayTexture.NO_OVERLAY,
+                        pose, buffers, level, 0);
             } finally {
                 pose.popPose();
             }

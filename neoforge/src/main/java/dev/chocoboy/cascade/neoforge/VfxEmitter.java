@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
@@ -198,6 +199,14 @@ public final class VfxEmitter {
     public VfxEmitter block(Block block) {
         this.mesh = MeshId.BLOCK;
         this.meshModel = BuiltInRegistries.BLOCK.getKey(block).toString();
+        return this;
+    }
+
+    // draw particles as falling copies of a real item model, for coin bursts and shrapnel. pair with a spin.
+    // opaque like the other meshes, so fade by the size curve, not alpha
+    public VfxEmitter item(Item item) {
+        this.mesh = MeshId.ITEM;
+        this.meshModel = BuiltInRegistries.ITEM.getKey(item).toString();
         return this;
     }
 
