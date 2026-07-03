@@ -2,6 +2,7 @@ package dev.chocoboy.cascade.testmod;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.chocoboy.cascade.Vfx;
 import dev.chocoboy.cascade.VfxEmitter;
 import dev.chocoboy.cascade.VfxSequence;
@@ -16,6 +17,7 @@ import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.Random;
+import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -39,150 +41,102 @@ public final class CascadeTestCommands {
     private CascadeTestCommands() {
     }
 
+    // a showcase leaf: name it, and run the action against the command source
+    private static LiteralArgumentBuilder<CommandSourceStack> show(String name, Consumer<CommandSourceStack> action) {
+        return Commands.literal(name).executes(ctx -> {
+            action.accept(ctx.getSource());
+            return Command.SINGLE_SUCCESS;
+        });
+    }
+
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("vfxtest")
-                .then(Commands.literal("burst").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    burst(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("beam").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    Vec3 from = src.getPosition();
-                    Vec3 to = from.add(lookVector(src).scale(10.0));
-                    Vfx.beam(src.getLevel(), from, to);
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("combo").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    combo(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("shake").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    Vfx.shake(src.getLevel(), src.getPosition(), 3.0f, 12);
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("custom").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    Vfx.play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0),
-                            ResourceLocation.fromNamespaceAndPath("cascade", "firework"));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("custombeam").executes(ctx -> {
-                    customBeam(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("singularity").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    singularity(src.getLevel(), src.getPosition().add(0.0, 2.2, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("gravitywell").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    gravityWell(src.getLevel(), src.getPosition().add(0.0, 2.5, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("gravitystar").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    Vec3 impact = onGround(src.getLevel(), src.getPosition(), src.getEntity());
-                    gravityStar(src.getLevel(), impact.add(0.0, 0.6, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("splash").executes(ctx -> {
-                    splash(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("layered").executes(ctx -> {
-                    layered(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("debris").executes(ctx -> {
-                    debris(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("blockdebris").executes(ctx -> {
-                    blockDebris(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("itemdebris").executes(ctx -> {
-                    itemDebris(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("softsmoke").executes(ctx -> {
-                    softSmoke(ctx.getSource());
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("component").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    component(src.getLevel(), src.getPosition().add(0.0, 1.5, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("boids").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    boids(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("storm").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    storm(src.getLevel(), src.getPosition().add(0.0, 3.0, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
-                .then(Commands.literal("sdf").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    sdfCluster(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
-                    return Command.SINGLE_SUCCESS;
-                }))
+        // one root for every showcase. each leaf runs at the source position, most lifted a little so
+        // airbursts read clear of the ground
+        event.getDispatcher().register(Commands.literal("cascade")
+                // primitives and one-liners
+                .then(show("burst", src -> burst(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
+                .then(show("firework", src -> Vfx.play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0),
+                        ResourceLocation.fromNamespaceAndPath("cascade", "firework"))))
+                .then(show("beam", src -> Vfx.beam(src.getLevel(), src.getPosition(),
+                        src.getPosition().add(lookVector(src).scale(10.0)))))
+                .then(show("custombeam", CascadeTestCommands::customBeam))
+                .then(show("dome", src -> standaloneDome(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
+                .then(show("shake", src -> Vfx.shake(src.getLevel(), src.getPosition(), 3.0f, 12)))
+                .then(show("light", src -> standaloneLight(src.getLevel(),
+                        onGround(src.getLevel(), src.getPosition(), src.getEntity()).add(0.0, 0.05, 0.0))))
+                // emitter appearance and motion
+                .then(show("splash", CascadeTestCommands::splash))
+                .then(show("layered", CascadeTestCommands::layered))
+                .then(show("smoke", src -> combo(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
+                .then(show("softsmoke", CascadeTestCommands::softSmoke))
+                .then(show("jet", src -> jet(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
+                .then(show("turbulence", src -> turbulence(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
+                .then(show("boids", src -> boids(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0))))
+                .then(show("component", src -> component(src.getLevel(), src.getPosition().add(0.0, 1.5, 0.0))))
+                // mesh particles
+                .then(show("debris", CascadeTestCommands::debris))
+                .then(show("blockdebris", CascadeTestCommands::blockDebris))
+                .then(show("itemdebris", CascadeTestCommands::itemDebris))
+                // advanced render
+                .then(show("sdf", src -> sdfCluster(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0))))
+                .then(show("storm", src -> storm(src.getLevel(), src.getPosition().add(0.0, 3.0, 0.0))))
+                // timeline set pieces
+                .then(show("singularity", src -> singularity(src.getLevel(), src.getPosition().add(0.0, 2.2, 0.0))))
+                .then(show("gravitywell", src -> gravityWell(src.getLevel(), src.getPosition().add(0.0, 2.5, 0.0))))
+                .then(show("gravitystar", src -> gravityStar(src.getLevel(),
+                        onGround(src.getLevel(), src.getPosition(), src.getEntity()).add(0.0, 0.6, 0.0))))
+                // the whole tour at once
                 .then(Commands.literal("gallery").executes(ctx -> gallery(ctx.getSource()))));
     }
 
     // client side, since bloom is client render state; toggling on the server would only work in singleplayer
     @SubscribeEvent
     public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("cascadebloom").executes(ctx -> {
-            boolean on = !PostFx.enabled();
-            PostFx.setEnabled(on);
-            ctx.getSource().sendSuccess(() -> Component.literal("bloom " + (on ? "on" : "off")), false);
-            return Command.SINGLE_SUCCESS;
-        }));
-        // hud particles are pure client render state too, so this stays a client command. sizes and speeds
-        // are gui units. a ring shape samples the xz plane and would flatten to a line on the hud, so the
-        // burst spawns on a sphere shell, which projects as a round ring of sparks
-        event.getDispatcher().register(Commands.literal("cascadescreen").executes(ctx -> {
-            ScreenVfx.playCentered(Vfx.emitter()
-                    .shape(ShapeSpec.sphere(30f))
-                    .count(90).lifetime(40).speed(2.5f)
-                    .size(8f, 0f, Easings.EASE_OUT_QUAD)
-                    .alpha(1f, 0f, Easings.LINEAR)
-                    .color(0xFFD75A, 0xFF4422, Easings.LINEAR)
-                    .gravity(0f, 0.15f, 0f)
-                    .sprite(SpriteId.SPARK));
-            return Command.SINGLE_SUCCESS;
-        }));
-        // gpu backend toggle; render state is client-side, so this stays a client command
-        event.getDispatcher().register(Commands.literal("cascadegpu").executes(ctx -> {
-            String status;
-            if (!GpuSim.available()) {
-                status = "gpu sim unavailable, needs gl 4.3";
-            } else {
-                boolean on = !GpuSim.enabled();
-                GpuSim.setEnabled(on);
-                status = "gpu sim " + (on ? "on" : "off");
-            }
-            ctx.getSource().sendSuccess(() -> Component.literal(status), false);
-            return Command.SINGLE_SUCCESS;
-        }));
-        // a client-local stress field for measuring render throughput: a grid of long lived spark systems
-        // around the player, no network involved, so fps under load compares cleanly between builds
-        event.getDispatcher().register(Commands.literal("cascadestress")
-                .then(Commands.argument("count", IntegerArgumentType.integer(1, 256)).executes(ctx -> {
-                    int count = IntegerArgumentType.getInteger(ctx, "count");
-                    spawnStressField(count);
-                    ctx.getSource().sendSuccess(
-                            () -> Component.literal("spawned " + count + " systems"), false);
+        // the client-only render toggles share the same root, on the client dispatcher. this group has no
+        // bare executes, so a server showcase like /cascade burst falls through to the server command above
+        event.getDispatcher().register(Commands.literal("cascade")
+                .then(Commands.literal("bloom").executes(ctx -> {
+                    boolean on = !PostFx.enabled();
+                    PostFx.setEnabled(on);
+                    ctx.getSource().sendSuccess(() -> Component.literal("bloom " + (on ? "on" : "off")), false);
                     return Command.SINGLE_SUCCESS;
-                })));
+                }))
+                // hud particles are client render state. sizes and speeds are gui units; a sphere shell
+                // projects as a round ring of sparks where a ring shape would flatten to a line on the hud
+                .then(Commands.literal("screen").executes(ctx -> {
+                    ScreenVfx.playCentered(Vfx.emitter()
+                            .shape(ShapeSpec.sphere(30f))
+                            .count(90).lifetime(40).speed(2.5f)
+                            .size(8f, 0f, Easings.EASE_OUT_QUAD)
+                            .alpha(1f, 0f, Easings.LINEAR)
+                            .color(0xFFD75A, 0xFF4422, Easings.LINEAR)
+                            .gravity(0f, 0.15f, 0f)
+                            .sprite(SpriteId.SPARK));
+                    return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("gpu").executes(ctx -> {
+                    String status;
+                    if (!GpuSim.available()) {
+                        status = "gpu sim unavailable, needs gl 4.3";
+                    } else {
+                        boolean on = !GpuSim.enabled();
+                        GpuSim.setEnabled(on);
+                        status = "gpu sim " + (on ? "on" : "off");
+                    }
+                    ctx.getSource().sendSuccess(() -> Component.literal(status), false);
+                    return Command.SINGLE_SUCCESS;
+                }))
+                // a client-local stress field for measuring render throughput: a grid of long lived spark
+                // systems around the player, no network involved, so fps under load compares between builds
+                .then(Commands.literal("stress")
+                        .then(Commands.argument("count", IntegerArgumentType.integer(1, 256)).executes(ctx -> {
+                            int count = IntegerArgumentType.getInteger(ctx, "count");
+                            spawnStressField(count);
+                            ctx.getSource().sendSuccess(
+                                    () -> Component.literal("spawned " + count + " systems"), false);
+                            return Command.SINGLE_SUCCESS;
+                        }))));
     }
 
     // the same path the network handler takes, minus the wire: build each system straight from the spec
@@ -222,6 +176,44 @@ public final class CascadeTestCommands {
             VfxRenderManager.get().spawn(new ParticleBurstEffect(
                     origin, spec.build(new Random(i)), spec.render(), spec.subEmitter(), 0));
         }
+    }
+
+    // the dome primitive on its own: a lone translucent force-field hemisphere
+    private static void standaloneDome(ServerLevel level, Vec3 pos) {
+        Vfx.dome(level, pos, 3.0f, 0x33CCFF, 60);
+    }
+
+    // the fake-light primitive on its own: a warm glow pooled on the ground, fading over its duration
+    private static void standaloneLight(ServerLevel level, Vec3 pos) {
+        Vfx.light(level, pos, 0xFFAA33, 5.0f, 40);
+    }
+
+    // a directional jet: particles fire up in a tight cone, the DIRECTIONAL velocity mode with a small spread
+    private static void jet(ServerLevel level, Vec3 pos) {
+        Vfx.emitter()
+                .shape(ShapeSpec.point())
+                .rate(6.0f, 60).lifetime(40).speed(0.5f)
+                .jet(0.0f, 1.0f, 0.0f, 0.25f)
+                .size(0.16f, 0.02f, Easings.LINEAR)
+                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, 0xFFF2A0, 0xFF6A2C, 0x882200)
+                .drag(0.02f)
+                .sprite(SpriteId.SPARK).stretch(2.0f).trail(4)
+                .play(level, pos);
+    }
+
+    // a rising ember column shoved around by turbulence noise, the chaotic-jitter force on its own
+    private static void turbulence(ServerLevel level, Vec3 pos) {
+        Vfx.emitter()
+                .shape(ShapeSpec.disc(0.4f))
+                .rate(8.0f, 70).lifetime(50).speed(0.05f)
+                .size(0.14f, 0.02f, Easings.LINEAR)
+                .alpha(1.0f, 0.0f, Easings.LINEAR)
+                .gradient(Easings.LINEAR, 0xFFD070, 0xFF5522, 0x551100)
+                .gravity(0.0f, 0.02f, 0.0f)
+                .turbulence(0.06f, 1.2f)
+                .sprite(SpriteId.SPARK).stretch(1.5f)
+                .play(level, pos);
     }
 
     // two low billowing smoke clouds that sit on the ground, four blocks apart, snapped to the surface. the
@@ -776,15 +768,17 @@ public final class CascadeTestCommands {
         }
         galleryRunning = true;
         ServerLevel level = src.getLevel();
-        String[] names = {"burst", "firework json", "layered", "splash", "debris", "block debris",
-                "item debris", "smoke lit vs unlit", "soft smoke", "custom beam", "component", "boids",
-                "sdf", "singularity", "gravity star", "storm"};
+        String[] names = {"burst", "firework json", "layered", "splash", "jet", "turbulence", "debris",
+                "block debris", "item debris", "smoke lit vs unlit", "soft smoke", "custom beam", "component",
+                "boids", "sdf", "singularity", "gravity star", "storm"};
         Runnable[] fires = {
                 () -> burst(level, src.getPosition().add(0.0, 1.0, 0.0)),
                 () -> Vfx.play(level, src.getPosition().add(0.0, 1.0, 0.0),
                         ResourceLocation.fromNamespaceAndPath("cascade", "firework")),
                 () -> layered(src),
                 () -> splash(src),
+                () -> jet(level, src.getPosition().add(0.0, 1.0, 0.0)),
+                () -> turbulence(level, src.getPosition().add(0.0, 1.0, 0.0)),
                 () -> debris(src),
                 () -> blockDebris(src),
                 () -> itemDebris(src),

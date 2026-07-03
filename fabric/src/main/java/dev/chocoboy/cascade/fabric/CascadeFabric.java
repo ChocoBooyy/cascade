@@ -35,15 +35,17 @@ public final class CascadeFabric implements ModInitializer {
         }
     }
 
-    // dev-only parity check for the fabric port: /cascadefab fires a burst at the player. guarded so it
-    // never reaches a shipped build
+    // dev-only parity check for the fabric port: /cascade burst fires at the player, matching the neoforge
+    // testmod's root. the full showcase lives on neoforge; this is just proof the fabric wiring renders.
+    // guarded so it never reaches a shipped build
     private static void registerDevCommand() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) ->
-                dispatcher.register(Commands.literal("cascadefab").executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                    Vfx.burst((ServerLevel) player.level(), player.position().add(0.0, 1.0, 0.0));
-                    return 1;
-                })));
+                dispatcher.register(Commands.literal("cascade")
+                        .then(Commands.literal("burst").executes(ctx -> {
+                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                            Vfx.burst((ServerLevel) player.level(), player.position().add(0.0, 1.0, 0.0));
+                            return 1;
+                        }))));
     }
 
     private static void registerPayloads() {
