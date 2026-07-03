@@ -52,6 +52,12 @@ public final class CascadeClientHandler {
     }
 
     private static void spawnEmitter(EmitterSpec spec, Vec3 origin, long seed, float density) {
+        // eligible specs run on the gpu backend when it is enabled; density is a cpu build-cost dial,
+        // so the gpu path ignores it and keeps the full count
+        if (GpuSim.shouldRun(spec)) {
+            VfxRenderManager.get().spawn(new GpuBurstEffect(origin, spec, seed));
+            return;
+        }
         CollisionProbe probe = spec.collision().enabled()
                 ? new LevelCollisionProbe(Minecraft.getInstance().level, origin)
                 : null;

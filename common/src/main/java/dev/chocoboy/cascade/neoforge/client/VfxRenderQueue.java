@@ -42,8 +42,12 @@ public final class VfxRenderQueue {
     private record DirectSubmission(Object owner, DirectWriter writer) {
     }
 
+    private record SelfSubmission(Object owner, Runnable draw) {
+    }
+
     private final Map<RenderType, List<Submission>> groups = new LinkedHashMap<>();
     private final List<DirectSubmission> direct = new ArrayList<>();
+    private final List<SelfSubmission> self = new ArrayList<>();
     private Object owner;
 
     // tags following submissions with the effect making them, so a playback failure traces back to it
@@ -57,6 +61,12 @@ public final class VfxRenderQueue {
 
     public void submitDirect(DirectWriter writer) {
         direct.add(new DirectSubmission(owner, writer));
+    }
+
+    // for effects that own their whole draw call (gpu-resident geometry). they play after the typed
+    // tiers, so their glow composites over everything the frame batched
+    public void submitSelf(Runnable draw) {
+        self.add(new SelfSubmission(owner, draw));
     }
 
     void play(MultiBufferSource.BufferSource buffers, FailureSink failures) {
@@ -75,6 +85,13 @@ public final class VfxRenderQueue {
         order.sort(Comparator.comparingInt(VfxRenderQueue::tier));
         for (RenderType type : order) {
             CascadeBatcher.draw(type, groups.get(type), failures);
+        }
+        for (SelfSubmission s : self) {
+            try {
+                s.draw().run();
+            } catch (RuntimeException e) {
+                failures.failed(s.owner(), e);
+            }
         }
     }
 

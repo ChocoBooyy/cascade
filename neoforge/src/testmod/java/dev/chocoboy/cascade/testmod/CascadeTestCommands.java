@@ -9,6 +9,7 @@ import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import dev.chocoboy.cascade.neoforge.VfxEmitter;
+import dev.chocoboy.cascade.neoforge.client.GpuSim;
 import dev.chocoboy.cascade.neoforge.client.ParticleBurstEffect;
 import dev.chocoboy.cascade.neoforge.client.PostFx;
 import dev.chocoboy.cascade.neoforge.client.ScreenVfx;
@@ -155,6 +156,11 @@ public final class CascadeTestCommands {
                     CommandSourceStack src = ctx.getSource();
                     boids(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("storm").executes(ctx -> {
+                    CommandSourceStack src = ctx.getSource();
+                    storm(src.getLevel(), src.getPosition().add(0.0, 3.0, 0.0));
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -179,6 +185,19 @@ public final class CascadeTestCommands {
                     .color(0xFFD75A, 0xFF4422, Easings.LINEAR)
                     .gravity(0f, 0.15f, 0f)
                     .sprite(SpriteId.SPARK));
+            return Command.SINGLE_SUCCESS;
+        }));
+        // gpu backend toggle; render state is client-side, so this stays a client command
+        event.getDispatcher().register(Commands.literal("cascadegpu").executes(ctx -> {
+            String status;
+            if (!GpuSim.available()) {
+                status = "gpu sim unavailable, needs gl 4.3";
+            } else {
+                boolean on = !GpuSim.enabled();
+                GpuSim.setEnabled(on);
+                status = "gpu sim " + (on ? "on" : "off");
+            }
+            ctx.getSource().sendSuccess(() -> Component.literal(status), false);
             return Command.SINGLE_SUCCESS;
         }));
         // a client-local stress field for measuring render throughput: a grid of long lived spark systems
@@ -276,6 +295,24 @@ public final class CascadeTestCommands {
                 .color(0x66FF88, 0x1188AA, Easings.LINEAR)
                 .component(new ContainSpec(2.5f))
                 .sprite(SpriteId.SPARK).stretch(1.5f).trail(4)
+                .play(level, pos);
+    }
+
+    // the gpu showcase: a hundred thousand sparks in one burst, swirled by a vortex against a weak inward
+    // pull so the cloud churns in place for its whole life. the spec is gpu-eligible on purpose; with the
+    // backend off it falls back to the cpu sim, which clips at its 4000 cap, so the toggle is its own A/B
+    private static void storm(ServerLevel level, Vec3 pos) {
+        Vfx.emitter()
+                .shape(ShapeSpec.sphere(2.0f))
+                .count(100000).lifetime(300).speed(0.05f)
+                .size(0.06f, 0.02f, Easings.LINEAR)
+                .alpha(1.0f, 0.0f, Easings.EASE_IN_QUAD)
+                .gradient(Easings.LINEAR, 0xFFE9A8, 0xFF9C33, 0xB03A9C, 0x3A2C86)
+                .vortex(0.0f, 0.0f, 0.0f, 0.012f)
+                .attractor(0.0f, 0.0f, 0.0f, 0.003f)
+                .drag(0.01f)
+                .spin(0.25f)
+                .sprite(SpriteId.SPARK)
                 .play(level, pos);
     }
 
