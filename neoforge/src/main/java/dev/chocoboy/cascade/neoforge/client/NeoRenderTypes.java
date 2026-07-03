@@ -49,4 +49,14 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
     public RenderType texturedAlphaLitSoft() {
         return VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT;
     }
+
+    @Override
+    public RenderType guiTexturedAdditive() {
+        return VfxRenderTypes.GUI_TEXTURED_ADDITIVE;
+    }
+
+    @Override
+    public RenderType guiTexturedAlpha() {
+        return VfxRenderTypes.GUI_TEXTURED_ALPHA;
+    }
 }

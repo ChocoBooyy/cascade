@@ -117,6 +117,12 @@ public final class FabricRenderTypes implements CascadeRenderTypes.Provider {
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .createCompositeState(false));
 
+    private static final RenderType GUI_TEXTURED_ADDITIVE = guiTextured("cascade_gui_textured_additive",
+            RenderStateShard.ADDITIVE_TRANSPARENCY);
+
+    private static final RenderType GUI_TEXTURED_ALPHA = guiTextured("cascade_gui_textured_alpha",
+            RenderStateShard.TRANSLUCENT_TRANSPARENCY);
+
     private static RenderType textured(String name, RenderStateShard.TransparencyStateShard transparency) {
         return RenderType.create(
                 name,
@@ -131,6 +137,25 @@ public final class FabricRenderTypes implements CascadeRenderTypes.Provider {
                         .setTransparencyState(transparency)
                         .setCullState(RenderStateShard.NO_CULL)
                         .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .createCompositeState(false));
+    }
+
+    // gui twins: NO_DEPTH_TEST so the hud pass draws them regardless of leftover scene depth, no depth write
+    private static RenderType guiTextured(String name, RenderStateShard.TransparencyStateShard transparency) {
+        return RenderType.create(
+                name,
+                DefaultVertexFormat.POSITION_TEX_COLOR,
+                VertexFormat.Mode.QUADS,
+                1536,
+                false,
+                true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_TEX_COLOR)
+                        .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
+                        .setTransparencyState(transparency)
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
                         .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                         .createCompositeState(false));
     }
@@ -197,5 +222,15 @@ public final class FabricRenderTypes implements CascadeRenderTypes.Provider {
     @Override
     public RenderType texturedAlphaLitSoft() {
         return TEXTURED_ALPHA_LIT_SOFT;
+    }
+
+    @Override
+    public RenderType guiTexturedAdditive() {
+        return GUI_TEXTURED_ADDITIVE;
+    }
+
+    @Override
+    public RenderType guiTexturedAlpha() {
+        return GUI_TEXTURED_ALPHA;
     }
 }

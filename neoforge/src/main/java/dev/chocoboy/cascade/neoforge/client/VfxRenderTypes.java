@@ -83,6 +83,32 @@ final class VfxRenderTypes {
                         .createCompositeState(false));
     }
 
+    // gui twins of the textured types: NO_DEPTH_TEST so the hud pass draws them over whatever scene depth is
+    // left in the buffer, and no depth write so they never disturb it for the rest of the gui
+    static final RenderType GUI_TEXTURED_ADDITIVE = guiTextured("cascade_gui_textured_additive",
+            RenderStateShard.ADDITIVE_TRANSPARENCY);
+
+    static final RenderType GUI_TEXTURED_ALPHA = guiTextured("cascade_gui_textured_alpha",
+            RenderStateShard.TRANSLUCENT_TRANSPARENCY);
+
+    private static RenderType guiTextured(String name, RenderStateShard.TransparencyStateShard transparency) {
+        return RenderType.create(
+                name,
+                DefaultVertexFormat.POSITION_TEX_COLOR,
+                VertexFormat.Mode.QUADS,
+                1536,
+                false,
+                true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_TEX_COLOR)
+                        .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
+                        .setTransparencyState(transparency)
+                        .setCullState(RenderStateShard.NO_CULL)
+                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                        .createCompositeState(false));
+    }
+
     // solid double sided geometry for mesh particles. NO_CULL so a winding mistake cannot hide a face.
     // COLOR_DEPTH_WRITE and LEQUAL depth so cubes occlude correctly and read as solid 3D
     static final RenderType SOLID = RenderType.create(

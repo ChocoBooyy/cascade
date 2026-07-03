@@ -98,8 +98,8 @@ public final class ScreenVfxManager {
     private void renderEntry(Entry entry, Matrix4f pose, MultiBufferSource.BufferSource buffers) {
         RenderSpec render = entry.spec().render();
         RenderType type = render.blend() == BlendMode.ADDITIVE
-                ? CascadeRenderTypes.texturedAdditive()
-                : CascadeRenderTypes.texturedAlpha();
+                ? CascadeRenderTypes.guiTexturedAdditive()
+                : CascadeRenderTypes.guiTexturedAlpha();
         VertexConsumer vc = buffers.getBuffer(type);
         ParticleSystem sim = entry.system();
         boolean animate = render.animate();
