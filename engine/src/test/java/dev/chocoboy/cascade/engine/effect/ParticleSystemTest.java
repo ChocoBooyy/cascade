@@ -10,7 +10,6 @@ import dev.chocoboy.cascade.engine.math.Vec3f;
 import dev.chocoboy.cascade.engine.tween.ColorCurve;
 import dev.chocoboy.cascade.engine.tween.Curve;
 import dev.chocoboy.cascade.engine.tween.Easings;
-import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
 
@@ -19,11 +18,11 @@ class ParticleSystemTest {
     private static final float EPS = 1e-4f;
 
     private static ParticleSystem system(int count, int lifetime, float speed) {
-        return new ParticleSystem(
-                Shapes.sphere(2f), count, lifetime, speed,
-                Curve.of(1f, 0f, Easings.LINEAR),
-                Curve.of(1f, 0f, Easings.LINEAR),
-                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
+        return new ParticleSystem(Shapes.sphere(2f), new BurstSpawner(count),
+                ParticleConfig.burst(lifetime, speed,
+                        Curve.of(1f, 0f, Easings.LINEAR),
+                        Curve.of(1f, 0f, Easings.LINEAR),
+                        ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR)),
                 new Random(4));
     }
 
@@ -76,12 +75,12 @@ class ParticleSystemTest {
 
     @Test
     void rateEmissionSpawnsOverTimeAndStaysAliveWhileEmitting() {
-        ParticleSystem s = new ParticleSystem(
-                Shapes.sphere(2f), new RateSpawner(3f, 4), 50, 0f, VelocitySpec.RADIAL,
-                Curve.of(1f, 0f, Easings.LINEAR),
-                Curve.of(1f, 0f, Easings.LINEAR),
-                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                List.of(), RotationSpec.NONE, CollisionSpec.NONE, null, false, false, false, TrailSpec.NONE, new Random(2));
+        ParticleSystem s = new ParticleSystem(Shapes.sphere(2f), new RateSpawner(3f, 4),
+                ParticleConfig.burst(50, 0f,
+                        Curve.of(1f, 0f, Easings.LINEAR),
+                        Curve.of(1f, 0f, Easings.LINEAR),
+                        ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR)),
+                new Random(2));
         assertEquals(3, s.particles().size());
         s.tick();
         assertEquals(6, s.particles().size());

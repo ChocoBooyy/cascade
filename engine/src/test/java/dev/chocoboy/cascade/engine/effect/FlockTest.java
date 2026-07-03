@@ -15,13 +15,13 @@ import org.junit.jupiter.api.Test;
 class FlockTest {
 
     private static ParticleSystem flockSystem() {
-        return new ParticleSystem(
-                Shapes.sphere(3f), new BurstSpawner(40), 50, 1f, VelocitySpec.RADIAL,
-                Curve.of(1f, 0f, Easings.LINEAR),
-                Curve.of(1f, 0f, Easings.LINEAR),
-                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                List.of(new FlockSpec(4f, 1f, 1f, 1f, 2f).toModifier()),
-                RotationSpec.NONE, CollisionSpec.NONE, null, false, false, false, TrailSpec.NONE, new Random(9));
+        return new ParticleSystem(Shapes.sphere(3f), new BurstSpawner(40),
+                ParticleConfig.burst(50, 1f,
+                                Curve.of(1f, 0f, Easings.LINEAR),
+                                Curve.of(1f, 0f, Easings.LINEAR),
+                                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR))
+                        .withModifiers(List.of(new FlockSpec(4f, 1f, 1f, 1f, 2f).toModifier())),
+                new Random(9));
     }
 
     @Test

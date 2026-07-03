@@ -10,7 +10,6 @@ import dev.chocoboy.cascade.engine.tween.Curve;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import java.util.Collections;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -22,13 +21,13 @@ class CapAndPoolingTest {
     private static final int CAP = 4000;
 
     private static ParticleSystem system(Spawner spawner, int lifetime) {
-        return new ParticleSystem(
-                Shapes.sphere(1f), spawner, lifetime, 0.05f, VelocitySpec.RADIAL,
-                Curve.of(1f, 0f, Easings.LINEAR),
-                Curve.of(1f, 0f, Easings.LINEAR),
-                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                List.of(), RotationSpec.spin(0.1f), CollisionSpec.NONE, null,
-                false, false, false, TrailSpec.NONE, new Random(11));
+        return new ParticleSystem(Shapes.sphere(1f), spawner,
+                ParticleConfig.burst(lifetime, 0.05f,
+                                Curve.of(1f, 0f, Easings.LINEAR),
+                                Curve.of(1f, 0f, Easings.LINEAR),
+                                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR))
+                        .withRotation(RotationSpec.spin(0.1f)),
+                new Random(11));
     }
 
     @Test

@@ -25,13 +25,14 @@ class CollisionTest {
 
     private static ParticleSystem withCollision(Particle seed, CollisionSpec collision, CollisionProbe probe,
             List<ParticleModifier> modifiers, boolean emitsOnCollision) {
-        ParticleSystem s = new ParticleSystem(
-                Shapes.point(), new BurstSpawner(0), 20, 0f, VelocitySpec.RADIAL,
-                Curve.of(1f, 0f, Easings.LINEAR),
-                Curve.of(1f, 0f, Easings.LINEAR),
-                ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR),
-                modifiers, RotationSpec.NONE, collision, probe, false, emitsOnCollision, false, TrailSpec.NONE,
-                new Random(1));
+        ParticleConfig config = ParticleConfig.burst(20, 0f,
+                        Curve.of(1f, 0f, Easings.LINEAR),
+                        Curve.of(1f, 0f, Easings.LINEAR),
+                        ColorCurve.of(0xFFFFFF, 0x000000, Easings.LINEAR))
+                .withModifiers(modifiers)
+                .withCollision(collision)
+                .withEmitsOnCollision(emitsOnCollision);
+        ParticleSystem s = new ParticleSystem(Shapes.point(), new BurstSpawner(0), config, probe, new Random(1));
         s.particles().add(seed);
         return s;
     }
