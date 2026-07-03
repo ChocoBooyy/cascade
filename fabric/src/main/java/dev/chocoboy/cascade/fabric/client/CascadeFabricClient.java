@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import dev.chocoboy.cascade.neoforge.client.CascadeClientHandler;
 import dev.chocoboy.cascade.neoforge.client.CascadeRenderTypes;
 import dev.chocoboy.cascade.neoforge.client.CascadeShaders;
+import dev.chocoboy.cascade.neoforge.client.PostFx;
 import dev.chocoboy.cascade.neoforge.client.VfxRenderManager;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.DomePayload;
@@ -32,7 +33,12 @@ public final class CascadeFabricClient implements ClientModInitializer {
             Camera cam = context.camera();
             VfxRenderManager.get().render(context.matrixStack(),
                     Minecraft.getInstance().renderBuffers().bufferSource(), cam.rotation(), cam.getPosition());
+            // the bloom capture re-renders here, in the same stage, so the frame's matrices still match
+            PostFx.captureVfx(context.matrixStack(),
+                    Minecraft.getInstance().renderBuffers().bufferSource(), cam.rotation(), cam.getPosition());
         });
+        WorldRenderEvents.END.register(context ->
+                PostFx.process(context.tickCounter().getGameTimeDeltaPartialTick(false)));
     }
 
     private static void registerShaders() {

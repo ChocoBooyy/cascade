@@ -17,11 +17,17 @@ public final class VfxRenderBridge {
 
     @SubscribeEvent
     public void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            Camera camera = event.getCamera();
+            MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+            VfxRenderManager.get().render(event.getPoseStack(), buffers, camera.rotation(), camera.getPosition());
+            // the bloom capture re-renders here, in the same stage, so the frame's matrices still match
+            PostFx.captureVfx(event.getPoseStack(), buffers, camera.rotation(), camera.getPosition());
             return;
         }
-        Camera camera = event.getCamera();
-        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        VfxRenderManager.get().render(event.getPoseStack(), buffers, camera.rotation(), camera.getPosition());
+        // run post fx after the whole level, so it captures particles too
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            PostFx.process(event.getPartialTick().getGameTimeDeltaPartialTick(false));
+        }
     }
 }

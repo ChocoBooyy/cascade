@@ -7,8 +7,10 @@ import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import dev.chocoboy.cascade.neoforge.VfxEmitter;
+import dev.chocoboy.cascade.neoforge.client.PostFx;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -20,6 +22,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 public final class CascadeTestCommands {
@@ -146,6 +149,17 @@ public final class CascadeTestCommands {
                     boids(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 })));
+    }
+
+    // client side, since bloom is client render state; toggling on the server would only work in singleplayer
+    @SubscribeEvent
+    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("cascadebloom").executes(ctx -> {
+            boolean on = !PostFx.enabled();
+            PostFx.setEnabled(on);
+            ctx.getSource().sendSuccess(() -> Component.literal("bloom " + (on ? "on" : "off")), false);
+            return Command.SINGLE_SUCCESS;
+        }));
     }
 
     // two low billowing smoke clouds that sit on the ground, four blocks apart, snapped to the surface. the
