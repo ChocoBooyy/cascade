@@ -172,6 +172,9 @@ public final class GpuBurstEffect implements RenderedEffect {
             RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
             RenderSystem.enableDepthTest();
             RenderSystem.depthMask(false);
+            // billboards draw both ways like the NO_CULL render types; with culling left on, a winding
+            // mistake silently erases every quad
+            RenderSystem.disableCull();
             int texture = Minecraft.getInstance().getTextureManager()
                     .getTexture(ParticleAtlas.textureId()).getId();
             GlStateManager._activeTexture(GL43C.GL_TEXTURE0);
@@ -200,6 +203,7 @@ public final class GpuBurstEffect implements RenderedEffect {
             GL43C.glBindVertexArray(0);
             GL43C.glBindBufferBase(GL43C.GL_SHADER_STORAGE_BUFFER, 0, 0);
             GL43C.glUseProgram(0);
+            RenderSystem.enableCull();
             RenderSystem.depthMask(true);
             RenderSystem.disableBlend();
             RenderSystem.defaultBlendFunc();
