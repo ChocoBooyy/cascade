@@ -1,6 +1,13 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'me.champeau.jmh' version '0.7.2'
+}
+
+// published under the cascade-* coordinate family, matching cascade-neoforge. note the neoforge jar
+// already embeds these classes: a consumer picks one, either engine alone or a loader module
+base {
+    archivesName = "${mod_id}-engine"
 }
 
 java {
@@ -45,4 +52,13 @@ configurations {
 
 artifacts {
     engineJava sourceSets.main.java.sourceDirectories.singleFile
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifactId base.archivesName.get()
+            from components.java
+        }
+    }
 }
