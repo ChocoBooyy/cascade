@@ -8,6 +8,7 @@ import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import dev.chocoboy.cascade.neoforge.VfxEmitter;
 import dev.chocoboy.cascade.neoforge.client.PostFx;
+import dev.chocoboy.cascade.neoforge.client.ScreenVfx;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -158,6 +159,20 @@ public final class CascadeTestCommands {
             boolean on = !PostFx.enabled();
             PostFx.setEnabled(on);
             ctx.getSource().sendSuccess(() -> Component.literal("bloom " + (on ? "on" : "off")), false);
+            return Command.SINGLE_SUCCESS;
+        }));
+        // hud particles are pure client render state too, so this stays a client command. sizes and speeds
+        // are gui units. a ring shape samples the xz plane and would flatten to a line on the hud, so the
+        // burst spawns on a sphere shell, which projects as a round ring of sparks
+        event.getDispatcher().register(Commands.literal("cascadescreen").executes(ctx -> {
+            ScreenVfx.playCentered(Vfx.emitter()
+                    .shape(ShapeSpec.sphere(30f))
+                    .count(90).lifetime(40).speed(2.5f)
+                    .size(8f, 0f, Easings.EASE_OUT_QUAD)
+                    .alpha(1f, 0f, Easings.LINEAR)
+                    .color(0xFFD75A, 0xFF4422, Easings.LINEAR)
+                    .gravity(0f, 0.15f, 0f)
+                    .sprite(SpriteId.SPARK));
             return Command.SINGLE_SUCCESS;
         }));
     }

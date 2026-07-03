@@ -29,6 +29,12 @@ public final class CascadeRenderTypes {
         RenderType texturedAlphaLit();
 
         RenderType texturedAlphaLitSoft();
+
+        // gui-safe twins of the textured types: same atlas and blend, but depth testing is off so the hud
+        // pass cannot clip them against the leftover scene depth. billboard sprites only, no lightmap
+        RenderType guiTexturedAdditive();
+
+        RenderType guiTexturedAlpha();
     }
 
     public static void install(Provider p) {
@@ -69,5 +75,13 @@ public final class CascadeRenderTypes {
 
     public static RenderType texturedAlphaLitSoft() {
         return provider.texturedAlphaLitSoft();
+    }
+
+    public static RenderType guiTexturedAdditive() {
+        return provider.guiTexturedAdditive();
+    }
+
+    public static RenderType guiTexturedAlpha() {
+        return provider.guiTexturedAlpha();
     }
 }
