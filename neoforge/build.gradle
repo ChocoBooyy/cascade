@@ -18,10 +18,21 @@ repositories {
 
 sourceSets {
     testmod
+    // the shader asset lint keeps its own mc-free source set; the default test set belongs to the
+    // fml junit codec suite, which needs the full modding classpath
+    shaderLint
     // package the shared assets (core shaders) that live in :common, the resource twin of the java source-merge
     main {
         resources {
             srcDir project(':common').file('src/main/resources')
+        }
+    }
+    // the codec suite parses the shipped datapack effects; data only, the testmod mods.toml must
+    // not leak onto the junit classpath or fml would try to load a mod with no classes
+    test {
+        resources {
+            srcDir file('src/testmod/resources')
+            include 'data/**'
         }
     }
 }
@@ -40,6 +51,13 @@ neoForge {
         cascadetest {
             sourceSet sourceSets.testmod
         }
+    }
+    // fml junit: the codec suite runs with the game bootstrapped, so real registry byte bufs and
+    // dfu json ops work; this is the only automated coverage of the json+wire spec path (the
+    // gametest server bails before any datapack load)
+    unitTest {
+        enable()
+        testedMod = mods."${mod_id}"
     }
     runs {
         client {
@@ -70,15 +88,30 @@ dependencies {
 
     testmodImplementation sourceSets.main.output
 
-    // the shader asset lint reads json+glsl as text, so it stays off the modding classpath
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'com.google.code.gson:gson:2.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // the shader asset lint reads json+glsl as text, so it stays off the modding classpath
+    shaderLintImplementation platform('org.junit:junit-bom:5.10.2')
+    shaderLintImplementation 'org.junit.jupiter:junit-jupiter'
+    shaderLintImplementation 'com.google.code.gson:gson:2.10.1'
+    shaderLintRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
     useJUnitPlatform()
+}
+
+tasks.register('shaderLint', Test) {
+    description = 'Lints core shader assets against the ShaderInstance load contract.'
+    group = 'verification'
+    testClassesDirs = sourceSets.shaderLint.output.classesDirs
+    classpath = sourceSets.shaderLint.runtimeClasspath
+    useJUnitPlatform()
+}
+tasks.named('check') {
+    dependsOn 'shaderLint'
 }
 
 tasks.named('compileJava', JavaCompile) {
