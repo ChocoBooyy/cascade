@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge.client;
 
+import dev.chocoboy.cascade.client.CascadeRenderTypes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 

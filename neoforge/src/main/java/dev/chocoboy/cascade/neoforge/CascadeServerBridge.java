@@ -1,5 +1,7 @@
 package dev.chocoboy.cascade.neoforge;
 
+import dev.chocoboy.cascade.CascadeEffects;
+import dev.chocoboy.cascade.VfxSequencer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;

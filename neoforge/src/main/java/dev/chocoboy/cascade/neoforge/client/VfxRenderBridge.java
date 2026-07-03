@@ -1,5 +1,8 @@
 package dev.chocoboy.cascade.neoforge.client;
 
+import dev.chocoboy.cascade.client.PostFx;
+import dev.chocoboy.cascade.client.ScreenVfxManager;
+import dev.chocoboy.cascade.client.VfxRenderManager;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;

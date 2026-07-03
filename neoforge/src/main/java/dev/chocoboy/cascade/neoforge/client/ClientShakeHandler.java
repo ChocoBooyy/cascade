@@ -1,6 +1,6 @@
 package dev.chocoboy.cascade.neoforge.client;
 
-import dev.chocoboy.cascade.neoforge.net.ShakePayload;
+import dev.chocoboy.cascade.net.ShakePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 

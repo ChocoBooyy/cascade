@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge;
 
+import dev.chocoboy.cascade.NetworkSender;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.network.PacketDistributor;

@@ -1,6 +1,6 @@
 package dev.chocoboy.cascade.fabric;
 
-import dev.chocoboy.cascade.neoforge.NetworkSender;
+import dev.chocoboy.cascade.NetworkSender;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

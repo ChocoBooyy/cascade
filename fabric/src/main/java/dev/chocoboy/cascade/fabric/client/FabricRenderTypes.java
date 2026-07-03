@@ -2,9 +2,9 @@ package dev.chocoboy.cascade.fabric.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import dev.chocoboy.cascade.neoforge.client.CascadeRenderTypes;
-import dev.chocoboy.cascade.neoforge.client.CascadeShaders;
-import dev.chocoboy.cascade.neoforge.client.ParticleAtlas;
+import dev.chocoboy.cascade.client.CascadeRenderTypes;
+import dev.chocoboy.cascade.client.CascadeShaders;
+import dev.chocoboy.cascade.client.ParticleAtlas;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
