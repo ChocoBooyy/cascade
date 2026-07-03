@@ -21,6 +21,8 @@ public final class CascadeNetwork {
                         (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleLight(payload)))
                 .playToClient(DomePayload.TYPE, DomePayload.STREAM_CODEC,
                         (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleDome(payload)))
+                .playToClient(SdfPayload.TYPE, SdfPayload.STREAM_CODEC,
+                        (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleSdf(payload)))
                 .playToClient(EffectPayload.TYPE, EffectPayload.STREAM_CODEC,
                         (payload, context) -> context.enqueueWork(() -> CascadeClientHandler.handleEffect(payload)));
     }

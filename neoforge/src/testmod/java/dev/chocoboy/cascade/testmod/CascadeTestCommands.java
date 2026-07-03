@@ -161,6 +161,11 @@ public final class CascadeTestCommands {
                     CommandSourceStack src = ctx.getSource();
                     storm(src.getLevel(), src.getPosition().add(0.0, 3.0, 0.0));
                     return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("sdf").executes(ctx -> {
+                    CommandSourceStack src = ctx.getSource();
+                    sdfCluster(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
+                    return Command.SINGLE_SUCCESS;
                 })));
     }
 
@@ -313,6 +318,21 @@ public final class CascadeTestCommands {
                 .drag(0.01f)
                 .spin(0.25f)
                 .sprite(SpriteId.SPARK)
+                .play(level, pos);
+    }
+
+    // the sdf showcase: a rotating metaball cluster whose shapes fuse where they near each other, a look
+    // no billboard sprite can fake. the rim gradient paints the silhouette
+    private static void sdfCluster(ServerLevel level, Vec3 pos) {
+        Vfx.sdf()
+                .sphere(0.6f, 0.0f, 0.0f, 0.45f)
+                .sphere(-0.5f, 0.3f, 0.2f, 0.35f)
+                .sphere(0.0f, -0.4f, -0.3f, 0.3f)
+                .torus(0.0f, 0.0f, 0.0f, 0.9f, 0.12f)
+                .smoothness(0.5f)
+                .gradient(Easings.LINEAR, 0x2430A8, 0xB03AF0, 0x22E5FF)
+                .duration(400)
+                .rotate(0.02f)
                 .play(level, pos);
     }
 
