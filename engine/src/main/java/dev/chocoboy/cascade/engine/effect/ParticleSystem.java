@@ -41,31 +41,20 @@ public final class ParticleSystem implements EffectSim {
     private final float cellSize;
     private int tick;
 
-    public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
-            Curve size, Curve alpha, ColorCurve color, RandomGenerator rng) {
-        this(shape, count, particleLifetime, speed, size, alpha, color, List.of(), rng);
+    public ParticleSystem(ShapeSampler shape, Spawner spawner, ParticleConfig config, RandomGenerator rng) {
+        this(shape, spawner, config, null, rng);
     }
 
-    public ParticleSystem(ShapeSampler shape, int count, int particleLifetime, float speed,
-            Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers, RandomGenerator rng) {
-        this(shape, new BurstSpawner(count), particleLifetime, speed, VelocitySpec.RADIAL, size, alpha, color, modifiers,
-                RotationSpec.NONE, CollisionSpec.NONE, null, false, false, false, TrailSpec.NONE, rng);
-    }
-
-    public ParticleSystem(ShapeSampler shape, Spawner spawner, int particleLifetime, float speed,
-            VelocitySpec velocity, Curve size, Curve alpha, ColorCurve color, List<ParticleModifier> modifiers,
-            RotationSpec rotation, CollisionSpec collision, CollisionProbe probe, boolean emitsOnDeath,
-            boolean emitsOnCollision, boolean tumble, TrailSpec trail, RandomGenerator rng) {
-        if (particleLifetime < 1) {
-            throw new IllegalArgumentException("lifetime < 1");
-        }
+    public ParticleSystem(ShapeSampler shape, Spawner spawner, ParticleConfig config, CollisionProbe probe,
+            RandomGenerator rng) {
         this.shape = Objects.requireNonNull(shape, "shape");
         this.spawner = Objects.requireNonNull(spawner, "spawner");
-        this.velocity = Objects.requireNonNull(velocity, "velocity");
-        this.size = Objects.requireNonNull(size, "size");
-        this.alpha = Objects.requireNonNull(alpha, "alpha");
-        this.color = Objects.requireNonNull(color, "color");
-        this.modifiers = List.copyOf(modifiers);
+        Objects.requireNonNull(config, "config");
+        this.velocity = config.velocity();
+        this.size = config.size();
+        this.alpha = config.alpha();
+        this.color = config.color();
+        this.modifiers = config.modifiers();
         // cell size is the max flock radius so a single 3x3x3 block covers every query
         boolean aware = false;
         float cell = 0f;
@@ -77,16 +66,16 @@ public final class ParticleSystem implements EffectSim {
         }
         this.neighborAware = aware;
         this.cellSize = cell;
-        this.rotation = Objects.requireNonNull(rotation, "rotation");
-        this.collision = Objects.requireNonNull(collision, "collision");
+        this.rotation = config.rotation();
+        this.collision = config.collision();
         this.probe = probe;
-        this.emitsOnDeath = emitsOnDeath;
-        this.emitsOnCollision = emitsOnCollision;
-        this.tumble = tumble;
-        this.trail = Objects.requireNonNull(trail, "trail");
+        this.emitsOnDeath = config.emitsOnDeath();
+        this.emitsOnCollision = config.emitsOnCollision();
+        this.tumble = config.tumble();
+        this.trail = config.trail();
         this.rng = Objects.requireNonNull(rng, "rng");
-        this.speed = speed;
-        this.particleLifetime = particleLifetime;
+        this.speed = config.speed();
+        this.particleLifetime = config.lifetime();
         // emit the first batch up front so burst systems are populated the moment they are built
         spawn(spawner.spawnCount(0));
         tick = 1;

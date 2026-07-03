@@ -70,13 +70,14 @@ public class SimTickBench {
 
         static ParticleSystem system(Spawner spawner, int lifetime, List<ParticleModifier> modifiers,
                 CollisionSpec collision, CollisionProbe probe) {
-            return new ParticleSystem(
-                    Shapes.sphere(2f), spawner, lifetime, 0.05f, VelocitySpec.RADIAL,
-                    Curve.of(0.3f, 0f, Easings.LINEAR),
-                    Curve.of(1f, 0f, Easings.LINEAR),
-                    ColorCurve.of(0xFFCC33, 0xFF3300, Easings.LINEAR),
-                    modifiers, RotationSpec.spin(0.2f), collision, probe,
-                    false, false, false, TrailSpec.NONE, new Random(31L));
+            ParticleConfig config = ParticleConfig.burst(lifetime, 0.05f,
+                            Curve.of(0.3f, 0f, Easings.LINEAR),
+                            Curve.of(1f, 0f, Easings.LINEAR),
+                            ColorCurve.of(0xFFCC33, 0xFF3300, Easings.LINEAR))
+                    .withModifiers(modifiers)
+                    .withRotation(RotationSpec.spin(0.2f))
+                    .withCollision(collision);
+            return new ParticleSystem(Shapes.sphere(2f), spawner, config, probe, new Random(31L));
         }
     }
 }
