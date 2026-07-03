@@ -5,6 +5,7 @@ import dev.chocoboy.cascade.engine.effect.BeamSpec;
 import dev.chocoboy.cascade.engine.effect.ComponentSpec;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
+import dev.chocoboy.cascade.engine.effect.SdfSpec;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.ComponentCodecs;
 import dev.chocoboy.cascade.neoforge.net.DomePayload;
@@ -12,6 +13,7 @@ import dev.chocoboy.cascade.neoforge.net.EffectJson;
 import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
+import dev.chocoboy.cascade.neoforge.net.SdfPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -70,6 +72,10 @@ public final class Vfx {
         return new VfxBeam();
     }
 
+    public static VfxSdf sdf() {
+        return new VfxSdf();
+    }
+
     public static void burst(ServerLevel level, Vec3 pos) {
         emit(level, pos, EmitterSpec.defaultBurst());
     }
@@ -96,5 +102,9 @@ public final class Vfx {
 
     static void beam(ServerLevel level, Vec3 from, Vec3 to, BeamSpec spec) {
         sender.sendNear(level, from.x, from.y, from.z, RADIUS, new BeamPayload(spec, from, to, level.getGameTime()));
+    }
+
+    static void sdf(ServerLevel level, Vec3 pos, SdfSpec spec) {
+        sender.sendNear(level, pos.x, pos.y, pos.z, RADIUS, new SdfPayload(pos, spec, level.getGameTime()));
     }
 }

@@ -10,6 +10,7 @@ import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import dev.chocoboy.cascade.engine.effect.RotationSpec;
+import dev.chocoboy.cascade.engine.effect.SdfSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.effect.SubEmitterSpec;
 import dev.chocoboy.cascade.engine.effect.TrailSpec;
@@ -186,6 +187,34 @@ public final class SpecCodecs {
     public static final StreamCodec<RegistryFriendlyByteBuf, EffectSpec> EFFECT = StreamCodec.composite(
             EMITTER_LIST, EffectSpec::emitters,
             EffectSpec::new);
+
+    private static final StreamCodec<ByteBuf, SdfSpec.Type> SDF_TYPE =
+            ByteBufCodecs.idMapper(i -> SdfSpec.Type.values()[i], Enum::ordinal);
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, SdfSpec> SDF = StreamCodec.of(
+            (buf, s) -> {
+                buf.writeVarInt(s.shapes().size());
+                for (SdfSpec.SdfShape shape : s.shapes()) {
+                    SDF_TYPE.encode(buf, shape.type());
+                    NetCodecs.VEC3F.encode(buf, shape.center());
+                    NetCodecs.VEC3F.encode(buf, shape.size());
+                }
+                buf.writeFloat(s.smoothness());
+                COLOR.encode(buf, s.color());
+                buf.writeFloat(s.alpha());
+                buf.writeVarInt(s.duration());
+                buf.writeFloat(s.rotateSpeed());
+            },
+            buf -> {
+                int count = buf.readVarInt();
+                List<SdfSpec.SdfShape> shapes = new ArrayList<>(count);
+                for (int i = 0; i < count; i++) {
+                    shapes.add(new SdfSpec.SdfShape(SDF_TYPE.decode(buf),
+                            NetCodecs.VEC3F.decode(buf), NetCodecs.VEC3F.decode(buf)));
+                }
+                return new SdfSpec(shapes, buf.readFloat(), COLOR.decode(buf),
+                        buf.readFloat(), buf.readVarInt(), buf.readFloat());
+            });
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamSpec> BEAM = StreamCodec.composite(
             ByteBufCodecs.INT, BeamSpec::color,

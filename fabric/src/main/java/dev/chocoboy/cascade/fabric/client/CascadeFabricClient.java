@@ -12,6 +12,7 @@ import dev.chocoboy.cascade.neoforge.net.DomePayload;
 import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
+import dev.chocoboy.cascade.neoforge.net.SdfPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -67,6 +68,8 @@ public final class CascadeFabricClient implements ClientModInitializer {
                 (payload, context) -> CascadeClientHandler.handleLight(payload));
         ClientPlayNetworking.registerGlobalReceiver(DomePayload.TYPE,
                 (payload, context) -> CascadeClientHandler.handleDome(payload));
+        ClientPlayNetworking.registerGlobalReceiver(SdfPayload.TYPE,
+                (payload, context) -> CascadeClientHandler.handleSdf(payload));
         // shake is descoped on fabric v1: accept the payload so the server send stays valid, then ignore it
         ClientPlayNetworking.registerGlobalReceiver(ShakePayload.TYPE, (payload, context) -> {
         });

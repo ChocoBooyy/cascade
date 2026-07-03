@@ -10,6 +10,7 @@ import dev.chocoboy.cascade.neoforge.net.DomePayload;
 import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
+import dev.chocoboy.cascade.neoforge.net.SdfPayload;
 import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
@@ -49,6 +50,10 @@ public final class CascadeClientHandler {
     public static void handleDome(DomePayload payload) {
         VfxRenderManager.get().spawn(
                 new DomeField(payload.pos(), payload.radius(), payload.color(), payload.duration()));
+    }
+
+    public static void handleSdf(SdfPayload payload) {
+        VfxRenderManager.get().spawn(new SdfVolumeEffect(payload.pos(), payload.spec(), payload.seed()));
     }
 
     private static void spawnEmitter(EmitterSpec spec, Vec3 origin, long seed, float density) {

@@ -9,12 +9,6 @@ import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.GravitySpec;
 import dev.chocoboy.cascade.engine.effect.MeshId;
 import dev.chocoboy.cascade.engine.effect.VortexSpec;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.stream.Collectors;
-import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL43C;
 import org.slf4j.Logger;
@@ -96,9 +90,11 @@ public final class GpuSim {
         if (built) {
             return;
         }
-        computeProgram = link(compile(GL43C.GL_COMPUTE_SHADER, load("shaders/gpu/particle.comp")));
-        drawProgram = link(compile(GL43C.GL_VERTEX_SHADER, load("shaders/gpu/particle.vert")),
-                compile(GL43C.GL_FRAGMENT_SHADER, load("shaders/gpu/particle.frag")));
+        computeProgram = GlShaders.link(
+                GlShaders.compile(GL43C.GL_COMPUTE_SHADER, GlShaders.load("shaders/gpu/particle.comp")));
+        drawProgram = GlShaders.link(
+                GlShaders.compile(GL43C.GL_VERTEX_SHADER, GlShaders.load("shaders/gpu/particle.vert")),
+                GlShaders.compile(GL43C.GL_FRAGMENT_SHADER, GlShaders.load("shaders/gpu/particle.frag")));
         vao = GL43C.glGenVertexArrays();
         built = true;
     }
@@ -116,42 +112,4 @@ public final class GpuSim {
         return failed;
     }
 
-    private static String load(String path) {
-        ResourceLocation rl = ResourceLocation.fromNamespaceAndPath("cascade", path);
-        try (BufferedReader reader = Minecraft.getInstance().getResourceManager().openAsReader(rl)) {
-            return reader.lines().collect(Collectors.joining("\n"));
-        } catch (IOException e) {
-            throw new UncheckedIOException("missing gpu shader " + rl, e);
-        }
-    }
-
-    private static int compile(int type, String src) {
-        int shader = GL43C.glCreateShader(type);
-        GL43C.glShaderSource(shader, src);
-        GL43C.glCompileShader(shader);
-        if (GL43C.glGetShaderi(shader, GL43C.GL_COMPILE_STATUS) == 0) {
-            String log = GL43C.glGetShaderInfoLog(shader);
-            GL43C.glDeleteShader(shader);
-            throw new IllegalStateException("gpu shader compile failed: " + log);
-        }
-        return shader;
-    }
-
-    private static int link(int... shaders) {
-        int program = GL43C.glCreateProgram();
-        for (int s : shaders) {
-            GL43C.glAttachShader(program, s);
-        }
-        GL43C.glLinkProgram(program);
-        for (int s : shaders) {
-            GL43C.glDetachShader(program, s);
-            GL43C.glDeleteShader(s);
-        }
-        if (GL43C.glGetProgrami(program, GL43C.GL_LINK_STATUS) == 0) {
-            String log = GL43C.glGetProgramInfoLog(program);
-            GL43C.glDeleteProgram(program);
-            throw new IllegalStateException("gpu program link failed: " + log);
-        }
-        return program;
-    }
 }

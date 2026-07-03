@@ -8,6 +8,7 @@ import dev.chocoboy.cascade.neoforge.net.DomePayload;
 import dev.chocoboy.cascade.neoforge.net.EffectPayload;
 import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
 import dev.chocoboy.cascade.neoforge.net.LightPayload;
+import dev.chocoboy.cascade.neoforge.net.SdfPayload;
 import dev.chocoboy.cascade.neoforge.net.ShakePayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -52,6 +53,7 @@ public final class CascadeFabric implements ModInitializer {
         s2c.register(BeamPayload.TYPE, BeamPayload.STREAM_CODEC);
         s2c.register(LightPayload.TYPE, LightPayload.STREAM_CODEC);
         s2c.register(DomePayload.TYPE, DomePayload.STREAM_CODEC);
+        s2c.register(SdfPayload.TYPE, SdfPayload.STREAM_CODEC);
         s2c.register(ShakePayload.TYPE, ShakePayload.STREAM_CODEC);
     }
 }
