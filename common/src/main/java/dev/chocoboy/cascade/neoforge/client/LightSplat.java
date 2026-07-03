@@ -1,6 +1,5 @@
 package dev.chocoboy.cascade.neoforge.client;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
@@ -78,11 +77,12 @@ public final class LightSplat implements RenderedEffect {
         int b = color & 0xFF;
         int a = (int) (fade * 255f);
         Matrix4f m = frame.pose().last().pose();
-        VertexConsumer vc = frame.buffers().getBuffer(CascadeRenderTypes.texturedAdditive());
-        vc.addVertex(m, x0, y, z0).setUv(uv[0], uv[1]).setColor(r, g, b, a);
-        vc.addVertex(m, x0, y, z1).setUv(uv[0], uv[3]).setColor(r, g, b, a);
-        vc.addVertex(m, x1, y, z1).setUv(uv[2], uv[3]).setColor(r, g, b, a);
-        vc.addVertex(m, x1, y, z0).setUv(uv[2], uv[1]).setColor(r, g, b, a);
+        frame.queue().submit(CascadeRenderTypes.texturedAdditive(), vc -> {
+            vc.addVertex(m, x0, y, z0).setUv(uv[0], uv[1]).setColor(r, g, b, a);
+            vc.addVertex(m, x0, y, z1).setUv(uv[0], uv[3]).setColor(r, g, b, a);
+            vc.addVertex(m, x1, y, z1).setUv(uv[2], uv[3]).setColor(r, g, b, a);
+            vc.addVertex(m, x1, y, z0).setUv(uv[2], uv[1]).setColor(r, g, b, a);
+        });
     }
 
     // ramp up over the first fifth, hold, then ramp down over the last two fifths

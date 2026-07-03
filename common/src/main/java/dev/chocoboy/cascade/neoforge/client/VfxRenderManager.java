@@ -88,7 +88,8 @@ public final class VfxRenderManager {
         if (active.isEmpty()) {
             return false;
         }
-        VfxFrame frame = new VfxFrame(pose, buffers, camRot, camPos);
+        VfxRenderQueue queue = new VfxRenderQueue();
+        VfxFrame frame = new VfxFrame(pose, buffers, camRot, camPos, queue);
 
         // cull beyond range, then draw nearest first so the per-frame budget keeps the closest effects
         List<RenderedEffect> visible = new ArrayList<>();
@@ -118,28 +119,33 @@ public final class VfxRenderManager {
             }
         }
 
+        // effects only submit work here; the queue draws it grouped by render type in the playback below
         int primitives = 0;
-        List<RenderedEffect> failed = null;
-        try {
-            for (RenderedEffect effect : visible) {
-                if (primitives >= MAX_PRIMITIVES_PER_FRAME) {
-                    break;
-                }
-                try {
-                    effect.render(frame);
-                    primitives += effect.drawCount();
-                } catch (RuntimeException e) {
-                    if (failed == null) {
-                        failed = new ArrayList<>();
-                    }
-                    failed.add(effect);
-                    logOnce("rendering an effect", e);
-                }
+        List<RenderedEffect> failed = new ArrayList<>();
+        for (RenderedEffect effect : visible) {
+            if (primitives >= MAX_PRIMITIVES_PER_FRAME) {
+                break;
             }
+            queue.owner(effect);
+            try {
+                effect.render(frame);
+                primitives += effect.drawCount();
+            } catch (RuntimeException e) {
+                failed.add(effect);
+                logOnce("rendering an effect", e);
+            }
+        }
+        try {
+            queue.play(buffers, (owner, e) -> {
+                if (owner instanceof RenderedEffect effect) {
+                    failed.add(effect);
+                }
+                logOnce("rendering an effect", e);
+            });
         } finally {
             buffers.endBatch();
         }
-        if (failed != null) {
+        if (!failed.isEmpty()) {
             active.removeAll(failed);
         }
         return !visible.isEmpty();

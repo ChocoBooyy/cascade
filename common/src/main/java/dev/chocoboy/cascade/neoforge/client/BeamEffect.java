@@ -1,6 +1,5 @@
 package dev.chocoboy.cascade.neoforge.client;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.BeamState;
 import dev.chocoboy.cascade.engine.math.Vec3f;
 import java.util.List;
@@ -43,23 +42,24 @@ public final class BeamEffect implements RenderedEffect {
     public void render(VfxFrame frame) {
         Vec3 cam = frame.cameraPos();
         Matrix4f m = frame.pose().last().pose();
-        VertexConsumer vc = frame.buffers().getBuffer(CascadeRenderTypes.additive());
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
-        List<Vec3f> spine = sim.spine();
-        for (int i = 0; i < spine.size() - 1; i++) {
-            Vec3f p0 = spine.get(i);
-            Vec3f p1 = spine.get(i + 1);
-            Vec3 a = new Vec3(p0.x() - cam.x, p0.y() - cam.y, p0.z() - cam.z);
-            Vec3 c = new Vec3(p1.x() - cam.x, p1.y() - cam.y, p1.z() - cam.z);
-            Vec3 dir = c.subtract(a).normalize();
-            Vec3 toView = a.scale(-1.0).normalize();
-            Vec3 side = dir.cross(toView).normalize().scale(halfWidth);
-            vc.addVertex(m, (float) (a.x - side.x), (float) (a.y - side.y), (float) (a.z - side.z)).setColor(r, g, b, 255);
-            vc.addVertex(m, (float) (a.x + side.x), (float) (a.y + side.y), (float) (a.z + side.z)).setColor(r, g, b, 255);
-            vc.addVertex(m, (float) (c.x + side.x), (float) (c.y + side.y), (float) (c.z + side.z)).setColor(r, g, b, 255);
-            vc.addVertex(m, (float) (c.x - side.x), (float) (c.y - side.y), (float) (c.z - side.z)).setColor(r, g, b, 255);
-        }
+        frame.queue().submit(CascadeRenderTypes.additive(), vc -> {
+            List<Vec3f> spine = sim.spine();
+            for (int i = 0; i < spine.size() - 1; i++) {
+                Vec3f p0 = spine.get(i);
+                Vec3f p1 = spine.get(i + 1);
+                Vec3 a = new Vec3(p0.x() - cam.x, p0.y() - cam.y, p0.z() - cam.z);
+                Vec3 c = new Vec3(p1.x() - cam.x, p1.y() - cam.y, p1.z() - cam.z);
+                Vec3 dir = c.subtract(a).normalize();
+                Vec3 toView = a.scale(-1.0).normalize();
+                Vec3 side = dir.cross(toView).normalize().scale(halfWidth);
+                vc.addVertex(m, (float) (a.x - side.x), (float) (a.y - side.y), (float) (a.z - side.z)).setColor(r, g, b, 255);
+                vc.addVertex(m, (float) (a.x + side.x), (float) (a.y + side.y), (float) (a.z + side.z)).setColor(r, g, b, 255);
+                vc.addVertex(m, (float) (c.x + side.x), (float) (c.y + side.y), (float) (c.z + side.z)).setColor(r, g, b, 255);
+                vc.addVertex(m, (float) (c.x - side.x), (float) (c.y - side.y), (float) (c.z - side.z)).setColor(r, g, b, 255);
+            }
+        });
     }
 }
