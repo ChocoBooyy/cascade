@@ -19,6 +19,5 @@ public final class CascadeTestMod {
                         Codec.FLOAT.fieldOf("radius").forGetter(ContainSpec::radius)
                 ).apply(i, ContainSpec::new)));
         NeoForge.EVENT_BUS.register(CascadeTestCommands.class);
-        NeoForge.EVENT_BUS.register(GpuSimSpike.class);
     }
 }
