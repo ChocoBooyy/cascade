@@ -1,5 +1,9 @@
 package dev.chocoboy.cascade.engine.tween;
 
+/**
+ * The interpolation curves used by size, alpha and color transitions. LINEAR is the identity; the ease-in and
+ * ease-out variants accelerate or decelerate the transition across a particle's life.
+ */
 public enum Easings implements Easing {
 
     LINEAR {

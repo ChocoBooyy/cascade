@@ -32,6 +32,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * Fluent builder for a particle emitter. Obtain with {@code Vfx.emitter()}; it starts from the default burst,
+ * so a caller overrides only what it wants. Chain shape, count, lifetime and appearance, layer on force
+ * components ({@link #gravity}, {@link #vortex}, {@link #flock}, or a custom {@link #component}), then
+ * {@link #play} at a point, or hand it to a {@link VfxEffect} as one layer.
+ */
 public final class VfxEmitter {
 
     private ShapeSpec shape;
@@ -104,7 +110,7 @@ public final class VfxEmitter {
         return this;
     }
 
-    // blend through several colors over a particle's life instead of just two, for fire and plasma
+    /** Blend through several colors over a particle's life instead of just two, for fire and plasma. */
     public VfxEmitter gradient(Easings ease, int... colors) {
         this.color = ColorSpec.gradient(ease, colors);
         return this;
@@ -122,32 +128,33 @@ public final class VfxEmitter {
         return component(new TurbulenceSpec(strength, frequency));
     }
 
-    // pull particles toward a point in emitter-local space; negative strength pushes them away
+    /** Pull particles toward a point in emitter-local space; negative strength pushes them away. */
     public VfxEmitter attractor(float x, float y, float z, float strength) {
         return component(new AttractorSpec(new Vec3f(x, y, z), strength));
     }
 
-    // swirl particles around the vertical axis through the given emitter-local point
+    /** Swirl particles around the vertical axis through the given emitter-local point. */
     public VfxEmitter vortex(float x, float y, float z, float strength) {
         return component(new VortexSpec(new Vec3f(x, y, z), strength));
     }
 
-    // divergence-free curl noise, a smoother fluid-like flow than plain turbulence
+    /** Divergence-free curl noise, a smoother fluid-like flow than plain turbulence. */
     public VfxEmitter curl(float strength, float frequency) {
         return component(new CurlSpec(strength, frequency));
     }
 
-    // boids flocking: neighbors within radius separate, align headings, and cohere, capped at maxSpeed
+    /** Boids flocking: neighbors within radius separate, align headings, and cohere, capped at maxSpeed. */
     public VfxEmitter flock(float radius, float separation, float alignment, float cohesion, float maxSpeed) {
         return component(new FlockSpec(radius, separation, alignment, cohesion, maxSpeed));
     }
 
+    /** Adds a custom particle behavior. Register its type first with {@code Vfx.registerComponent}. */
     public VfxEmitter component(ComponentSpec component) {
         modifiers.add(component);
         return this;
     }
 
-    // emit perTick particles each tick for durationTicks instead of all at once; count is then ignored
+    /** Emit perTick particles each tick for durationTicks instead of all at once; count is then ignored. */
     public VfxEmitter rate(float perTick, int durationTicks) {
         this.emission = EmissionSpec.rate(perTick, durationTicks);
         return this;
@@ -163,102 +170,108 @@ public final class VfxEmitter {
         return this;
     }
 
-    // random initial roll plus a per-tick spin within the given magnitude, so sprites tumble
+    /** Random initial roll plus a per-tick spin within the given magnitude, so sprites tumble. */
     public VfxEmitter spin(float spinRange) {
         this.rotation = RotationSpec.spin(spinRange);
         return this;
     }
 
-    // elongate fast particles along their velocity into streaks; 0 keeps them round
+    /** Elongate fast particles along their velocity into streaks; 0 keeps them round. */
     public VfxEmitter stretch(float stretch) {
         this.stretch = stretch;
         return this;
     }
 
-    // play the sprite's animation frames across each particle's life instead of holding the still frame
+    /** Play the sprite's animation frames across each particle's life instead of holding the still frame. */
     public VfxEmitter animate() {
         this.animate = true;
         return this;
     }
 
-    // tint by world light, for smoke and dust that should sit in shadow instead of glowing full bright
+    /** Tint by world light, for smoke and dust that should sit in shadow instead of glowing full bright. */
     public VfxEmitter lit() {
         this.lit = true;
         return this;
     }
 
-    // fade this particle out where it meets scene geometry, removing the hard clip line. alpha blend only
+    /** Fade this particle out where it meets scene geometry, removing the hard clip line. Alpha blend only. */
     public VfxEmitter soft() {
         this.soft = true;
         return this;
     }
 
-    // draw particles as solid tumbling cubes instead of billboards, for chunky debris. pair with a spin.
-    // meshes are opaque, so they fade out by shrinking their size curve, not by alpha
+    /**
+     * Draw particles as solid tumbling cubes instead of billboards, for chunky debris. Pair with a spin.
+     * Meshes are opaque, so they fade out by shrinking their size curve, not by alpha.
+     */
     public VfxEmitter cube() {
         this.mesh = MeshId.CUBE;
         return this;
     }
 
-    // draw particles as elongated splinters, for shards and shrapnel. pair with a spin. opaque like cube
+    /** Draw particles as elongated splinters, for shards and shrapnel. Pair with a spin. Opaque like cube. */
     public VfxEmitter shard() {
         this.mesh = MeshId.SHARD;
         return this;
     }
 
-    // draw particles as falling chunks of a real block model, for block-break debris. pair with a spin.
-    // opaque like cube and shard, so fade by the size curve, not alpha
+    /**
+     * Draw particles as falling chunks of a real block model, for block-break debris. Pair with a spin.
+     * Opaque like cube and shard, so fade by the size curve, not alpha.
+     */
     public VfxEmitter block(Block block) {
         this.mesh = MeshId.BLOCK;
         this.meshModel = BuiltInRegistries.BLOCK.getKey(block).toString();
         return this;
     }
 
-    // draw particles as falling copies of a real item model, for coin bursts and shrapnel. pair with a spin.
-    // opaque like the other meshes, so fade by the size curve, not alpha
+    /**
+     * Draw particles as falling copies of a real item model, for coin bursts and shrapnel. Pair with a spin.
+     * Opaque like the other meshes, so fade by the size curve, not alpha.
+     */
     public VfxEmitter item(Item item) {
         this.mesh = MeshId.ITEM;
         this.meshModel = BuiltInRegistries.ITEM.getKey(item).toString();
         return this;
     }
 
-    // bounce particles off solid blocks. bounce is the speed kept on a hit, friction sheds sliding speed
+    /** Bounce particles off solid blocks. Bounce is the speed kept on a hit, friction sheds sliding speed. */
     public VfxEmitter collide(float bounce, float friction) {
         this.collision = CollisionSpec.bouncy(bounce, friction);
         return this;
     }
 
-    // spawn the child system wherever one of this emitter's particles dies, for fireworks and trails
+    /** Spawn the child system wherever one of this emitter's particles dies, for fireworks and trails. */
     public VfxEmitter burstOnDeath(VfxEmitter child) {
         this.subEmitter = new SubEmitterSpec(child.spec());
         return this;
     }
 
-    // spawn the child system at the first block contact of each parent particle, for impact sparks and splashes
+    /** Spawn the child system at the first block contact of each parent particle, for impact sparks and splashes. */
     public VfxEmitter burstOnCollision(VfxEmitter child) {
         this.subEmitter = new SubEmitterSpec(child.spec(), SubEmitterSpec.Trigger.COLLISION);
         return this;
     }
 
-    // draw a ribbon through each particle's last length positions, for comets and streaking sparks
+    /** Draw a ribbon through each particle's last length positions, for comets and streaking sparks. */
     public VfxEmitter trail(int length) {
         this.trail = TrailSpec.of(length);
         return this;
     }
 
-    // fire particles inward toward the shape center instead of outward, for implosions
+    /** Fire particles inward toward the shape center instead of outward, for implosions. */
     public VfxEmitter implode() {
         this.velocity = VelocitySpec.inward();
         return this;
     }
 
-    // fire particles along a direction within a cone of the given half angle in radians, for jets
+    /** Fire particles along a direction within a cone of the given half angle in radians, for jets. */
     public VfxEmitter jet(float x, float y, float z, float spread) {
         this.velocity = VelocitySpec.directional(new Vec3f(x, y, z), spread);
         return this;
     }
 
-    // fire particles tangent to the vertical axis so they circle the center, for swirls and discs
+    /** Fire particles tangent to the vertical axis so they circle the center, for swirls and discs. */
     public VfxEmitter orbit() {
         this.velocity = VelocitySpec.orbital();
         return this;

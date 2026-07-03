@@ -2,6 +2,11 @@ package dev.chocoboy.cascade.engine.emitter;
 
 import dev.chocoboy.cascade.engine.math.Vec3f;
 
+/**
+ * The spawn volume an emitter samples: a point, line, ring, sphere, cone, box, disc or hemisphere. Build one
+ * with the static factories, e.g. {@code ShapeSpec.sphere(radius)} or {@code ShapeSpec.cone(radius, height)}.
+ * Sizes are in blocks.
+ */
 public record ShapeSpec(Kind kind, float radius, float height, Vec3f a, Vec3f b) {
 
     public enum Kind {
