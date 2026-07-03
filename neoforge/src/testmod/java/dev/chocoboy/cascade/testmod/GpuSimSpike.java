@@ -150,6 +150,12 @@ public final class GpuSimSpike {
         GL43C.glDispatchCompute(COUNT / GROUP_SIZE, 1, 1);
         GL43C.glMemoryBarrier(GL43C.GL_SHADER_STORAGE_BARRIER_BIT);
 
+        // the stage runs right after translucent rendering, which can leave blending on; these points are
+        // opaque, so force the state rather than inherit it. RenderSystem keeps mc's state cache in sync
+        RenderSystem.disableBlend();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(true);
+
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         GL43C.glUseProgram(drawProgram);
         GL43C.glUniformMatrix4fv(uModelView, false, RenderSystem.getModelViewMatrix().get(new float[16]));
