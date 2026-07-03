@@ -39,6 +39,16 @@ class ColorCurveTest {
     }
 
     @Test
+    void segmentBoundariesLandExactlyOnStops() {
+        // four stops split t into thirds; each boundary must return its stop bit-exact, no blend bleed
+        ColorCurve c = ColorCurve.of(List.of(0x112233, 0x445566, 0x778899, 0xAABBCC), Easings.LINEAR);
+        assertEquals(0x112233, c.at(0f));
+        assertEquals(0x445566, c.at(1f / 3f));
+        assertEquals(0x778899, c.at(2f / 3f));
+        assertEquals(0xAABBCC, c.at(1f));
+    }
+
+    @Test
     void clampsOvershootEasing() {
         ColorCurve c = ColorCurve.of(0x000000, 0xFFFFFF, t -> 1.5f);
         assertEquals(0xFFFFFF, c.at(0.5f));
