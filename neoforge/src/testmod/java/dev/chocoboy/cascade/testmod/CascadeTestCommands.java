@@ -28,6 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 public final class CascadeTestCommands {
 
@@ -50,6 +51,13 @@ public final class CascadeTestCommands {
             action.accept(ctx.getSource());
             return Command.SINGLE_SUCCESS;
         });
+    }
+
+    @SubscribeEvent
+    public static void onServerStarting(ServerStartingEvent event) {
+        // a tour left unfinished (world closed mid-run) drops its final reset step, so clear the guard on
+        // every world load rather than leak it across worlds within one game session
+        galleryRunning = false;
     }
 
     @SubscribeEvent
