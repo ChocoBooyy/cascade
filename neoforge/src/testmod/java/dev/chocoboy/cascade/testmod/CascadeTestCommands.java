@@ -9,6 +9,7 @@ import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import dev.chocoboy.cascade.neoforge.VfxEmitter;
+import dev.chocoboy.cascade.neoforge.VfxSequence;
 import dev.chocoboy.cascade.neoforge.client.GpuSim;
 import dev.chocoboy.cascade.neoforge.client.ParticleBurstEffect;
 import dev.chocoboy.cascade.neoforge.client.PostFx;
@@ -43,30 +44,7 @@ public final class CascadeTestCommands {
         event.getDispatcher().register(Commands.literal("vfxtest")
                 .then(Commands.literal("burst").executes(ctx -> {
                     CommandSourceStack src = ctx.getSource();
-                    Vfx.emitter()
-                            .shape(ShapeSpec.hemisphere(0.15f))
-                            .count(8)
-                            .lifetime(25)
-                            .speed(0.45f)
-                            .size(0.12f, 0.12f, Easings.LINEAR)
-                            .alpha(1.0f, 1.0f, Easings.LINEAR)
-                            .color(0xFFFFFF, 0xFFEE88, Easings.LINEAR)
-                            .gravity(0.0f, -0.02f, 0.0f)
-                            .sprite(SpriteId.SPARK)
-                            .stretch(2.0f)
-                            .burstOnDeath(Vfx.emitter()
-                                    .shape(ShapeSpec.sphere(0.1f))
-                                    .count(60)
-                                    .lifetime(30)
-                                    .speed(0.25f)
-                                    .size(0.12f, 0.03f, Easings.LINEAR)
-                                    .alpha(1.0f, 0.0f, Easings.LINEAR)
-                                    .color(0xFF66AA, 0x3366FF, Easings.LINEAR)
-                                    .gravity(0.0f, -0.02f, 0.0f)
-                                    .drag(0.05f)
-                                    .sprite(SpriteId.SPARK)
-                                    .stretch(1.5f))
-                            .play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0));
+                    burst(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("beam").executes(ctx -> {
@@ -78,10 +56,7 @@ public final class CascadeTestCommands {
                 }))
                 .then(Commands.literal("combo").executes(ctx -> {
                     CommandSourceStack src = ctx.getSource();
-                    Vec3 base = src.getPosition().add(0.0, 1.0, 0.0);
-                    // left plume is lit, so it sits in world light; right plume is the full-bright twin
-                    smokePlume(src.getLevel(), base.add(-1.0, 0.0, 0.0), true);
-                    smokePlume(src.getLevel(), base.add(1.0, 0.0, 0.0), false);
+                    combo(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("shake").executes(ctx -> {
@@ -96,15 +71,7 @@ public final class CascadeTestCommands {
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("custombeam").executes(ctx -> {
-                    CommandSourceStack src = ctx.getSource();
-                    Vec3 from = src.getPosition();
-                    Vec3 to = from.add(lookVector(src).scale(12.0));
-                    Vfx.beam()
-                            .color(0xFF3366)
-                            .width(0.3f)
-                            .arc(0.7f)
-                            .duration(20)
-                            .play(src.getLevel(), from, to);
+                    customBeam(ctx.getSource());
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("singularity").executes(ctx -> {
@@ -166,7 +133,8 @@ public final class CascadeTestCommands {
                     CommandSourceStack src = ctx.getSource();
                     sdfCluster(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0));
                     return Command.SINGLE_SUCCESS;
-                })));
+                }))
+                .then(Commands.literal("gallery").executes(ctx -> gallery(ctx.getSource()))));
     }
 
     // client side, since bloom is client render state; toggling on the server would only work in singleplayer
@@ -747,6 +715,107 @@ public final class CascadeTestCommands {
                 .spin(0.7f).item(Items.STICK).lit()
                 .gravity(0f, -0.03f, 0f).collide(0.2f, 0.5f);
         Vfx.effect().add(nuggets).add(sticks).play(level, c);
+    }
+
+    // a two-stage spark burst whose motes pop into a second color on death, the sub-emitter basic
+    private static void burst(ServerLevel level, Vec3 pos) {
+        Vfx.emitter()
+                .shape(ShapeSpec.hemisphere(0.15f))
+                .count(8)
+                .lifetime(25)
+                .speed(0.45f)
+                .size(0.12f, 0.12f, Easings.LINEAR)
+                .alpha(1.0f, 1.0f, Easings.LINEAR)
+                .color(0xFFFFFF, 0xFFEE88, Easings.LINEAR)
+                .gravity(0.0f, -0.02f, 0.0f)
+                .sprite(SpriteId.SPARK)
+                .stretch(2.0f)
+                .burstOnDeath(Vfx.emitter()
+                        .shape(ShapeSpec.sphere(0.1f))
+                        .count(60)
+                        .lifetime(30)
+                        .speed(0.25f)
+                        .size(0.12f, 0.03f, Easings.LINEAR)
+                        .alpha(1.0f, 0.0f, Easings.LINEAR)
+                        .color(0xFF66AA, 0x3366FF, Easings.LINEAR)
+                        .gravity(0.0f, -0.02f, 0.0f)
+                        .drag(0.05f)
+                        .sprite(SpriteId.SPARK)
+                        .stretch(1.5f))
+                .play(level, pos);
+    }
+
+    // left plume is lit, so it sits in world light; right plume is the full-bright twin
+    private static void combo(ServerLevel level, Vec3 base) {
+        smokePlume(level, base.add(-1.0, 0.0, 0.0), true);
+        smokePlume(level, base.add(1.0, 0.0, 0.0), false);
+    }
+
+    private static void customBeam(CommandSourceStack src) {
+        Vec3 from = src.getPosition();
+        Vec3 to = from.add(lookVector(src).scale(12.0));
+        Vfx.beam()
+                .color(0xFF3366)
+                .width(0.3f)
+                .arc(0.7f)
+                .duration(20)
+                .play(src.getLevel(), from, to);
+    }
+
+    private static boolean galleryRunning;
+
+    // one command tours every showcase in order, one entry every six seconds, so a single run puts
+    // eyes on the whole library. the command source's position is a snapshot, so the whole tour
+    // plays where it was started. big set pieces overlap their neighbors a little on purpose; the
+    // chat lines keep entries attributable. gravitywell is skipped, its capabilities all appear in
+    // singularity
+    private static int gallery(CommandSourceStack src) {
+        if (galleryRunning) {
+            src.sendFailure(Component.literal("gallery already running"));
+            return 0;
+        }
+        galleryRunning = true;
+        ServerLevel level = src.getLevel();
+        String[] names = {"burst", "firework json", "layered", "splash", "debris", "block debris",
+                "item debris", "smoke lit vs unlit", "soft smoke", "custom beam", "component", "boids",
+                "sdf", "singularity", "gravity star", "storm"};
+        Runnable[] fires = {
+                () -> burst(level, src.getPosition().add(0.0, 1.0, 0.0)),
+                () -> Vfx.play(level, src.getPosition().add(0.0, 1.0, 0.0),
+                        ResourceLocation.fromNamespaceAndPath("cascade", "firework")),
+                () -> layered(src),
+                () -> splash(src),
+                () -> debris(src),
+                () -> blockDebris(src),
+                () -> itemDebris(src),
+                () -> combo(level, src.getPosition().add(0.0, 1.0, 0.0)),
+                () -> softSmoke(src),
+                () -> customBeam(src),
+                () -> component(level, src.getPosition().add(0.0, 1.5, 0.0)),
+                () -> boids(level, src.getPosition().add(0.0, 2.0, 0.0)),
+                () -> sdfCluster(level, src.getPosition().add(0.0, 2.0, 0.0)),
+                () -> singularity(level, src.getPosition().add(0.0, 2.2, 0.0)),
+                () -> gravityStar(level,
+                        onGround(level, src.getPosition(), src.getEntity()).add(0.0, 0.6, 0.0)),
+                () -> storm(level, src.getPosition().add(0.0, 3.0, 0.0)),
+        };
+        VfxSequence seq = Vfx.at(level);
+        for (int i = 0; i < names.length; i++) {
+            String label = "cascade gallery " + (i + 1) + "/" + names.length + ": " + names[i];
+            Runnable fire = fires[i];
+            seq.run(() -> {
+                src.sendSuccess(() -> Component.literal(label), false);
+                // a throwing entry would take the whole timeline down with it, and the guard reset
+                // is the timeline's last step; contain it so the tour and the reset survive
+                try {
+                    fire.run();
+                } catch (RuntimeException e) {
+                    src.sendFailure(Component.literal("gallery entry failed: " + label));
+                }
+            }).delay(120);
+        }
+        seq.run(() -> galleryRunning = false).play();
+        return Command.SINGLE_SUCCESS;
     }
 
     // the command source's facing as a unit vector. A command block defaults to (0,0), which points
