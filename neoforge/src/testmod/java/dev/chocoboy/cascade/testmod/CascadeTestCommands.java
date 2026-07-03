@@ -41,6 +41,16 @@ public final class CascadeTestCommands {
     private CascadeTestCommands() {
     }
 
+    // shared palettes for the timeline set pieces below (singularity, gravity well, gravity star)
+    private static final int CYAN = 0x33EEFF;
+    private static final int VIOLET = 0x8833FF;
+    private static final int DEEP_VIOLET = 0x3A1060;
+    private static final int WHITE = 0xFFFFFF;
+    private static final int GZ_BRIGHT = 0xB36BFF;
+    private static final int GZ_VIOLET = 0x7A2CE0;
+    private static final int GZ_DEEP = 0x2A1060;
+    private static final int GZ_LAVENDER = 0xD9B8FF;
+
     // a showcase leaf: name it, and run the action against the command source
     private static LiteralArgumentBuilder<CommandSourceStack> show(String name, Consumer<CommandSourceStack> action) {
         return Commands.literal(name).executes(ctx -> {
@@ -66,18 +76,19 @@ public final class CascadeTestCommands {
                 .then(show("light", src -> standaloneLight(src.getLevel(),
                         onGround(src.getLevel(), src.getPosition(), src.getEntity()).add(0.0, 0.05, 0.0))))
                 // emitter appearance and motion
-                .then(show("splash", CascadeTestCommands::splash))
-                .then(show("layered", CascadeTestCommands::layered))
+                .then(show("splash", src -> splash(src.getLevel(), src.getPosition())))
+                .then(show("layered", src -> layered(src.getLevel(), src.getPosition())))
                 .then(show("smoke", src -> combo(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
-                .then(show("softsmoke", CascadeTestCommands::softSmoke))
+                .then(show("softsmoke", src -> softSmoke(src.getLevel(),
+                        onGround(src.getLevel(), src.getPosition(), src.getEntity()))))
                 .then(show("jet", src -> jet(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
                 .then(show("turbulence", src -> turbulence(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
                 .then(show("boids", src -> boids(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0))))
                 .then(show("component", src -> component(src.getLevel(), src.getPosition().add(0.0, 1.5, 0.0))))
                 // mesh particles
-                .then(show("debris", CascadeTestCommands::debris))
-                .then(show("blockdebris", CascadeTestCommands::blockDebris))
-                .then(show("itemdebris", CascadeTestCommands::itemDebris))
+                .then(show("debris", src -> debris(src.getLevel(), src.getPosition())))
+                .then(show("blockdebris", src -> blockDebris(src.getLevel(), src.getPosition())))
+                .then(show("itemdebris", src -> itemDebris(src.getLevel(), src.getPosition())))
                 // advanced render
                 .then(show("sdf", src -> sdfCluster(src.getLevel(), src.getPosition().add(0.0, 2.0, 0.0))))
                 .then(show("storm", src -> storm(src.getLevel(), src.getPosition().add(0.0, 3.0, 0.0))))
@@ -219,9 +230,7 @@ public final class CascadeTestCommands {
     // two low billowing smoke clouds that sit on the ground, four blocks apart, snapped to the surface. the
     // left is soft and should melt into the floor where the billboards cut it; the right is the hard
     // reference and shows sharp slice lines along the ground. that contact line is the whole demo
-    private static void softSmoke(CommandSourceStack src) {
-        ServerLevel level = src.getLevel();
-        Vec3 ground = onGround(level, src.getPosition(), src.getEntity());
+    private static void softSmoke(ServerLevel level, Vec3 ground) {
         fog(level, ground.add(-2.0, 0.0, 0.0), true);
         fog(level, ground.add(2.0, 0.0, 0.0), false);
     }
@@ -314,11 +323,6 @@ public final class CascadeTestCommands {
     // Gravity Star: a kunai impact opens a purple gravity zone that draws matter straight inward, a steady
     // field rather than a whirlpool, then collapses into a knockback blast, a low wide shockwave that throws
     // outward rather than up. Sits on the ground since it is an impact, not an airburst.
-    private static final int GZ_BRIGHT = 0xB36BFF;
-    private static final int GZ_VIOLET = 0x7A2CE0;
-    private static final int GZ_DEEP = 0x2A1060;
-    private static final int GZ_LAVENDER = 0xD9B8FF;
-
     private static void gravityStar(ServerLevel level, Vec3 c) {
         Vfx.at(level)
                 .parallel(
@@ -397,13 +401,7 @@ public final class CascadeTestCommands {
                 .gradient(Easings.LINEAR, GZ_BRIGHT, GZ_DEEP)
                 .sprite(SpriteId.RING).stretch(1.4f)
                 .play(level, c);
-        int beams = 12;
-        for (int i = 0; i < beams; i++) {
-            double angle = Math.PI * 2.0 * i / beams;
-            Vec3 dir = new Vec3(Math.cos(angle), 0.0, Math.sin(angle));
-            Vfx.beam().color(GZ_BRIGHT).width(0.3f).arc(0.4f).duration(12)
-                    .play(level, c, c.add(dir.scale(9.0)));
-        }
+        radialBolts(level, c, 12, GZ_BRIGHT, 0.3f, 0.4f, 12, 9.0, 0.0);
         Vfx.light(level, c, GZ_LAVENDER, 9.0f, 26);
         Vfx.shake(level, c, 3.4f, 20);
     }
@@ -489,24 +487,13 @@ public final class CascadeTestCommands {
                 .drag(0.06f)
                 .sprite(SpriteId.SPARK).stretch(2.5f).trail(5)
                 .play(level, c);
-        int beams = 12;
-        for (int i = 0; i < beams; i++) {
-            double angle = Math.PI * 2.0 * i / beams;
-            Vec3 dir = new Vec3(Math.cos(angle), 0.12, Math.sin(angle));
-            Vfx.beam().color(CYAN).width(0.28f).arc(0.6f).duration(12)
-                    .play(level, c, c.add(dir.scale(9.0)));
-        }
+        radialBolts(level, c, 12, CYAN, 0.28f, 0.6f, 12, 9.0, 0.12);
         Vfx.light(level, c, WHITE, 8.0f, 28);
         Vfx.shake(level, c, 3.0f, 18);
     }
 
     // the showcase: a collapsing singularity that implodes matter into an orbiting disc, then detonates.
     // every stage is one phase on the timeline, with parallel branches where light and particles overlap.
-    private static final int CYAN = 0x33EEFF;
-    private static final int VIOLET = 0x8833FF;
-    private static final int DEEP_VIOLET = 0x3A1060;
-    private static final int WHITE = 0xFFFFFF;
-
     private static void singularity(ServerLevel level, Vec3 c) {
         Vfx.at(level)
                 // implosion: a shell of embers rushes inward while a faint pool of light gathers below
@@ -579,21 +566,24 @@ public final class CascadeTestCommands {
                 .gradient(Easings.LINEAR, CYAN, WHITE)
                 .sprite(SpriteId.RING).stretch(1.5f)
                 .play(level, c);
-        int beams = 8;
-        for (int i = 0; i < beams; i++) {
-            double angle = Math.PI * 2.0 * i / beams;
-            Vec3 dir = new Vec3(Math.cos(angle), 0.15, Math.sin(angle));
-            Vfx.beam().color(CYAN).width(0.25f).arc(0.5f).duration(10)
-                    .play(level, c, c.add(dir.scale(7.0)));
-        }
+        radialBolts(level, c, 8, CYAN, 0.25f, 0.5f, 10, 7.0, 0.15);
         Vfx.light(level, c, WHITE, 6.0f, 24);
         Vfx.shake(level, c, 2.4f, 16);
     }
 
+    // the radial bolt fan the three blasts share: count beams spaced evenly around c, each angled up by lift
+    // and reaching reach blocks out
+    private static void radialBolts(ServerLevel level, Vec3 c, int count, int color,
+            float width, float arc, int duration, double reach, double lift) {
+        for (int i = 0; i < count; i++) {
+            double angle = Math.PI * 2.0 * i / count;
+            Vec3 dir = new Vec3(Math.cos(angle), lift, Math.sin(angle));
+            Vfx.beam().color(color).width(width).arc(arc).duration(duration).play(level, c, c.add(dir.scale(reach)));
+        }
+    }
+
     // fountain whose droplets pop into a spark on first block contact, proving collision-triggered sub-emitters
-    private static void splash(CommandSourceStack src) {
-        ServerLevel level = src.getLevel();
-        Vec3 c = src.getPosition();
+    private static void splash(ServerLevel level, Vec3 c) {
         VfxEmitter spark = Vfx.emitter()
                 .shape(ShapeSpec.sphere(0.2f))
                 .count(10).lifetime(22).speed(0.1f)
@@ -614,9 +604,7 @@ public final class CascadeTestCommands {
     }
 
     // three emitters at one origin: a core flash, a lit smoke puff, and a spark spray, proving layered effects
-    private static void layered(CommandSourceStack src) {
-        ServerLevel level = src.getLevel();
-        Vec3 c = src.getPosition();
+    private static void layered(ServerLevel level, Vec3 c) {
         VfxEmitter core = Vfx.emitter()
                 .shape(ShapeSpec.sphere(0.3f))
                 .count(40).lifetime(12).speed(0.05f)
@@ -641,9 +629,7 @@ public final class CascadeTestCommands {
     }
 
     // a burst of solid tumbling cube and shard debris that falls and bounces, proving mesh particles
-    private static void debris(CommandSourceStack src) {
-        ServerLevel level = src.getLevel();
-        Vec3 c = src.getPosition();
+    private static void debris(ServerLevel level, Vec3 c) {
         VfxEmitter chunks = Vfx.emitter()
                 .shape(ShapeSpec.sphere(0.3f))
                 .count(50).lifetime(70).speed(0.4f)
@@ -664,9 +650,7 @@ public final class CascadeTestCommands {
     }
 
     // a burst of real block model chunks (stone and dirt) that tumble, fall, and bounce, block break debris
-    private static void blockDebris(CommandSourceStack src) {
-        ServerLevel level = src.getLevel();
-        Vec3 c = src.getPosition();
+    private static void blockDebris(ServerLevel level, Vec3 c) {
         VfxEmitter stone = Vfx.emitter()
                 .shape(ShapeSpec.sphere(0.3f))
                 .count(40).lifetime(70).speed(0.4f)
@@ -687,9 +671,7 @@ public final class CascadeTestCommands {
     }
 
     // a burst of real item model debris (nuggets and sticks) that tumble, fall, and bounce
-    private static void itemDebris(CommandSourceStack src) {
-        ServerLevel level = src.getLevel();
-        Vec3 c = src.getPosition();
+    private static void itemDebris(ServerLevel level, Vec3 c) {
         VfxEmitter nuggets = Vfx.emitter()
                 .shape(ShapeSpec.sphere(0.3f))
                 .count(36).lifetime(70).speed(0.4f)
@@ -775,15 +757,15 @@ public final class CascadeTestCommands {
                 () -> burst(level, src.getPosition().add(0.0, 1.0, 0.0)),
                 () -> Vfx.play(level, src.getPosition().add(0.0, 1.0, 0.0),
                         ResourceLocation.fromNamespaceAndPath("cascade", "firework")),
-                () -> layered(src),
-                () -> splash(src),
+                () -> layered(level, src.getPosition()),
+                () -> splash(level, src.getPosition()),
                 () -> jet(level, src.getPosition().add(0.0, 1.0, 0.0)),
                 () -> turbulence(level, src.getPosition().add(0.0, 1.0, 0.0)),
-                () -> debris(src),
-                () -> blockDebris(src),
-                () -> itemDebris(src),
+                () -> debris(level, src.getPosition()),
+                () -> blockDebris(level, src.getPosition()),
+                () -> itemDebris(level, src.getPosition()),
                 () -> combo(level, src.getPosition().add(0.0, 1.0, 0.0)),
-                () -> softSmoke(src),
+                () -> softSmoke(level, onGround(level, src.getPosition(), src.getEntity())),
                 () -> customBeam(src),
                 () -> component(level, src.getPosition().add(0.0, 1.5, 0.0)),
                 () -> boids(level, src.getPosition().add(0.0, 2.0, 0.0)),
