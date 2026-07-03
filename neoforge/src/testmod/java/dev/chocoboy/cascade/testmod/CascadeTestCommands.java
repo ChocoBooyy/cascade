@@ -181,6 +181,13 @@ public final class CascadeTestCommands {
                     .sprite(SpriteId.SPARK));
             return Command.SINGLE_SUCCESS;
         }));
+        // F3a spike toggle: a gpu-computed point fountain at the player, gated on gl 4.3
+        event.getDispatcher().register(Commands.literal("cascadegpu").executes(ctx -> {
+            Minecraft mc = Minecraft.getInstance();
+            String status = GpuSimSpike.toggle(mc.player != null ? mc.player.position() : Vec3.ZERO);
+            ctx.getSource().sendSuccess(() -> Component.literal(status), false);
+            return Command.SINGLE_SUCCESS;
+        }));
         // a client-local stress field for measuring render throughput: a grid of long lived spark systems
         // around the player, no network involved, so fps under load compares cleanly between builds
         event.getDispatcher().register(Commands.literal("cascadestress")
