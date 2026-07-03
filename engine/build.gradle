@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'me.champeau.jmh' version '0.7.2'
 }
 
 java {
@@ -21,6 +22,16 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// benchmarks are a measurement tool, not a correctness gate: slow by nature and machine-dependent,
+// so they stay off the check/build graph and run only via an explicit :engine:jmh
+jmh {
+    warmupIterations = 3
+    warmup = '1s'
+    iterations = 5
+    timeOnIteration = '1s'
+    fork = 1
 }
 
 // expose the source so the loader modules can compile it into their own mod module; a plain jar
