@@ -53,19 +53,20 @@ public final class DomeField implements RenderedEffect {
         int b = color & 0xFF;
         Vec3 cam = frame.cameraPos();
         Matrix4f m = frame.pose().last().pose();
-        VertexConsumer vc = frame.buffers().getBuffer(CascadeRenderTypes.additive());
-        for (int i = 0; i < RINGS; i++) {
-            float lat0 = HALF_PI * i / RINGS;
-            float lat1 = HALF_PI * (i + 1) / RINGS;
-            for (int j = 0; j < SEGMENTS; j++) {
-                float lon0 = TAU * j / SEGMENTS;
-                float lon1 = TAU * (j + 1) / SEGMENTS;
-                vertex(vc, m, cam, lat0, lon0, r, g, b, fade);
-                vertex(vc, m, cam, lat1, lon0, r, g, b, fade);
-                vertex(vc, m, cam, lat1, lon1, r, g, b, fade);
-                vertex(vc, m, cam, lat0, lon1, r, g, b, fade);
+        frame.queue().submit(CascadeRenderTypes.additive(), vc -> {
+            for (int i = 0; i < RINGS; i++) {
+                float lat0 = HALF_PI * i / RINGS;
+                float lat1 = HALF_PI * (i + 1) / RINGS;
+                for (int j = 0; j < SEGMENTS; j++) {
+                    float lon0 = TAU * j / SEGMENTS;
+                    float lon1 = TAU * (j + 1) / SEGMENTS;
+                    vertex(vc, m, cam, lat0, lon0, r, g, b, fade);
+                    vertex(vc, m, cam, lat1, lon0, r, g, b, fade);
+                    vertex(vc, m, cam, lat1, lon1, r, g, b, fade);
+                    vertex(vc, m, cam, lat0, lon1, r, g, b, fade);
+                }
             }
-        }
+        });
     }
 
     private void vertex(VertexConsumer vc, Matrix4f m, Vec3 cam, float lat, float lon,

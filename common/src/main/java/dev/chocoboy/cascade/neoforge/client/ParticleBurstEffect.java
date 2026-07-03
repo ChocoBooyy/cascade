@@ -1,7 +1,6 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionProbe;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -120,50 +118,50 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Vector3f right = camRot.transform(new Vector3f(1f, 0f, 0f));
         Vector3f up = camRot.transform(new Vector3f(0f, 1f, 0f));
 
-        // billboards first, then trails. the buffer source shares one builder, so fetching a second render
-        // type while still writing the first would end the buffer we are mid way through
-        VertexConsumer vc = frame.buffers().getBuffer(type);
-        for (Particle p : sim.particles()) {
-            int color = sim.colorOf(p);
-            int alpha = (int) (sim.alphaOf(p) * 255f);
-            float size = sim.sizeOf(p);
-            float hx = size;
-            float hy = size;
-            float roll = p.rotation;
-            float[] cell = animate ? ParticleAtlas.uv(render.sprite(), frameOf(p)) : uv;
-            if (stretch > 0f) {
-                float speed = p.vel.length();
-                if (speed > 1e-5f) {
-                    float vx = p.vel.x() * right.x + p.vel.y() * right.y + p.vel.z() * right.z;
-                    float vy = p.vel.x() * up.x + p.vel.y() * up.y + p.vel.z() * up.z;
-                    roll = (float) Math.atan2(vy, vx);
-                    hx = size * (1f + speed * stretch);
+        frame.queue().submit(type, vc -> {
+            for (Particle p : sim.particles()) {
+                int color = sim.colorOf(p);
+                int alpha = (int) (sim.alphaOf(p) * 255f);
+                float size = sim.sizeOf(p);
+                float hx = size;
+                float hy = size;
+                float roll = p.rotation;
+                float[] cell = animate ? ParticleAtlas.uv(render.sprite(), frameOf(p)) : uv;
+                if (stretch > 0f) {
+                    float speed = p.vel.length();
+                    if (speed > 1e-5f) {
+                        float vx = p.vel.x() * right.x + p.vel.y() * right.y + p.vel.z() * right.z;
+                        float vy = p.vel.x() * up.x + p.vel.y() * up.y + p.vel.z() * up.z;
+                        roll = (float) Math.atan2(vy, vx);
+                        hx = size * (1f + speed * stretch);
+                    }
+                }
+                float wx = (float) (origin.x + p.pos.x() - cam.x);
+                float wy = (float) (origin.y + p.pos.y() - cam.y);
+                float wz = (float) (origin.z + p.pos.z() - cam.z);
+                int cr = (color >> 16) & 0xFF;
+                int cg = (color >> 8) & 0xFF;
+                int cb = color & 0xFF;
+                if (lit) {
+                    int light = lightAt(level, p);
+                    Billboards.litQuad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha, light);
+                } else {
+                    Billboards.quad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha);
                 }
             }
-            float wx = (float) (origin.x + p.pos.x() - cam.x);
-            float wy = (float) (origin.y + p.pos.y() - cam.y);
-            float wz = (float) (origin.z + p.pos.z() - cam.z);
-            int cr = (color >> 16) & 0xFF;
-            int cg = (color >> 8) & 0xFF;
-            int cb = color & 0xFF;
-            if (lit) {
-                int light = lightAt(level, p);
-                Billboards.litQuad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha, light);
-            } else {
-                Billboards.quad(frame.pose(), vc, camRot, wx, wy, wz, hx, hy, roll, cell, cr, cg, cb, alpha);
-            }
-        }
+        });
 
         if (hasTrails()) {
             Matrix4f m = frame.pose().last().pose();
-            VertexConsumer trailVc = frame.buffers().getBuffer(unlit);
-            for (Particle p : sim.particles()) {
-                if (p.trail != null && p.trailCount >= 2) {
-                    int color = sim.colorOf(p);
-                    Billboards.ribbon(m, trailVc, p, origin, cam, uv,
-                            (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, sim.alphaOf(p), sim.sizeOf(p));
+            frame.queue().submit(unlit, vc -> {
+                for (Particle p : sim.particles()) {
+                    if (p.trail != null && p.trailCount >= 2) {
+                        int color = sim.colorOf(p);
+                        Billboards.ribbon(m, vc, p, origin, cam, uv,
+                                (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, sim.alphaOf(p), sim.sizeOf(p));
+                    }
                 }
-            }
+            });
         }
     }
 
@@ -175,32 +173,33 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Level level = Minecraft.getInstance().level;
         Vec3 cam = frame.cameraPos();
         PoseStack pose = frame.pose();
-        VertexConsumer vc = frame.buffers().getBuffer(RenderType.cutout());
-        Quaternionf rot = new Quaternionf();
-        for (Particle p : sim.particles()) {
-            float size = sim.sizeOf(p);
-            float s = size * 2f;   // block models span a unit cube, size is a half extent, so double it
-            float wx = (float) (origin.x + p.pos.x() - cam.x);
-            float wy = (float) (origin.y + p.pos.y() - cam.y);
-            float wz = (float) (origin.z + p.pos.z() - cam.z);
-            // block debris always reads scene light, there is no full bright variant like cube and shard have
-            int light = level != null ? lightAt(level, p) : 0xF000F0;
-            // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
-            // of the frame draws on a corrupted stack
-            pose.pushPose();
-            try {
-                pose.translate(wx, wy, wz);
-                pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
-                pose.scale(s, s, s);
-                pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
-                PoseStack.Pose last = pose.last();
-                for (int i = 0; i < quads.size(); i++) {
-                    vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
+        frame.queue().submit(RenderType.cutout(), vc -> {
+            Quaternionf rot = new Quaternionf();
+            for (Particle p : sim.particles()) {
+                float size = sim.sizeOf(p);
+                float s = size * 2f;   // block models span a unit cube, size is a half extent, so double it
+                float wx = (float) (origin.x + p.pos.x() - cam.x);
+                float wy = (float) (origin.y + p.pos.y() - cam.y);
+                float wz = (float) (origin.z + p.pos.z() - cam.z);
+                // block debris always reads scene light, there is no full bright variant like cube and shard have
+                int light = level != null ? lightAt(level, p) : 0xF000F0;
+                // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
+                // of the frame draws on a corrupted stack
+                pose.pushPose();
+                try {
+                    pose.translate(wx, wy, wz);
+                    pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                    pose.scale(s, s, s);
+                    pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
+                    PoseStack.Pose last = pose.last();
+                    for (int i = 0; i < quads.size(); i++) {
+                        vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
+                    }
+                } finally {
+                    pose.popPose();
                 }
-            } finally {
-                pose.popPose();
             }
-        }
+        });
     }
 
     private void renderItemMesh(VfxFrame frame) {
@@ -212,26 +211,28 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Level level = mc.level;
         Vec3 cam = frame.cameraPos();
         PoseStack pose = frame.pose();
-        MultiBufferSource buffers = frame.buffers();
         ItemRenderer items = mc.getItemRenderer();
-        Quaternionf rot = new Quaternionf();
-        for (Particle p : sim.particles()) {
-            float s = sim.sizeOf(p) * 3f;   // GROUND transform already shrinks the model, so scale up to match
-            float wx = (float) (origin.x + p.pos.x() - cam.x);
-            float wy = (float) (origin.y + p.pos.y() - cam.y);
-            float wz = (float) (origin.z + p.pos.z() - cam.z);
-            int light = level != null ? lightAt(level, p) : 0xF000F0;
-            pose.pushPose();
-            try {
-                pose.translate(wx, wy, wz);
-                pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
-                pose.scale(s, s, s);
-                items.renderStatic(stack, ItemDisplayContext.GROUND, light, OverlayTexture.NO_OVERLAY,
-                        pose, buffers, level, 0);
-            } finally {
-                pose.popPose();
+        // renderStatic picks its render types internally, so this path cannot group by type
+        frame.queue().submitDirect(buffers -> {
+            Quaternionf rot = new Quaternionf();
+            for (Particle p : sim.particles()) {
+                float s = sim.sizeOf(p) * 3f;   // GROUND transform already shrinks the model, so scale up to match
+                float wx = (float) (origin.x + p.pos.x() - cam.x);
+                float wy = (float) (origin.y + p.pos.y() - cam.y);
+                float wz = (float) (origin.z + p.pos.z() - cam.z);
+                int light = level != null ? lightAt(level, p) : 0xF000F0;
+                pose.pushPose();
+                try {
+                    pose.translate(wx, wy, wz);
+                    pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                    pose.scale(s, s, s);
+                    items.renderStatic(stack, ItemDisplayContext.GROUND, light, OverlayTexture.NO_OVERLAY,
+                            pose, buffers, level, 0);
+                } finally {
+                    pose.popPose();
+                }
             }
-        }
+        });
     }
 
     private void renderMesh(VfxFrame frame) {
@@ -241,37 +242,38 @@ public final class ParticleBurstEffect implements RenderedEffect {
         Vec3 cam = frame.cameraPos();
         Matrix4f pose = frame.pose().last().pose();
         Vector3f scale = MeshGeometry.scaleFor(render.mesh());
-        VertexConsumer vc = frame.buffers().getBuffer(type);
-        Vector3f v = new Vector3f();
-        Quaternionf rot = new Quaternionf();
-        for (Particle p : sim.particles()) {
-            int color = sim.colorOf(p);
-            int a = (int) (sim.alphaOf(p) * 255f);
-            float size = sim.sizeOf(p);
-            int cr = (color >> 16) & 0xFF;
-            int cg = (color >> 8) & 0xFF;
-            int cb = color & 0xFF;
-            double wx = origin.x + p.pos.x() - cam.x;
-            double wy = origin.y + p.pos.y() - cam.y;
-            double wz = origin.z + p.pos.z() - cam.z;
-            rot.rotationYXZ(p.yaw, p.pitch, p.rotation);
-            int light = lit ? lightAt(level, p) : 0;
-            for (float[] face : MeshGeometry.CUBE_FACES) {
-                for (int i = 0; i < 4; i++) {
-                    v.set(face[i * 3] * scale.x, face[i * 3 + 1] * scale.y, face[i * 3 + 2] * scale.z);
-                    v.mul(size);
-                    rot.transform(v);
-                    float fx = (float) (wx + v.x);
-                    float fy = (float) (wy + v.y);
-                    float fz = (float) (wz + v.z);
-                    if (lit) {
-                        vc.addVertex(pose, fx, fy, fz).setColor(cr, cg, cb, a).setLight(light);
-                    } else {
-                        vc.addVertex(pose, fx, fy, fz).setColor(cr, cg, cb, a);
+        frame.queue().submit(type, vc -> {
+            Vector3f v = new Vector3f();
+            Quaternionf rot = new Quaternionf();
+            for (Particle p : sim.particles()) {
+                int color = sim.colorOf(p);
+                int a = (int) (sim.alphaOf(p) * 255f);
+                float size = sim.sizeOf(p);
+                int cr = (color >> 16) & 0xFF;
+                int cg = (color >> 8) & 0xFF;
+                int cb = color & 0xFF;
+                double wx = origin.x + p.pos.x() - cam.x;
+                double wy = origin.y + p.pos.y() - cam.y;
+                double wz = origin.z + p.pos.z() - cam.z;
+                rot.rotationYXZ(p.yaw, p.pitch, p.rotation);
+                int light = lit ? lightAt(level, p) : 0;
+                for (float[] face : MeshGeometry.CUBE_FACES) {
+                    for (int i = 0; i < 4; i++) {
+                        v.set(face[i * 3] * scale.x, face[i * 3 + 1] * scale.y, face[i * 3 + 2] * scale.z);
+                        v.mul(size);
+                        rot.transform(v);
+                        float fx = (float) (wx + v.x);
+                        float fy = (float) (wy + v.y);
+                        float fz = (float) (wz + v.z);
+                        if (lit) {
+                            vc.addVertex(pose, fx, fy, fz).setColor(cr, cg, cb, a).setLight(light);
+                        } else {
+                            vc.addVertex(pose, fx, fy, fz).setColor(cr, cg, cb, a);
+                        }
                     }
                 }
             }
-        }
+        });
     }
 
     // the unlit textured type. trails always draw with this, and it is the fallback for an unlit billboard pass
