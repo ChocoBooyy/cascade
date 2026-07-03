@@ -5,6 +5,7 @@ import dev.chocoboy.cascade.neoforge.client.CascadeClientHandler;
 import dev.chocoboy.cascade.neoforge.client.CascadeRenderTypes;
 import dev.chocoboy.cascade.neoforge.client.CascadeShaders;
 import dev.chocoboy.cascade.neoforge.client.PostFx;
+import dev.chocoboy.cascade.neoforge.client.ScreenVfxManager;
 import dev.chocoboy.cascade.neoforge.client.VfxRenderManager;
 import dev.chocoboy.cascade.neoforge.net.BeamPayload;
 import dev.chocoboy.cascade.neoforge.net.DomePayload;
@@ -16,6 +17,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -28,7 +30,11 @@ public final class CascadeFabricClient implements ClientModInitializer {
         CascadeRenderTypes.install(new FabricRenderTypes());
         registerShaders();
         registerReceivers();
-        ClientTickEvents.END_CLIENT_TICK.register(client -> VfxRenderManager.get().clientTick());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            VfxRenderManager.get().clientTick();
+            ScreenVfxManager.get().tick();
+        });
+        HudRenderCallback.EVENT.register((gui, tickCounter) -> ScreenVfxManager.get().render(gui));
         WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
             Camera cam = context.camera();
             VfxRenderManager.get().render(context.matrixStack(),
