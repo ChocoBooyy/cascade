@@ -1,14 +1,20 @@
 package dev.chocoboy.cascade.testmod;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
+import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
 import dev.chocoboy.cascade.neoforge.Vfx;
 import dev.chocoboy.cascade.neoforge.VfxEmitter;
+import dev.chocoboy.cascade.neoforge.client.ParticleBurstEffect;
 import dev.chocoboy.cascade.neoforge.client.PostFx;
 import dev.chocoboy.cascade.neoforge.client.ScreenVfx;
+import dev.chocoboy.cascade.neoforge.client.VfxRenderManager;
+import java.util.Random;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -175,6 +181,55 @@ public final class CascadeTestCommands {
                     .sprite(SpriteId.SPARK));
             return Command.SINGLE_SUCCESS;
         }));
+        // a client-local stress field for measuring render throughput: a grid of long lived spark systems
+        // around the player, no network involved, so fps under load compares cleanly between builds
+        event.getDispatcher().register(Commands.literal("cascadestress")
+                .then(Commands.argument("count", IntegerArgumentType.integer(1, 256)).executes(ctx -> {
+                    int count = IntegerArgumentType.getInteger(ctx, "count");
+                    spawnStressField(count);
+                    ctx.getSource().sendSuccess(
+                            () -> Component.literal("spawned " + count + " systems"), false);
+                    return Command.SINGLE_SUCCESS;
+                })));
+    }
+
+    // the same path the network handler takes, minus the wire: build each system straight from the spec
+    // and hand it to the render manager. alternating blends keep both textured passes under load
+    private static void spawnStressField(int count) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
+        EmitterSpec additive = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.4f))
+                .count(300).lifetime(200).speed(0.12f)
+                .size(0.1f, 0.02f, Easings.LINEAR)
+                .alpha(1f, 0f, Easings.LINEAR)
+                .color(0x66CCFF, 0xFF44AA, Easings.LINEAR)
+                .gravity(0f, -0.004f, 0f)
+                .drag(0.02f)
+                .sprite(SpriteId.SPARK)
+                .spec();
+        EmitterSpec alpha = Vfx.emitter()
+                .shape(ShapeSpec.sphere(0.4f))
+                .count(300).lifetime(200).speed(0.1f)
+                .size(0.25f, 0.05f, Easings.LINEAR)
+                .alpha(0.8f, 0f, Easings.LINEAR)
+                .color(0xDDDDDD, 0x555555, Easings.LINEAR)
+                .gravity(0f, 0.003f, 0f)
+                .sprite(SpriteId.SMOKE)
+                .blend(BlendMode.ALPHA)
+                .spec();
+        Vec3 base = mc.player.position();
+        int side = (int) Math.ceil(Math.sqrt(count));
+        for (int i = 0; i < count; i++) {
+            double x = (i % side - side / 2.0) * 5.0;
+            double z = (i / side - side / 2.0) * 5.0;
+            Vec3 origin = base.add(x, 2.0, z);
+            EmitterSpec spec = i % 2 == 0 ? additive : alpha;
+            VfxRenderManager.get().spawn(new ParticleBurstEffect(
+                    origin, spec.build(new Random(i)), spec.render(), spec.subEmitter(), 0));
+        }
     }
 
     // two low billowing smoke clouds that sit on the ground, four blocks apart, snapped to the surface. the

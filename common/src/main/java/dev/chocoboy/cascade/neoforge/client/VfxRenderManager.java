@@ -25,8 +25,9 @@ public final class VfxRenderManager {
     private static final double CULL_DISTANCE_SQ = CULL_DISTANCE * CULL_DISTANCE;
 
     // soft ceiling on primitives submitted per frame. effects render nearest first, so under heavy load
-    // the closest work is kept and the far tail is dropped for that frame
-    private static final int MAX_PRIMITIVES_PER_FRAME = 12000;
+    // the closest work is kept and the far tail is dropped for that frame. raised from 12k once draws
+    // went through the batcher: one upload and one draw per type leaves vertex building as the only cost
+    private static final int MAX_PRIMITIVES_PER_FRAME = 60000;
 
     private final List<RenderedEffect> active = new ArrayList<>();
     // effects spawned while a tick pass is running (sub-emitters), held until the pass finishes

@@ -36,7 +36,7 @@ public final class VfxRenderQueue {
         void failed(Object owner, RuntimeException e);
     }
 
-    private record Submission(Object owner, Writer writer) {
+    record Submission(Object owner, Writer writer) {
     }
 
     private record DirectSubmission(Object owner, DirectWriter writer) {
@@ -67,18 +67,14 @@ public final class VfxRenderQueue {
                 failures.failed(s.owner(), e);
             }
         }
+        // flush the direct draws now: the typed groups below bypass the buffer source entirely, so
+        // anything left in it would otherwise draw after the glow tiers instead of with the opaque one
+        buffers.endBatch();
         // the sort is stable, so types in the same tier keep first-submission order
         List<RenderType> order = new ArrayList<>(groups.keySet());
         order.sort(Comparator.comparingInt(VfxRenderQueue::tier));
         for (RenderType type : order) {
-            VertexConsumer vc = buffers.getBuffer(type);
-            for (Submission s : groups.get(type)) {
-                try {
-                    s.writer().write(vc);
-                } catch (RuntimeException e) {
-                    failures.failed(s.owner(), e);
-                }
-            }
+            CascadeBatcher.draw(type, groups.get(type), failures);
         }
     }
 
