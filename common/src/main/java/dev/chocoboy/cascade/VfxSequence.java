@@ -9,8 +9,11 @@ import java.util.function.Consumer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
-// builds a timeline of effects on one level. Each call appends a step; delay spaces them out and parallel
-// runs whole branches at once, so a composite effect (charge, then beam, then burst) reads top to bottom.
+/**
+ * Builds a timeline of effects on one level. Obtain with {@code Vfx.at(level)}. Each call appends a step;
+ * {@link #delay} spaces them out and {@link #parallel} runs whole branches at once, so a composite effect
+ * (charge, then beam, then burst) reads top to bottom. Finish with {@link #play}.
+ */
 public final class VfxSequence {
 
     private final ServerLevel level;
@@ -52,18 +55,19 @@ public final class VfxSequence {
         return run(() -> Vfx.dome(level, pos, radius, color, duration));
     }
 
+    /** Waits {@code ticks} ticks before the next step runs. */
     public VfxSequence delay(int ticks) {
         steps.add(Steps.delay(ticks));
         return this;
     }
 
-    // run an arbitrary action at this point in the timeline, the escape hatch for anything not covered above
+    /** Runs an arbitrary action at this point in the timeline, the escape hatch for anything not covered above. */
     public VfxSequence run(Runnable action) {
         steps.add(Steps.run(action));
         return this;
     }
 
-    // play several branches at once; the timeline continues only after the longest branch finishes
+    /** Plays several branches at once; the timeline continues only after the longest branch finishes. */
     @SafeVarargs
     public final VfxSequence parallel(Consumer<VfxSequence>... branches) {
         Step[] branchSteps = new Step[branches.length];
@@ -76,6 +80,7 @@ public final class VfxSequence {
         return this;
     }
 
+    /** Schedules the timeline; it begins running on the next server tick. */
     public void play() {
         VfxSequencer.get().schedule(new Timeline(Steps.sequence(steps.toArray(new Step[0]))));
     }

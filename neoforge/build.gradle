@@ -104,6 +104,15 @@ test {
     useJUnitPlatform()
 }
 
+// the jar is self-contained, so its javadoc should cover the merged common and engine api too, mirroring
+// the compileJava source-merge below. missing-comment noise is dropped (internals are undocumented on
+// purpose) while link and syntax checks still fail on a broken reference
+javadoc {
+    source(configurations.commonJava)
+    source(configurations.engineJava)
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
+}
+
 tasks.register('shaderLint', Test) {
     description = 'Lints core shader assets against the ShaderInstance load contract.'
     group = 'verification'
