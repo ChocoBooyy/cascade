@@ -2,7 +2,7 @@ package dev.chocoboy.cascade.testmod;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.chocoboy.cascade.neoforge.Vfx;
+import dev.chocoboy.cascade.Vfx;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.fml.common.Mod;

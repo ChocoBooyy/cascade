@@ -1,15 +1,15 @@
 package dev.chocoboy.cascade.fabric;
 
 import dev.chocoboy.cascade.CascadeCommon;
-import dev.chocoboy.cascade.neoforge.Vfx;
-import dev.chocoboy.cascade.neoforge.VfxSequencer;
-import dev.chocoboy.cascade.neoforge.net.BeamPayload;
-import dev.chocoboy.cascade.neoforge.net.DomePayload;
-import dev.chocoboy.cascade.neoforge.net.EffectPayload;
-import dev.chocoboy.cascade.neoforge.net.EmitterPayload;
-import dev.chocoboy.cascade.neoforge.net.LightPayload;
-import dev.chocoboy.cascade.neoforge.net.SdfPayload;
-import dev.chocoboy.cascade.neoforge.net.ShakePayload;
+import dev.chocoboy.cascade.Vfx;
+import dev.chocoboy.cascade.VfxSequencer;
+import dev.chocoboy.cascade.net.BeamPayload;
+import dev.chocoboy.cascade.net.DomePayload;
+import dev.chocoboy.cascade.net.EffectPayload;
+import dev.chocoboy.cascade.net.EmitterPayload;
+import dev.chocoboy.cascade.net.LightPayload;
+import dev.chocoboy.cascade.net.SdfPayload;
+import dev.chocoboy.cascade.net.ShakePayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;

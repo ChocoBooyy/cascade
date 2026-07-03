@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import dev.chocoboy.cascade.client.CascadeShaders;
 import java.io.IOException;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;

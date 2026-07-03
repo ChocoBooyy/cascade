@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.neoforge;
 
 import dev.chocoboy.cascade.CascadeCommon;
+import dev.chocoboy.cascade.Vfx;
 import dev.chocoboy.cascade.neoforge.client.CascadeClient;
 import dev.chocoboy.cascade.neoforge.net.CascadeNetwork;
 import net.neoforged.api.distmarker.Dist;

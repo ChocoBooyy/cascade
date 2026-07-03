@@ -1,7 +1,14 @@
 package dev.chocoboy.cascade.neoforge.net;
 
-import dev.chocoboy.cascade.neoforge.client.CascadeClientHandler;
+import dev.chocoboy.cascade.client.CascadeClientHandler;
 import dev.chocoboy.cascade.neoforge.client.ClientShakeHandler;
+import dev.chocoboy.cascade.net.BeamPayload;
+import dev.chocoboy.cascade.net.DomePayload;
+import dev.chocoboy.cascade.net.EffectPayload;
+import dev.chocoboy.cascade.net.EmitterPayload;
+import dev.chocoboy.cascade.net.LightPayload;
+import dev.chocoboy.cascade.net.SdfPayload;
+import dev.chocoboy.cascade.net.ShakePayload;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class CascadeNetwork {

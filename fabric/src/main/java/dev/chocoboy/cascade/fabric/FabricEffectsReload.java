@@ -1,6 +1,6 @@
 package dev.chocoboy.cascade.fabric;
 
-import dev.chocoboy.cascade.neoforge.CascadeEffects;
+import dev.chocoboy.cascade.CascadeEffects;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resources.ResourceLocation;
 

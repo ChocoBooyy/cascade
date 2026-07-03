@@ -1,5 +1,6 @@
 package dev.chocoboy.cascade.neoforge.client;
 
+import dev.chocoboy.cascade.client.CascadeRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 
 // the neoforge-built render types, exposed to the shared code through the CascadeRenderTypes seam
