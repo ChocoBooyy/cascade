@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'net.neoforged.moddev'
 }
 
@@ -139,4 +140,21 @@ tasks.named('runClient') {
 }
 tasks.named('runGameTest') {
     dependsOn 'testmodClasses'
+}
+
+// the jar is self-contained (engine and common compile in as sources), so the pom must not
+// declare dependencies; moddev's neoforge dep is the consumer's own concern
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifactId base.archivesName.get()
+            from components.java
+            pom.withXml {
+                def deps = asNode().dependencies
+                if (!deps.isEmpty()) {
+                    asNode().remove(deps)
+                }
+            }
+        }
+    }
 }
