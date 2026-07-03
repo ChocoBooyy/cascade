@@ -6,24 +6,17 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import dev.chocoboy.cascade.Vfx;
 import dev.chocoboy.cascade.VfxEmitter;
 import dev.chocoboy.cascade.VfxSequence;
-import dev.chocoboy.cascade.client.GpuSim;
-import dev.chocoboy.cascade.client.ParticleBurstEffect;
-import dev.chocoboy.cascade.client.PostFx;
-import dev.chocoboy.cascade.client.ScreenVfx;
-import dev.chocoboy.cascade.client.VfxRenderManager;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
-import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.emitter.ShapeSpec;
 import dev.chocoboy.cascade.engine.tween.Easings;
-import java.util.Random;
 import java.util.function.Consumer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
@@ -33,7 +26,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 public final class CascadeTestCommands {
@@ -97,95 +90,100 @@ public final class CascadeTestCommands {
                 .then(show("gravitywell", src -> gravityWell(src.getLevel(), src.getPosition().add(0.0, 2.5, 0.0))))
                 .then(show("gravitystar", src -> gravityStar(src.getLevel(),
                         onGround(src.getLevel(), src.getPosition(), src.getEntity()).add(0.0, 0.6, 0.0))))
-                // the whole tour at once
-                .then(Commands.literal("gallery").executes(ctx -> gallery(ctx.getSource()))));
-    }
-
-    // client side, since bloom is client render state; toggling on the server would only work in singleplayer
-    @SubscribeEvent
-    public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
-        // the client-only render toggles share the same root, on the client dispatcher. this group has no
-        // bare executes, so a server showcase like /cascade burst falls through to the server command above
-        event.getDispatcher().register(Commands.literal("cascade")
+                // the whole tour at once: gallery is a quick fixed-cadence run, showcase paces each effect
+                .then(Commands.literal("gallery").executes(ctx -> gallery(ctx.getSource())))
+                .then(Commands.literal("showcase").executes(ctx -> showcase(ctx.getSource())))
+                // render toggles live under the same root; the dist guard keeps a dedicated server from
+                // loading the client-only render classes, and in singleplayer they run on the integrated client
                 .then(Commands.literal("bloom").executes(ctx -> {
-                    boolean on = !PostFx.enabled();
-                    PostFx.setEnabled(on);
-                    ctx.getSource().sendSuccess(() -> Component.literal("bloom " + (on ? "on" : "off")), false);
-                    return Command.SINGLE_SUCCESS;
-                }))
-                // hud particles are client render state. sizes and speeds are gui units; a sphere shell
-                // projects as a round ring of sparks where a ring shape would flatten to a line on the hud
-                .then(Commands.literal("screen").executes(ctx -> {
-                    ScreenVfx.playCentered(Vfx.emitter()
-                            .shape(ShapeSpec.sphere(30f))
-                            .count(90).lifetime(40).speed(2.5f)
-                            .size(8f, 0f, Easings.EASE_OUT_QUAD)
-                            .alpha(1f, 0f, Easings.LINEAR)
-                            .color(0xFFD75A, 0xFF4422, Easings.LINEAR)
-                            .gravity(0f, 0.15f, 0f)
-                            .sprite(SpriteId.SPARK));
+                    if (FMLEnvironment.dist.isClient()) {
+                        CascadeClientDemo.bloom();
+                    }
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("gpu").executes(ctx -> {
-                    String status;
-                    if (!GpuSim.available()) {
-                        status = "gpu sim unavailable, needs gl 4.3";
-                    } else {
-                        boolean on = !GpuSim.enabled();
-                        GpuSim.setEnabled(on);
-                        status = "gpu sim " + (on ? "on" : "off");
+                    if (FMLEnvironment.dist.isClient()) {
+                        CascadeClientDemo.gpu();
                     }
-                    ctx.getSource().sendSuccess(() -> Component.literal(status), false);
                     return Command.SINGLE_SUCCESS;
                 }))
-                // a client-local stress field for measuring render throughput: a grid of long lived spark
-                // systems around the player, no network involved, so fps under load compares between builds
+                .then(Commands.literal("screen").executes(ctx -> {
+                    if (FMLEnvironment.dist.isClient()) {
+                        CascadeClientDemo.screen();
+                    }
+                    return Command.SINGLE_SUCCESS;
+                }))
                 .then(Commands.literal("stress")
                         .then(Commands.argument("count", IntegerArgumentType.integer(1, 256)).executes(ctx -> {
                             int count = IntegerArgumentType.getInteger(ctx, "count");
-                            spawnStressField(count);
-                            ctx.getSource().sendSuccess(
-                                    () -> Component.literal("spawned " + count + " systems"), false);
+                            if (FMLEnvironment.dist.isClient()) {
+                                CascadeClientDemo.stress(count);
+                            }
                             return Command.SINGLE_SUCCESS;
                         }))));
     }
 
-    // the same path the network handler takes, minus the wire: build each system straight from the spec
-    // and hand it to the render manager. alternating blends keep both textured passes under load
-    private static void spawnStressField(int count) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
-            return;
+    // plays every showcase in order for a recording: each effect gets an actionbar title and a hold matched
+    // to how long it lingers, so nothing bleeds into the next. shares the gallery run guard
+    private static int showcase(CommandSourceStack src) {
+        if (galleryRunning) {
+            src.sendFailure(Component.literal("a tour is already running"));
+            return 0;
         }
-        EmitterSpec additive = Vfx.emitter()
-                .shape(ShapeSpec.sphere(0.4f))
-                .count(300).lifetime(200).speed(0.12f)
-                .size(0.1f, 0.02f, Easings.LINEAR)
-                .alpha(1f, 0f, Easings.LINEAR)
-                .color(0x66CCFF, 0xFF44AA, Easings.LINEAR)
-                .gravity(0f, -0.004f, 0f)
-                .drag(0.02f)
-                .sprite(SpriteId.SPARK)
-                .spec();
-        EmitterSpec alpha = Vfx.emitter()
-                .shape(ShapeSpec.sphere(0.4f))
-                .count(300).lifetime(200).speed(0.1f)
-                .size(0.25f, 0.05f, Easings.LINEAR)
-                .alpha(0.8f, 0f, Easings.LINEAR)
-                .color(0xDDDDDD, 0x555555, Easings.LINEAR)
-                .gravity(0f, 0.003f, 0f)
-                .sprite(SpriteId.SMOKE)
-                .blend(BlendMode.ALPHA)
-                .spec();
-        Vec3 base = mc.player.position();
-        int side = (int) Math.ceil(Math.sqrt(count));
-        for (int i = 0; i < count; i++) {
-            double x = (i % side - side / 2.0) * 5.0;
-            double z = (i / side - side / 2.0) * 5.0;
-            Vec3 origin = base.add(x, 2.0, z);
-            EmitterSpec spec = i % 2 == 0 ? additive : alpha;
-            VfxRenderManager.get().spawn(new ParticleBurstEffect(
-                    origin, spec.build(new Random(i)), spec.render(), spec.subEmitter(), 0));
+        galleryRunning = true;
+        ServerLevel level = src.getLevel();
+        Vec3 p = src.getPosition();
+        Vec3 ground = onGround(level, p, src.getEntity());
+        Vec3 beamTo = p.add(lookVector(src).scale(10.0));
+        VfxSequence seq = Vfx.at(level);
+        stage(seq, src, "burst", () -> burst(level, p.add(0.0, 1.0, 0.0)), 75);
+        stage(seq, src, "firework json", () -> Vfx.play(level, p.add(0.0, 1.0, 0.0),
+                ResourceLocation.fromNamespaceAndPath("cascade", "firework")), 75);
+        stage(seq, src, "beam", () -> Vfx.beam(level, p, beamTo), 50);
+        stage(seq, src, "custom beam", () -> customBeam(src), 55);
+        stage(seq, src, "dome", () -> standaloneDome(level, p.add(0.0, 1.0, 0.0)), 85);
+        stage(seq, src, "shake", () -> Vfx.shake(level, p, 3.0f, 12), 45);
+        stage(seq, src, "cast light", () -> standaloneLight(level, ground.add(0.0, 0.05, 0.0)), 65);
+        stage(seq, src, "jet", () -> jet(level, p.add(0.0, 1.0, 0.0)), 120);
+        stage(seq, src, "turbulence", () -> turbulence(level, p.add(0.0, 1.0, 0.0)), 140);
+        stage(seq, src, "splash", () -> splash(level, p), 140);
+        stage(seq, src, "layered effect", () -> layered(level, p), 75);
+        stage(seq, src, "smoke: lit vs unlit", () -> combo(level, p.add(0.0, 1.0, 0.0)), 160);
+        stage(seq, src, "soft smoke", () -> softSmoke(level, ground), 200);
+        stage(seq, src, "custom component", () -> component(level, p.add(0.0, 1.5, 0.0)), 75);
+        stage(seq, src, "boids", () -> boids(level, p.add(0.0, 2.0, 0.0)), 220);
+        stage(seq, src, "cube and shard debris", () -> debris(level, p), 110);
+        stage(seq, src, "block debris", () -> blockDebris(level, p), 110);
+        stage(seq, src, "item debris", () -> itemDebris(level, p), 110);
+        stage(seq, src, "sdf volume", () -> sdfCluster(level, p.add(0.0, 2.0, 0.0)), 240);
+        stage(seq, src, "storm: 100k gpu", () -> storm(level, p.add(0.0, 3.0, 0.0)), 220);
+        stage(seq, src, "singularity", () -> singularity(level, p.add(0.0, 2.2, 0.0)), 200);
+        stage(seq, src, "gravity well", () -> gravityWell(level, p.add(0.0, 2.5, 0.0)), 200);
+        stage(seq, src, "gravity star", () -> gravityStar(level, ground.add(0.0, 0.6, 0.0)), 200);
+        seq.run(() -> galleryRunning = false).play();
+        return Command.SINGLE_SUCCESS;
+    }
+
+    // one showcase beat: title in the actionbar, fire the effect, then hold before the next. a throwing entry
+    // is contained so it cannot take the timeline and its guard reset down with it
+    private static void stage(VfxSequence seq, CommandSourceStack src, String name, Runnable fire, int hold) {
+        seq.run(() -> {
+            announce(src, name);
+            try {
+                fire.run();
+            } catch (RuntimeException e) {
+                src.sendFailure(Component.literal("showcase entry failed: " + name));
+            }
+        }).delay(hold);
+    }
+
+    // the label rides the actionbar, above the hotbar, so it reads on camera without chat spam; a command
+    // block has no actionbar so it falls back to plain feedback
+    private static void announce(CommandSourceStack src, String name) {
+        if (src.getEntity() instanceof ServerPlayer player) {
+            player.displayClientMessage(Component.literal(name), true);
+        } else {
+            src.sendSuccess(() -> Component.literal(name), false);
         }
     }
 
