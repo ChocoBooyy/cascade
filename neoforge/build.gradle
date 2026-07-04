@@ -41,11 +41,8 @@ sourceSets {
 }
 
 neoForge {
+    // 26.1 is unobfuscated, so no parchment mappings are applied
     version = neoforge_version
-    parchment {
-        minecraftVersion = parchment_minecraft
-        mappingsVersion = parchment_version
-    }
     addModdingDependenciesTo(sourceSets.testmod)
     mods {
         "${mod_id}" {

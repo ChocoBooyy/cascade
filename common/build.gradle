@@ -17,11 +17,8 @@ repositories {
 }
 
 neoForge {
+    // 26.1 is unobfuscated, so no parchment mappings are applied
     neoFormVersion = neo_form_version
-    parchment {
-        minecraftVersion = parchment_minecraft
-        mappingsVersion = parchment_version
-    }
 }
 
 configurations {

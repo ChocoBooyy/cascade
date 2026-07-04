@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'fabric-loom' version '1.7.4'
+    id 'fabric-loom' version '1.17-SNAPSHOT'
 }
 
 base {
@@ -36,11 +36,10 @@ configurations {
 }
 
 dependencies {
+    // 26.1 ships unobfuscated: loom does not remap, so there is no mappings block and the deps are plain
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    // mojmap so the shared :common source (official names) compiles unchanged on this loader too
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
     commonJava project(path: ':common', configuration: 'commonJava')
     engineJava project(path: ':engine', configuration: 'engineJava')
