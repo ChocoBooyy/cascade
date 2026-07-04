@@ -1,9 +1,9 @@
 # Changelog
 
-Notable changes to Cascade, newest first. Versions follow [semver](https://semver.org); while the library is
-pre-1.0 the public API can still change between minor releases.
+Notable changes to Cascade, newest first. Versions follow [semver](https://semver.org): the public API is
+stable across 1.x, and a breaking change would come with a 2.0.
 
-## 0.1.0 - 2026-07-03
+## 1.0.0 - 2026-07-04
 
 First release. Cascade is a code-first visual effects and sequencing library for Minecraft 1.21.1, running on
 both NeoForge and Fabric from one shared core. On its own it adds nothing to the game; other mods drive it.
