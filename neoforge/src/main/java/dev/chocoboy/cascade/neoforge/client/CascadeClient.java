@@ -13,7 +13,9 @@ public final class CascadeClient {
         CascadeRenderTypes.install(new NeoRenderTypes());
         NeoForge.EVENT_BUS.register(new VfxRenderBridge());
         NeoForge.EVENT_BUS.register(ShakeController.get());
-        // core shaders register on the mod bus, not the game bus, so the soft particle shader loads with the rest
-        modBus.addListener(CascadeShaderReg::onRegisterShaders);
+        // the custom render pipelines register on the mod bus so the gpu device compiles them; the soft
+        // particle core shaders are not ported to 26.1 yet, so the soft render types fall back to their
+        // hard-edged twins. see the porting notes
+        modBus.addListener(VfxRenderTypes::registerPipelines);
     }
 }

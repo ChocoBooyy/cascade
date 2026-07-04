@@ -20,7 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
@@ -67,7 +67,7 @@ public final class CascadeTestCommands {
                 .then(Commands.literal("custom").executes(ctx -> {
                     CommandSourceStack src = ctx.getSource();
                     Vfx.play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0),
-                            ResourceLocation.fromNamespaceAndPath("cascade", "firework"));
+                            Identifier.fromNamespaceAndPath("cascade", "firework"));
                     return Command.SINGLE_SUCCESS;
                 }))
                 .then(Commands.literal("custombeam").executes(ctx -> {
@@ -782,7 +782,7 @@ public final class CascadeTestCommands {
         Runnable[] fires = {
                 () -> burst(level, src.getPosition().add(0.0, 1.0, 0.0)),
                 () -> Vfx.play(level, src.getPosition().add(0.0, 1.0, 0.0),
-                        ResourceLocation.fromNamespaceAndPath("cascade", "firework")),
+                        Identifier.fromNamespaceAndPath("cascade", "firework")),
                 () -> layered(src),
                 () -> splash(src),
                 () -> debris(src),

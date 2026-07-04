@@ -16,4 +16,7 @@ rootProject.name = 'cascade'
 include 'engine'
 include 'common'
 include 'neoforge'
+// fabric is temporarily out of the build for the 26.1 port: its loom setup needs a specific unobfuscated
+// snapshot and its render types still use the removed RenderStateShard api. neoforge is ported first so it
+// can be run and tested; fabric follows. see the porting notes
 //include 'fabric'

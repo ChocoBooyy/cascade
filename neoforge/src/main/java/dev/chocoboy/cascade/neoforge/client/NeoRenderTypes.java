@@ -1,7 +1,7 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import dev.chocoboy.cascade.client.CascadeRenderTypes;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 // the neoforge-built render types, exposed to the shared code through the CascadeRenderTypes seam
 public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
@@ -23,7 +23,8 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
 
     @Override
     public RenderType texturedAlphaSoft() {
-        return VfxRenderTypes.TEXTURED_ALPHA_SOFT;
+        // soft depth fade is not ported yet, so soft maps onto its hard-edged twin. see the porting notes
+        return VfxRenderTypes.TEXTURED_ALPHA;
     }
 
     @Override
@@ -33,7 +34,8 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
 
     @Override
     public RenderType solidLit() {
-        return VfxRenderTypes.SOLID_LIT;
+        // the lightmap-lit mesh shader is gone in 26.1, so lit mesh debris draws unlit. see the porting notes
+        return VfxRenderTypes.SOLID;
     }
 
     @Override
@@ -48,7 +50,8 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
 
     @Override
     public RenderType texturedAlphaLitSoft() {
-        return VfxRenderTypes.TEXTURED_ALPHA_LIT_SOFT;
+        // soft depth fade is not ported yet, so soft maps onto its hard-edged twin. see the porting notes
+        return VfxRenderTypes.TEXTURED_ALPHA_LIT;
     }
 
     @Override

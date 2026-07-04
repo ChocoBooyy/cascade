@@ -57,7 +57,9 @@ public final class GpuSim {
     }
 
     static boolean shouldRun(EmitterSpec spec) {
-        return enabled && !failed && eligible(spec) && available();
+        // the gpu backend's draw path is not ported to 26.1 yet, so eligible bursts route to the cpu sim
+        // instead. see GpuBurstEffect and the porting notes
+        return false;
     }
 
     // the honest v1 cut: stateless additive billboard bursts only. anything the compute shader does not

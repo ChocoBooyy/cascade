@@ -101,24 +101,10 @@ public final class VfxRenderManager {
         }
         visible.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(camPos)));
 
-        // only refresh the scene depth copy when a soft effect is actually on screen, so ordinary effects
-        // never pay for the blit. soft effects sample it to fade where they meet geometry
-        boolean anySoft = false;
-        for (int i = 0; i < visible.size(); i++) {
-            if (visible.get(i).soft()) {
-                anySoft = true;
-                break;
-            }
-        }
-        if (anySoft && refreshSoftDepth) {
-            SoftDepth.copyFromMain();
-            if (CascadeShaders.soft() != null) {
-                CascadeShaders.soft().setSampler("DepthSampler", SoftDepth.depthTextureId());
-            }
-            if (CascadeShaders.softLit() != null) {
-                CascadeShaders.softLit().setSampler("DepthSampler", SoftDepth.depthTextureId());
-            }
-        }
+        // soft particles fade where they meet geometry by sampling a scene depth copy through a custom core
+        // shader. 26.1 replaced ShaderInstance with the RenderPipeline system, so that path is disabled on
+        // this port: soft effects still draw, they just clip hard against terrain like an ordinary quad.
+        // the refreshSoftDepth flag and SoftDepth blit stay wired for when the port is restored
 
         // effects only submit work here; the queue draws it grouped by render type in the playback below
         int primitives = 0;

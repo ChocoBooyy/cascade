@@ -1,198 +1,125 @@
 package dev.chocoboy.cascade.neoforge.client;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import dev.chocoboy.cascade.client.CascadeShaders;
 import dev.chocoboy.cascade.client.ParticleAtlas;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
+import java.util.List;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
+// the neoforge render types, rebuilt for 26.1. the old RenderStateShard composite builder is gone, so each
+// type is a RenderPipeline (derived from the closest vanilla pipeline so it inherits that shader's uniform
+// and sampler wiring) paired with a RenderSetup that binds the particle atlas. custom pipelines must be
+// registered with the gpu device, which happens through registerPipelines below.
+//
+// first cut of the port: the soft (depth-fading) and lightmap-lit variants are not rebuilt yet, so the
+// provider maps them onto their hard-edged and unlit twins. see the porting notes
 final class VfxRenderTypes {
 
-    // no predefined position-tex-color shard exists, so wrap the matching core shader once
-    private static final RenderStateShard.ShaderStateShard POSITION_TEX_COLOR =
-            new RenderStateShard.ShaderStateShard(GameRenderer::getPositionTexColorShader);
+    private static final int BUFFER_BYTES = 1536;
 
-    // the vanilla particle shader samples the lightmap, which is what we want for lit particles
-    private static final RenderStateShard.ShaderStateShard PARTICLE =
-            new RenderStateShard.ShaderStateShard(GameRenderer::getParticleShader);
+    private static final DepthStencilState DEPTH_NO_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false);
+    private static final DepthStencilState DEPTH_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true);
+    private static final DepthStencilState NO_DEPTH = new DepthStencilState(CompareOp.ALWAYS_PASS, false);
 
     private VfxRenderTypes() {
     }
 
-    // main-target additive POSITION_COLOR. Depth tested so effects are occluded by terrain, but no
-    // depth write (COLOR_WRITE) so overlapping particles blend instead of fighting. Used by beams.
-    static final RenderType ADDITIVE = RenderType.create(
-            "cascade_additive",
-            DefaultVertexFormat.POSITION_COLOR,
-            VertexFormat.Mode.QUADS,
-            1536,
-            false,
-            true,
-            RenderType.CompositeState.builder()
-                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
-                    .setTransparencyState(RenderStateShard.ADDITIVE_TRANSPARENCY)
-                    .setCullState(RenderStateShard.NO_CULL)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                    .createCompositeState(false));
-
-    // textured atlas sprites, additive: glows that brighten what is behind them (fire, sparks, magic)
-    static final RenderType TEXTURED_ADDITIVE = textured("cascade_textured_additive",
-            RenderStateShard.ADDITIVE_TRANSPARENCY);
-
-    // textured atlas sprites, alpha blended: occlude what is behind them (smoke, dust)
-    static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha",
-            RenderStateShard.TRANSLUCENT_TRANSPARENCY);
-
-    // soft twin of TEXTURED_ALPHA: same alpha blend, but the cascade_soft core shader fades the quad out
-    // where it nears scene geometry, reading the depth copy bound each frame, so smoke has no hard clip line
-    private static final RenderStateShard.ShaderStateShard SOFT_SHADER =
-            new RenderStateShard.ShaderStateShard(CascadeShaders::soft);
-
-    static final RenderType TEXTURED_ALPHA_SOFT = RenderType.create(
-            "cascade_textured_alpha_soft",
-            DefaultVertexFormat.POSITION_TEX_COLOR,
-            VertexFormat.Mode.QUADS,
-            1536,
-            false,
-            true,
-            RenderType.CompositeState.builder()
-                    .setShaderState(SOFT_SHADER)
-                    .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
-                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                    .setCullState(RenderStateShard.NO_CULL)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                    .createCompositeState(false));
-
-    private static RenderType textured(String name, RenderStateShard.TransparencyStateShard transparency) {
-        return RenderType.create(
-                name,
-                DefaultVertexFormat.POSITION_TEX_COLOR,
-                VertexFormat.Mode.QUADS,
-                1536,
-                false,
-                true,
-                RenderType.CompositeState.builder()
-                        .setShaderState(POSITION_TEX_COLOR)
-                        .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
-                        .setTransparencyState(transparency)
-                        .setCullState(RenderStateShard.NO_CULL)
-                        .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                        .createCompositeState(false));
+    private static RenderPipeline pipeline(String name, RenderPipeline base, VertexFormat format,
+            ColorTargetState color, DepthStencilState depth) {
+        return base.toBuilder()
+                .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
+                .withVertexFormat(format, VertexFormat.Mode.QUADS)
+                .withColorTargetState(color)
+                .withDepthStencilState(depth)
+                .withCull(false)
+                .build();
     }
 
-    // gui twins of the textured types: NO_DEPTH_TEST so the hud pass draws them over whatever scene depth is
-    // left in the buffer, and no depth write so they never disturb it for the rest of the gui
-    static final RenderType GUI_TEXTURED_ADDITIVE = guiTextured("cascade_gui_textured_additive",
-            RenderStateShard.ADDITIVE_TRANSPARENCY);
+    // untextured additive quads for beams: additive blend, depth tested so terrain occludes, no depth write
+    private static final RenderPipeline ADDITIVE_PIPE = pipeline("additive",
+            RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
+            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
 
-    static final RenderType GUI_TEXTURED_ALPHA = guiTextured("cascade_gui_textured_alpha",
-            RenderStateShard.TRANSLUCENT_TRANSPARENCY);
+    // textured atlas sprites in world, additive (glows) and translucent (smoke); depth tested, no depth write
+    private static final RenderPipeline TEXTURED_ADDITIVE_PIPE = pipeline("textured_additive",
+            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
 
-    private static RenderType guiTextured(String name, RenderStateShard.TransparencyStateShard transparency) {
-        return RenderType.create(
-                name,
-                DefaultVertexFormat.POSITION_TEX_COLOR,
-                VertexFormat.Mode.QUADS,
-                1536,
-                false,
-                true,
-                RenderType.CompositeState.builder()
-                        .setShaderState(POSITION_TEX_COLOR)
-                        .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
-                        .setTransparencyState(transparency)
-                        .setCullState(RenderStateShard.NO_CULL)
-                        .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
-                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                        .createCompositeState(false));
+    private static final RenderPipeline TEXTURED_ALPHA_PIPE = pipeline("textured_alpha",
+            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+            new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
+
+    // double sided solid geometry for mesh particles: opaque, depth tested and written so cubes read as 3D
+    private static final RenderPipeline SOLID_PIPE = pipeline("solid",
+            RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
+            ColorTargetState.DEFAULT, DEPTH_WRITE);
+
+    // lit textured sprites use the particle format and shader, so the world lightmap tints them
+    private static final RenderPipeline TEXTURED_ADDITIVE_LIT_PIPE = pipeline("textured_additive_lit",
+            RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
+            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+
+    private static final RenderPipeline TEXTURED_ALPHA_LIT_PIPE = pipeline("textured_alpha_lit",
+            RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
+            new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
+
+    // gui twins: no depth test, so the hud pass draws over whatever scene depth is left, and no depth write
+    private static final RenderPipeline GUI_TEXTURED_ADDITIVE_PIPE = pipeline("gui_textured_additive",
+            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+            new ColorTargetState(BlendFunction.ADDITIVE), NO_DEPTH);
+
+    private static final RenderPipeline GUI_TEXTURED_ALPHA_PIPE = pipeline("gui_textured_alpha",
+            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+            new ColorTargetState(BlendFunction.TRANSLUCENT), NO_DEPTH);
+
+    private static final List<RenderPipeline> ALL = List.of(
+            ADDITIVE_PIPE, TEXTURED_ADDITIVE_PIPE, TEXTURED_ALPHA_PIPE, SOLID_PIPE,
+            TEXTURED_ADDITIVE_LIT_PIPE, TEXTURED_ALPHA_LIT_PIPE,
+            GUI_TEXTURED_ADDITIVE_PIPE, GUI_TEXTURED_ALPHA_PIPE);
+
+    // the gpu device only compiles pipelines it knows about, so every custom pipeline is registered here
+    static void registerPipelines(RegisterRenderPipelinesEvent event) {
+        ALL.forEach(event::registerPipeline);
     }
 
-    // solid double sided geometry for mesh particles. NO_CULL so a winding mistake cannot hide a face.
-    // COLOR_DEPTH_WRITE and LEQUAL depth so cubes occlude correctly and read as solid 3D
-    static final RenderType SOLID = RenderType.create(
-            "cascade_solid",
-            DefaultVertexFormat.POSITION_COLOR,
-            VertexFormat.Mode.QUADS,
-            1536,
-            false,
-            false,
-            RenderType.CompositeState.builder()
-                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
-                    .setCullState(RenderStateShard.NO_CULL)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                    .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
-                    .createCompositeState(false));
-
-    private static final RenderStateShard.ShaderStateShard POSITION_COLOR_LIGHTMAP =
-            new RenderStateShard.ShaderStateShard(GameRenderer::getPositionColorLightmapShader);
-
-    // lit twin: POSITION_COLOR_LIGHTMAP carries a lightmap coord per vertex so debris sits in scene light
-    static final RenderType SOLID_LIT = RenderType.create(
-            "cascade_solid_lit",
-            DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
-            VertexFormat.Mode.QUADS,
-            1536,
-            false,
-            false,
-            RenderType.CompositeState.builder()
-                    .setShaderState(POSITION_COLOR_LIGHTMAP)
-                    .setLightmapState(RenderStateShard.LIGHTMAP)
-                    .setCullState(RenderStateShard.NO_CULL)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                    .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
-                    .createCompositeState(false));
-
-    // lit twins of the textured types, tinted by the world lightmap so particles sit in scene lighting
-    static final RenderType TEXTURED_ADDITIVE_LIT = litTextured("cascade_textured_additive_lit",
-            RenderStateShard.ADDITIVE_TRANSPARENCY);
-
-    static final RenderType TEXTURED_ALPHA_LIT = litTextured("cascade_textured_alpha_lit",
-            RenderStateShard.TRANSLUCENT_TRANSPARENCY);
-
-    // soft twin of TEXTURED_ALPHA_LIT: PARTICLE format so the lightmap tints the vertex color, plus the
-    // cascade_soft_lit core shader fades the quad where it nears geometry. LIGHTMAP supplies Sampler2; the
-    // DepthSampler is bound per frame in VfxRenderManager, exactly like the unlit soft type
-    private static final RenderStateShard.ShaderStateShard SOFT_LIT_SHADER =
-            new RenderStateShard.ShaderStateShard(CascadeShaders::softLit);
-
-    static final RenderType TEXTURED_ALPHA_LIT_SOFT = RenderType.create(
-            "cascade_textured_alpha_lit_soft",
-            DefaultVertexFormat.PARTICLE,
-            VertexFormat.Mode.QUADS,
-            1536,
-            false,
-            true,
-            RenderType.CompositeState.builder()
-                    .setShaderState(SOFT_LIT_SHADER)
-                    .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
-                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                    .setLightmapState(RenderStateShard.LIGHTMAP)
-                    .setCullState(RenderStateShard.NO_CULL)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                    .createCompositeState(false));
-
-    // PARTICLE format carries a lightmap coord per vertex; the particle shader samples it
-    private static RenderType litTextured(String name, RenderStateShard.TransparencyStateShard transparency) {
-        return RenderType.create(
-                name,
-                DefaultVertexFormat.PARTICLE,
-                VertexFormat.Mode.QUADS,
-                1536,
-                false,
-                true,
-                RenderType.CompositeState.builder()
-                        .setShaderState(PARTICLE)
-                        .setTextureState(new RenderStateShard.TextureStateShard(ParticleAtlas.textureId(), false, false))
-                        .setTransparencyState(transparency)
-                        .setLightmapState(RenderStateShard.LIGHTMAP)
-                        .setCullState(RenderStateShard.NO_CULL)
-                        .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                        .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                        .createCompositeState(false));
+    // an untextured type: just the pipeline and a vertex buffer
+    private static RenderType plain(String name, RenderPipeline pipeline, boolean sort) {
+        RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline).bufferSize(BUFFER_BYTES);
+        if (sort) {
+            setup.sortOnUpload();
+        }
+        return RenderType.create(name, setup.createRenderSetup());
     }
+
+    // a textured type: binds the particle atlas to Sampler0, and the lightmap too when the shader is lit
+    private static RenderType textured(String name, RenderPipeline pipeline, boolean sort, boolean lightmap) {
+        RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline)
+                .withTexture("Sampler0", ParticleAtlas.textureId())
+                .bufferSize(BUFFER_BYTES);
+        if (lightmap) {
+            setup.useLightmap();
+        }
+        if (sort) {
+            setup.sortOnUpload();
+        }
+        return RenderType.create(name, setup.createRenderSetup());
+    }
+
+    static final RenderType ADDITIVE = plain("cascade_additive", ADDITIVE_PIPE, false);
+    static final RenderType SOLID = plain("cascade_solid", SOLID_PIPE, false);
+    static final RenderType TEXTURED_ADDITIVE = textured("cascade_textured_additive", TEXTURED_ADDITIVE_PIPE, false, false);
+    static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha", TEXTURED_ALPHA_PIPE, true, false);
+    static final RenderType TEXTURED_ADDITIVE_LIT = textured("cascade_textured_additive_lit", TEXTURED_ADDITIVE_LIT_PIPE, false, true);
+    static final RenderType TEXTURED_ALPHA_LIT = textured("cascade_textured_alpha_lit", TEXTURED_ALPHA_LIT_PIPE, true, true);
+    static final RenderType GUI_TEXTURED_ADDITIVE = textured("cascade_gui_textured_additive", GUI_TEXTURED_ADDITIVE_PIPE, false, false);
+    static final RenderType GUI_TEXTURED_ALPHA = textured("cascade_gui_textured_alpha", GUI_TEXTURED_ALPHA_PIPE, true, false);
 }
