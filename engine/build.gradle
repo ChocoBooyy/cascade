@@ -15,6 +15,7 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
     withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -65,6 +66,13 @@ publishing {
         register('mavenJava', MavenPublication) {
             artifactId base.archivesName.get()
             from components.java
+        }
+    }
+    repositories {
+        // a local clone of the ChocoBooyy/maven repo; push it after publishing, consumers read it over raw
+        maven {
+            name = 'chocoboy'
+            url = uri("${rootDir}/../maven")
         }
     }
 }

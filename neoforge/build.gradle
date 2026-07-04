@@ -10,6 +10,8 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+    withSourcesJar()
+    withJavadocJar()
 }
 
 repositories {
@@ -113,6 +115,12 @@ javadoc {
     options.addStringOption('Xdoclint:all,-missing', '-quiet')
 }
 
+// the sources jar covers the merged api too, so the published artifact is browsable end to end
+tasks.named('sourcesJar') {
+    from(configurations.commonJava)
+    from(configurations.engineJava)
+}
+
 tasks.register('shaderLint', Test) {
     description = 'Lints core shader assets against the ShaderInstance load contract.'
     group = 'verification'
@@ -164,6 +172,13 @@ publishing {
                     asNode().remove(deps)
                 }
             }
+        }
+    }
+    repositories {
+        // a local clone of the ChocoBooyy/maven repo; push it after publishing, consumers read it over raw
+        maven {
+            name = 'chocoboy'
+            url = uri("${rootDir}/../maven")
         }
     }
 }
