@@ -18,6 +18,10 @@ loom {
 sourceSets {
     // package the shared assets (core shaders) that live in :common, the resource twin of the java source-merge
     main {
+        // the shared testmod demos, dev-guarded at runtime; same source as the neoforge testmod
+        java {
+            srcDir "$rootDir/testmod-shared/java"
+        }
         resources {
             srcDir project(':common').file('src/main/resources')
         }
