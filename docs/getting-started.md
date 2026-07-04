@@ -11,7 +11,7 @@ artifact already bundles the engine and shared code, so depend on exactly one of
 
 ```groovy
 repositories {
-    mavenLocal() // where Cascade lives during development, until a public maven repo is set up
+    maven { url 'https://raw.githubusercontent.com/ChocoBooyy/maven/main' }
 }
 
 dependencies {
