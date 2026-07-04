@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.chocoboy.cascade.client.ParticleAtlas;
 import java.util.List;
+import java.util.function.Supplier;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -116,10 +117,21 @@ final class VfxRenderTypes {
         return RenderType.create(name, setup.createRenderSetup());
     }
 
+    // the atlas is a single mip level built for nearest sampling, so it must be bound with a nearest,
+    // no-mipmap sampler. the default sampler mipmaps, and sampling a missing mip reads as white, which drew
+    // every sprite as a flat vertex-coloured quad. clamp to edge so a cell cannot bleed into its neighbour.
+    private static final Supplier<com.mojang.blaze3d.textures.GpuSampler> ATLAS_SAMPLER = () ->
+            com.mojang.blaze3d.systems.RenderSystem.getSamplerCache().getSampler(
+                    com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
+                    com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
+                    com.mojang.blaze3d.textures.FilterMode.NEAREST,
+                    com.mojang.blaze3d.textures.FilterMode.NEAREST,
+                    false);
+
     // a textured type: binds the particle atlas to Sampler0, and the lightmap too when the shader is lit
     private static RenderType textured(String name, RenderPipeline pipeline, boolean sort, boolean lightmap) {
         RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline)
-                .withTexture("Sampler0", ParticleAtlas.textureId())
+                .withTexture("Sampler0", ParticleAtlas.textureId(), ATLAS_SAMPLER)
                 .bufferSize(BUFFER_BYTES);
         if (lightmap) {
             setup.useLightmap();
