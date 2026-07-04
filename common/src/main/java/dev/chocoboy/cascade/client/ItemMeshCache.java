@@ -3,7 +3,7 @@ package dev.chocoboy.cascade.client;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 // resolves an item id to a cached one-count ItemStack for its model. Unknown ids yield an empty stack, so a
@@ -20,7 +20,7 @@ final class ItemMeshCache {
     }
 
     private static ItemStack resolve(String itemId) {
-        ResourceLocation id = ResourceLocation.tryParse(itemId);
+        Identifier id = Identifier.tryParse(itemId);
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return ItemStack.EMPTY;
         }

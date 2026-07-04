@@ -8,7 +8,7 @@ import com.mojang.blaze3d.vertex.VertexBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 // owns a reusable native arena and a gpu vertex buffer per render type, so a frame's grouped work becomes
 // one build, one upload, and one draw per type without touching the shared buffer source. buffers persist

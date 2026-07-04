@@ -2,7 +2,7 @@ package dev.chocoboy.cascade.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
@@ -10,7 +10,7 @@ import java.io.IOException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.PostChain;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.slf4j.Logger;
@@ -23,8 +23,8 @@ public final class PostFx {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     // PostChain wants the full resource path, the way vanilla passes shaders/post/<name>.json
-    private static final ResourceLocation CHAIN =
-            ResourceLocation.fromNamespaceAndPath("cascade", "shaders/post/bloom.json");
+    private static final Identifier CHAIN =
+            Identifier.fromNamespaceAndPath("cascade", "shaders/post/bloom.json");
 
     private static boolean enabled;
     private static RenderTarget capture;

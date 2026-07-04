@@ -17,7 +17,7 @@ import dev.chocoboy.cascade.net.SdfPayload;
 import dev.chocoboy.cascade.net.ShakePayload;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
 
@@ -102,7 +102,7 @@ public final class Vfx {
     }
 
     /** Plays an effect authored in a datapack JSON. Unknown ids are ignored, so a missing pack is not fatal. */
-    public static void play(ServerLevel level, Vec3 pos, ResourceLocation id) {
+    public static void play(ServerLevel level, Vec3 pos, Identifier id) {
         EffectSpec spec = CascadeEffects.get(id);
         if (spec != null) {
             effect(level, pos, spec);

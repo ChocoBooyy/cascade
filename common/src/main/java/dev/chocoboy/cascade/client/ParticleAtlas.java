@@ -6,7 +6,7 @@ import dev.chocoboy.cascade.engine.effect.SpriteId;
 import dev.chocoboy.cascade.engine.math.Noise;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 // builds the particle sprite sheet in code so the library ships no image assets. The sheet is a grid of
 // FRAMES columns by one row per SpriteId, each cell 64px and all white so the vertex color tints it.
@@ -17,8 +17,8 @@ public final class ParticleAtlas {
 
     static final int FRAMES = 4;
 
-    private static final ResourceLocation LOCATION =
-            ResourceLocation.fromNamespaceAndPath(CascadeCommon.MOD_ID, "particle_atlas");
+    private static final Identifier LOCATION =
+            Identifier.fromNamespaceAndPath(CascadeCommon.MOD_ID, "particle_atlas");
 
     private static final int CELL = 128;
     private static final int SPRITES = SpriteId.values().length;
@@ -34,7 +34,7 @@ public final class ParticleAtlas {
     }
 
     // the texture id, for binding a render type. Pure constant, safe at class load.
-    public static ResourceLocation textureId() {
+    public static Identifier textureId() {
         return LOCATION;
     }
 

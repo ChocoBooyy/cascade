@@ -1,6 +1,6 @@
 package dev.chocoboy.cascade.client;
 
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 // building a custom RenderType touches protected vanilla render state that each loader widens its own way,
 // so the shared render code asks for its types through this seam and the loader installs the real set

@@ -5,13 +5,13 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 public record SdfPayload(Vec3 pos, SdfSpec spec, long seed) implements CustomPacketPayload {
 
     public static final Type<SdfPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("cascade", "sdf"));
+            new Type<>(Identifier.fromNamespaceAndPath("cascade", "sdf"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SdfPayload> STREAM_CODEC = StreamCodec.composite(
             NetCodecs.VEC3, SdfPayload::pos,

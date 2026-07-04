@@ -7,7 +7,7 @@ import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.net.EffectJson;
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -21,18 +21,18 @@ public class CascadeEffects extends SimpleJsonResourceReloadListener {
 
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerFactory.getLogger("Cascade");
-    private static final Map<ResourceLocation, EffectSpec> EFFECTS = new HashMap<>();
+    private static final Map<Identifier, EffectSpec> EFFECTS = new HashMap<>();
 
     public CascadeEffects() {
         super(GSON, "cascade/effects");
     }
 
-    public static EffectSpec get(ResourceLocation id) {
+    public static EffectSpec get(Identifier id) {
         return EFFECTS.get(id);
     }
 
     @Override
-    protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
+    protected void apply(Map<Identifier, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
         EFFECTS.clear();
         files.forEach((id, json) -> EffectJson.EFFECT.parse(JsonOps.INSTANCE, json)
                 .resultOrPartial(error -> LOGGER.error("Cascade effect {} failed to load: {}", id, error))

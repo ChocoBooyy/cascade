@@ -1,6 +1,6 @@
 package dev.chocoboy.cascade.client;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.chocoboy.cascade.engine.effect.SdfSpec;
 import java.util.List;

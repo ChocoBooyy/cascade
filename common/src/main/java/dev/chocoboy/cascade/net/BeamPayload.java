@@ -5,13 +5,13 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
 public record BeamPayload(BeamSpec spec, Vec3 from, Vec3 to, long seed) implements CustomPacketPayload {
 
     public static final Type<BeamPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath("cascade", "beam"));
+            new Type<>(Identifier.fromNamespaceAndPath("cascade", "beam"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BeamPayload> STREAM_CODEC = StreamCodec.composite(
             SpecCodecs.BEAM, BeamPayload::spec,

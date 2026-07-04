@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.stream.Collectors;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.opengl.GL32C;
 
 // raw gl program plumbing shared by the shader-owning backends (gpu sim, sdf volumes). throws to the
@@ -16,7 +16,7 @@ final class GlShaders {
     }
 
     static String load(String path) {
-        ResourceLocation rl = ResourceLocation.fromNamespaceAndPath("cascade", path);
+        Identifier rl = Identifier.fromNamespaceAndPath("cascade", path);
         try (BufferedReader reader = Minecraft.getInstance().getResourceManager().openAsReader(rl)) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {

@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 // collects a frame's draw work grouped by render type, then plays it back one type at a time. the shared
 // buffer source flushes every time the requested render type changes, so effects with mixed types

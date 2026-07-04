@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -28,7 +28,7 @@ final class BlockMeshCache {
     }
 
     private static List<BakedQuad> bake(String blockId) {
-        ResourceLocation id = ResourceLocation.tryParse(blockId);
+        Identifier id = Identifier.tryParse(blockId);
         if (id == null || !BuiltInRegistries.BLOCK.containsKey(id)) {
             return List.of();
         }
