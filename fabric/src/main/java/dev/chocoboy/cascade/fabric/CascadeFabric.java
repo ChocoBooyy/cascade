@@ -10,15 +10,15 @@ import dev.chocoboy.cascade.net.EmitterPayload;
 import dev.chocoboy.cascade.net.LightPayload;
 import dev.chocoboy.cascade.net.SdfPayload;
 import dev.chocoboy.cascade.net.ShakePayload;
+import dev.chocoboy.cascade.testmod.CascadeDemos;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.commands.Commands;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.PackType;
 
 public final class CascadeFabric implements ModInitializer {
@@ -35,17 +35,16 @@ public final class CascadeFabric implements ModInitializer {
         }
     }
 
-    // dev-only parity check for the fabric port: /cascade burst fires at the player, matching the neoforge
-    // testmod's root. the full showcase lives on neoforge; this is just proof the fabric wiring renders.
-    // guarded so it never reaches a shipped build
+    // the full dev testmod for the fabric port: the same /cascade command the neoforge testmod builds, out of
+    // the shared CascadeDemos. guarded so it never reaches a shipped build
     private static void registerDevCommand() {
-        CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) ->
-                dispatcher.register(Commands.literal("cascade")
-                        .then(Commands.literal("burst").executes(ctx -> {
-                            ServerPlayer player = ctx.getSource().getPlayerOrException();
-                            Vfx.burst((ServerLevel) player.level(), player.position().add(0.0, 1.0, 0.0));
-                            return 1;
-                        }))));
+        CascadeDemos.registerContainComponent();
+        CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) -> {
+            var root = CascadeDemos.serverTree();
+            CascadeDemos.addToggles(root, () -> FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT);
+            dispatcher.register(root);
+        });
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> CascadeDemos.resetTour());
     }
 
     private static void registerPayloads() {

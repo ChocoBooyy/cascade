@@ -18,7 +18,10 @@ repositories {
 }
 
 sourceSets {
-    testmod
+    // the shared demos compile into the testmod, the same source the fabric testmod builds from
+    testmod {
+        java.srcDir "$rootDir/testmod-shared/java"
+    }
     // the shader asset lint keeps its own mc-free source set; the default test set belongs to the
     // fml junit codec suite, which needs the full modding classpath
     shaderLint
