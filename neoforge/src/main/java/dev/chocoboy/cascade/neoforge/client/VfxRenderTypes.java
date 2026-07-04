@@ -44,18 +44,36 @@ final class VfxRenderTypes {
                 .build();
     }
 
+    // the unlit textured world types are built from scratch rather than from a vanilla pipeline: the closest
+    // stock textured pipeline is gui_textured, which is meant for the orthographic hud and does not sample a
+    // texture the way a world draw needs, so it rendered the sprites as flat colored quads. this pairs the
+    // core position_tex_color shader (samples Sampler0, discards fully transparent texels, so the atlas alpha
+    // shapes the sprite) with the world matrix and projection uniforms it reads.
+    private static final Identifier POSITION_TEX_COLOR = Identifier.withDefaultNamespace("core/position_tex_color");
+
+    private static RenderPipeline texturedPipeline(String name, ColorTargetState color, DepthStencilState depth) {
+        return RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+                .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
+                .withVertexShader(POSITION_TEX_COLOR)
+                .withFragmentShader(POSITION_TEX_COLOR)
+                .withSampler("Sampler0")
+                .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+                .withColorTargetState(color)
+                .withDepthStencilState(depth)
+                .withCull(false)
+                .build();
+    }
+
     // untextured additive quads for beams: additive blend, depth tested so terrain occludes, no depth write
     private static final RenderPipeline ADDITIVE_PIPE = pipeline("additive",
             RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
             new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
 
     // textured atlas sprites in world, additive (glows) and translucent (smoke); depth tested, no depth write
-    private static final RenderPipeline TEXTURED_ADDITIVE_PIPE = pipeline("textured_additive",
-            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+    private static final RenderPipeline TEXTURED_ADDITIVE_PIPE = texturedPipeline("textured_additive",
             new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
 
-    private static final RenderPipeline TEXTURED_ALPHA_PIPE = pipeline("textured_alpha",
-            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+    private static final RenderPipeline TEXTURED_ALPHA_PIPE = texturedPipeline("textured_alpha",
             new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
 
     // double sided solid geometry for mesh particles: opaque, depth tested and written so cubes read as 3D
@@ -73,12 +91,10 @@ final class VfxRenderTypes {
             new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
 
     // gui twins: no depth test, so the hud pass draws over whatever scene depth is left, and no depth write
-    private static final RenderPipeline GUI_TEXTURED_ADDITIVE_PIPE = pipeline("gui_textured_additive",
-            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+    private static final RenderPipeline GUI_TEXTURED_ADDITIVE_PIPE = texturedPipeline("gui_textured_additive",
             new ColorTargetState(BlendFunction.ADDITIVE), NO_DEPTH);
 
-    private static final RenderPipeline GUI_TEXTURED_ALPHA_PIPE = pipeline("gui_textured_alpha",
-            RenderPipelines.GUI_TEXTURED, DefaultVertexFormat.POSITION_TEX_COLOR,
+    private static final RenderPipeline GUI_TEXTURED_ALPHA_PIPE = texturedPipeline("gui_textured_alpha",
             new ColorTargetState(BlendFunction.TRANSLUCENT), NO_DEPTH);
 
     private static final List<RenderPipeline> ALL = List.of(
