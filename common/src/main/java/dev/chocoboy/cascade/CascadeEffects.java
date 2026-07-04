@@ -1,12 +1,10 @@
 package dev.chocoboy.cascade;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.mojang.serialization.JsonOps;
 import dev.chocoboy.cascade.engine.effect.EffectSpec;
 import dev.chocoboy.cascade.net.EffectJson;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -17,14 +15,14 @@ import org.slf4j.LoggerFactory;
 // loads datapack-authored effects from data/<namespace>/cascade/effects/*.json into a named registry,
 // so Vfx.play can fire an effect by id. Server side, reloaded with the rest of the datapacks. Each loader
 // registers an instance with its own reload-listener hook
-public class CascadeEffects extends SimpleJsonResourceReloadListener {
+public class CascadeEffects extends SimpleJsonResourceReloadListener<EffectSpec> {
 
-    private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerFactory.getLogger("Cascade");
     private static final Map<Identifier, EffectSpec> EFFECTS = new HashMap<>();
 
     public CascadeEffects() {
-        super(GSON, "cascade/effects");
+        // 26.1 decodes json with a Codec at prepare time, so apply receives already-parsed specs
+        super(EffectJson.EFFECT, FileToIdConverter.json("cascade/effects"));
     }
 
     public static EffectSpec get(Identifier id) {
@@ -32,11 +30,9 @@ public class CascadeEffects extends SimpleJsonResourceReloadListener {
     }
 
     @Override
-    protected void apply(Map<Identifier, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
+    protected void apply(Map<Identifier, EffectSpec> effects, ResourceManager manager, ProfilerFiller profiler) {
         EFFECTS.clear();
-        files.forEach((id, json) -> EffectJson.EFFECT.parse(JsonOps.INSTANCE, json)
-                .resultOrPartial(error -> LOGGER.error("Cascade effect {} failed to load: {}", id, error))
-                .ifPresent(spec -> EFFECTS.put(id, spec)));
+        EFFECTS.putAll(effects);
         LOGGER.info("Cascade loaded {} effect(s)", EFFECTS.size());
     }
 }

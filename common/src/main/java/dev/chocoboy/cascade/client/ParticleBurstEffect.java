@@ -15,8 +15,6 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -165,74 +163,17 @@ public final class ParticleBurstEffect implements RenderedEffect {
         }
     }
 
+    // block-model debris rides vanilla's block quad pipeline, which 26.1 rebuilt around BlockStateModel and
+    // ChunkSectionLayer. disabled on this port until that path is re-implemented; the effect still fires, it
+    // just draws no debris. see the porting notes
     private void renderBlockMesh(VfxFrame frame) {
-        List<BakedQuad> quads = BlockMeshCache.quadsFor(render.meshModel());
-        if (quads.isEmpty()) {
-            return;
-        }
-        Level level = Minecraft.getInstance().level;
-        Vec3 cam = frame.cameraPos();
-        PoseStack pose = frame.pose();
-        frame.queue().submit(RenderType.cutout(), vc -> {
-            Quaternionf rot = new Quaternionf();
-            for (Particle p : sim.particles()) {
-                float size = sim.sizeOf(p);
-                float s = size * 2f;   // block models span a unit cube, size is a half extent, so double it
-                float wx = (float) (origin.x + p.pos.x() - cam.x);
-                float wy = (float) (origin.y + p.pos.y() - cam.y);
-                float wz = (float) (origin.z + p.pos.z() - cam.z);
-                // block debris always reads scene light, there is no full bright variant like cube and shard have
-                int light = level != null ? lightAt(level, p) : 0xF000F0;
-                // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
-                // of the frame draws on a corrupted stack
-                pose.pushPose();
-                try {
-                    pose.translate(wx, wy, wz);
-                    pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
-                    pose.scale(s, s, s);
-                    pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
-                    PoseStack.Pose last = pose.last();
-                    for (int i = 0; i < quads.size(); i++) {
-                        vc.putBulkData(last, quads.get(i), 1f, 1f, 1f, 1f, light, OverlayTexture.NO_OVERLAY);
-                    }
-                } finally {
-                    pose.popPose();
-                }
-            }
-        });
+        MeshDebris.warnOnce("block");
     }
 
+    // item-model debris rode ItemRenderer.renderStatic, which 26.1 replaced with the ItemStackRenderState
+    // resolver. disabled on this port until that path is re-implemented; see the porting notes
     private void renderItemMesh(VfxFrame frame) {
-        ItemStack stack = ItemMeshCache.stackFor(render.meshModel());
-        if (stack.isEmpty()) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        Level level = mc.level;
-        Vec3 cam = frame.cameraPos();
-        PoseStack pose = frame.pose();
-        ItemRenderer items = mc.getItemRenderer();
-        // renderStatic picks its render types internally, so this path cannot group by type
-        frame.queue().submitDirect(buffers -> {
-            Quaternionf rot = new Quaternionf();
-            for (Particle p : sim.particles()) {
-                float s = sim.sizeOf(p) * 3f;   // GROUND transform already shrinks the model, so scale up to match
-                float wx = (float) (origin.x + p.pos.x() - cam.x);
-                float wy = (float) (origin.y + p.pos.y() - cam.y);
-                float wz = (float) (origin.z + p.pos.z() - cam.z);
-                int light = level != null ? lightAt(level, p) : 0xF000F0;
-                pose.pushPose();
-                try {
-                    pose.translate(wx, wy, wz);
-                    pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
-                    pose.scale(s, s, s);
-                    items.renderStatic(stack, ItemDisplayContext.GROUND, light, OverlayTexture.NO_OVERLAY,
-                            pose, buffers, level, 0);
-                } finally {
-                    pose.popPose();
-                }
-            }
-        });
+        MeshDebris.warnOnce("item");
     }
 
     private void renderMesh(VfxFrame frame) {
@@ -297,7 +238,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
 
     // scene light at the particle's world cell
     private int lightAt(Level level, Particle p) {
-        return LevelRenderer.getLightColor(level, BlockPos.containing(
+        return LevelRenderer.getLightCoords(level, BlockPos.containing(
                 origin.x + p.pos.x(), origin.y + p.pos.y(), origin.z + p.pos.z()));
     }
 

@@ -1,36 +1,32 @@
 package dev.chocoboy.cascade.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.VertexBuffer;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
-// owns a reusable native arena and a gpu vertex buffer per render type, so a frame's grouped work becomes
-// one build, one upload, and one draw per type without touching the shared buffer source. buffers persist
-// across frames: the arena recycles itself once its mesh is uploaded, so steady state never reallocates
+// owns a reusable native arena per render type, so a frame's grouped work becomes one build and one draw
+// per type without touching the shared buffer source. the arena recycles itself once its mesh is drawn, so
+// steady state never reallocates. 26.1 folds the upload and draw into RenderType.draw, so there is no
+// longer a persistent gpu vertex buffer to bind and manage here
 final class CascadeBatcher {
 
     // fits a few thousand textured quads up front; the arena grows on its own if a frame needs more
     private static final int INITIAL_BYTES = 786432;
 
-    private record Slot(ByteBufferBuilder arena, VertexBuffer vbo) {
-    }
-
-    private static final Map<RenderType, Slot> SLOTS = new HashMap<>();
+    private static final Map<RenderType, ByteBufferBuilder> ARENAS = new HashMap<>();
 
     private CascadeBatcher() {
     }
 
     static void draw(RenderType type, List<VfxRenderQueue.Submission> submissions,
             VfxRenderQueue.FailureSink failures) {
-        Slot slot = SLOTS.computeIfAbsent(type, t ->
-                new Slot(new ByteBufferBuilder(INITIAL_BYTES), new VertexBuffer(VertexBuffer.Usage.DYNAMIC)));
-        BufferBuilder builder = new BufferBuilder(slot.arena(), type.mode(), type.format());
+        ByteBufferBuilder arena = ARENAS.computeIfAbsent(type, t -> new ByteBufferBuilder(INITIAL_BYTES));
+        BufferBuilder builder = new BufferBuilder(arena, type.mode(), type.format());
         for (VfxRenderQueue.Submission s : submissions) {
             try {
                 s.writer().write(builder);
@@ -42,19 +38,12 @@ final class CascadeBatcher {
         if (mesh == null) {
             return;
         }
+        // the geometry is authored camera relative, so distance to origin is distance to the camera
         if (type.sortOnUpload()) {
-            mesh.sortQuads(slot.arena(), RenderSystem.getVertexSorting());
+            mesh.sortQuads(arena, VertexSorting.DISTANCE_TO_ORIGIN);
         }
-        // uploading closes the mesh, which frees its slice of the arena for the next frame
-        type.setupRenderState();
-        try {
-            slot.vbo().bind();
-            slot.vbo().upload(mesh);
-            slot.vbo().drawWithShader(RenderSystem.getModelViewMatrix(), RenderSystem.getProjectionMatrix(),
-                    RenderSystem.getShader());
-        } finally {
-            VertexBuffer.unbind();
-            type.clearRenderState();
-        }
+        // draw uploads the mesh, binds the type's pipeline and state, draws, then closes the mesh, which
+        // frees its slice of the arena for the next frame
+        type.draw(mesh);
     }
 }

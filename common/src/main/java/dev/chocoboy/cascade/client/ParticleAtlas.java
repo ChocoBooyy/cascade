@@ -64,7 +64,7 @@ public final class ParticleAtlas {
                 paintCell(image, sprite, frame);
             }
         }
-        Minecraft.getInstance().getTextureManager().register(LOCATION, new DynamicTexture(image));
+        Minecraft.getInstance().getTextureManager().register(LOCATION, new DynamicTexture(() -> "cascade-atlas", image));
     }
 
     private static void paintCell(NativeImage image, SpriteId sprite, int frame) {
@@ -77,7 +77,7 @@ public final class ParticleAtlas {
                 float ny = (py + 0.5f) / (CELL / 2f) - 1f;
                 float r = (float) Math.sqrt(nx * nx + ny * ny);
                 int a = alpha(sprite, nx, ny, r, t);
-                image.setPixelRGBA(ox + px, oy + py, (a << 24) | 0x00FFFFFF);
+                image.setPixelABGR(ox + px, oy + py, (a << 24) | 0x00FFFFFF);
             }
         }
     }

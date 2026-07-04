@@ -24,6 +24,6 @@ final class ItemMeshCache {
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return ItemStack.EMPTY;
         }
-        return new ItemStack(BuiltInRegistries.ITEM.get(id));
+        return new ItemStack(BuiltInRegistries.ITEM.getValue(id));
     }
 }

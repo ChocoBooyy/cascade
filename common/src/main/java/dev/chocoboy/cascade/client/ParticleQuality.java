@@ -1,7 +1,7 @@
 package dev.chocoboy.cascade.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.ParticleStatus;
+import net.minecraft.server.level.ParticleStatus;
 
 // maps the vanilla Particles video setting onto a spawn-count multiplier, so Cascade thins itself the
 // same way vanilla thins its own particles when a player picks Decreased or Minimal

@@ -96,8 +96,7 @@ public final class VfxRenderQueue {
     }
 
     private static int tier(RenderType type) {
-        if (type == CascadeRenderTypes.solid() || type == CascadeRenderTypes.solidLit()
-                || type == RenderType.cutout()) {
+        if (type == CascadeRenderTypes.solid() || type == CascadeRenderTypes.solidLit()) {
             return OPAQUE;
         }
         if (type == CascadeRenderTypes.additive() || type == CascadeRenderTypes.texturedAdditive()
