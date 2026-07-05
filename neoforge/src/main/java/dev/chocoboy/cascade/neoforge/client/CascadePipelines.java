@@ -5,6 +5,8 @@ import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.platform.DestFactor;
+import com.mojang.blaze3d.platform.SourceFactor;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import java.util.List;
@@ -18,6 +20,12 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 // is registered before a RenderSetup resolves it. touching this class at registration must not drag the
 // RenderTypes (and the atlas resolve) along with it, so the two live in separate classes.
 final class CascadePipelines {
+
+    // cascade's sprites carry their shape in the alpha channel over white rgb, so additive has to scale the
+    // source by its alpha (src_alpha, one). the stock BlendFunction.ADDITIVE is one, one, which adds the full
+    // white rgb across the whole quad and ignores the shape, filling a soft sprite like GLOW into a solid
+    // square. this is the same src_alpha, one blend the pre-26.1 build used
+    private static final BlendFunction ADDITIVE_BLEND = new BlendFunction(SourceFactor.SRC_ALPHA, DestFactor.ONE);
 
     static final DepthStencilState DEPTH_NO_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false);
     static final DepthStencilState DEPTH_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true);
@@ -59,11 +67,11 @@ final class CascadePipelines {
     // untextured additive quads for beams: additive blend, depth tested so terrain occludes, no depth write
     static final RenderPipeline ADDITIVE = derived("additive",
             RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
-            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+            new ColorTargetState(ADDITIVE_BLEND), DEPTH_NO_WRITE);
 
     // textured atlas sprites in world, additive (glows) and translucent (smoke); depth tested, no depth write
     static final RenderPipeline TEXTURED_ADDITIVE = textured("textured_additive",
-            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+            new ColorTargetState(ADDITIVE_BLEND), DEPTH_NO_WRITE);
 
     static final RenderPipeline TEXTURED_ALPHA = textured("textured_alpha",
             new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
@@ -76,7 +84,7 @@ final class CascadePipelines {
     // lit textured sprites use the particle format and shader, so the world lightmap tints them
     static final RenderPipeline TEXTURED_ADDITIVE_LIT = derived("textured_additive_lit",
             RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
-            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+            new ColorTargetState(ADDITIVE_BLEND), DEPTH_NO_WRITE);
 
     static final RenderPipeline TEXTURED_ALPHA_LIT = derived("textured_alpha_lit",
             RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
@@ -84,7 +92,7 @@ final class CascadePipelines {
 
     // gui twins: no depth test, so the hud pass draws over whatever scene depth is left, and no depth write
     static final RenderPipeline GUI_TEXTURED_ADDITIVE = textured("gui_textured_additive",
-            new ColorTargetState(BlendFunction.ADDITIVE), NO_DEPTH);
+            new ColorTargetState(ADDITIVE_BLEND), NO_DEPTH);
 
     static final RenderPipeline GUI_TEXTURED_ALPHA = textured("gui_textured_alpha",
             new ColorTargetState(BlendFunction.TRANSLUCENT), NO_DEPTH);
