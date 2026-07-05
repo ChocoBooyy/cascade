@@ -38,8 +38,9 @@ public final class ParticleAtlas {
         return LOCATION;
     }
 
-    // builds and registers the atlas on first call. Must run on the render thread.
-    static void ensureUploaded() {
+    // builds and registers the atlas on first call. Must run on the render thread. public so a loader's
+    // render-type setup can guarantee the atlas exists before a RenderSetup resolves it to a gpu texture
+    public static void ensureUploaded() {
         if (!uploaded) {
             upload();
             uploaded = true;

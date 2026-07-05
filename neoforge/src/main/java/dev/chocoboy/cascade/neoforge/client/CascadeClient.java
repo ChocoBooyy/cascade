@@ -16,6 +16,6 @@ public final class CascadeClient {
         // the custom render pipelines register on the mod bus so the gpu device compiles them; the soft
         // particle core shaders are not ported to 26.1 yet, so the soft render types fall back to their
         // hard-edged twins. see the porting notes
-        modBus.addListener(VfxRenderTypes::registerPipelines);
+        modBus.addListener(CascadePipelines::register);
     }
 }

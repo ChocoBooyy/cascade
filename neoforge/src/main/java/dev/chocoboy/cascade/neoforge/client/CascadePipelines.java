@@ -1,0 +1,101 @@
+package dev.chocoboy.cascade.neoforge.client;
+
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import java.util.List;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
+
+// the render pipelines for the cascade render types, kept apart from VfxRenderTypes on purpose. the gpu
+// device compiles pipelines at registration time, which happens during client startup, before the game
+// loop; VfxRenderTypes, by contrast, builds its RenderTypes lazily on the first draw so the particle atlas
+// is registered before a RenderSetup resolves it. touching this class at registration must not drag the
+// RenderTypes (and the atlas resolve) along with it, so the two live in separate classes.
+final class CascadePipelines {
+
+    static final DepthStencilState DEPTH_NO_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false);
+    static final DepthStencilState DEPTH_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true);
+    static final DepthStencilState NO_DEPTH = new DepthStencilState(CompareOp.ALWAYS_PASS, false);
+
+    // the core textured shader: samples Sampler0 and discards fully transparent texels, so the atlas alpha
+    // shapes the sprite. paired with the world matrix and projection uniforms it reads
+    private static final Identifier POSITION_TEX_COLOR = Identifier.withDefaultNamespace("core/position_tex_color");
+
+    private CascadePipelines() {
+    }
+
+    private static RenderPipeline derived(String name, RenderPipeline base, VertexFormat format,
+            ColorTargetState color, DepthStencilState depth) {
+        return base.toBuilder()
+                .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
+                .withVertexFormat(format, VertexFormat.Mode.QUADS)
+                .withColorTargetState(color)
+                .withDepthStencilState(depth)
+                .withCull(false)
+                .build();
+    }
+
+    // the unlit textured world types are built from scratch: the closest stock textured pipeline, gui_textured,
+    // targets the orthographic hud and does not sample a bound world texture, so it drew sprites as flat quads
+    private static RenderPipeline textured(String name, ColorTargetState color, DepthStencilState depth) {
+        return RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+                .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
+                .withVertexShader(POSITION_TEX_COLOR)
+                .withFragmentShader(POSITION_TEX_COLOR)
+                .withSampler("Sampler0")
+                .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+                .withColorTargetState(color)
+                .withDepthStencilState(depth)
+                .withCull(false)
+                .build();
+    }
+
+    // untextured additive quads for beams: additive blend, depth tested so terrain occludes, no depth write
+    static final RenderPipeline ADDITIVE = derived("additive",
+            RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
+            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+
+    // textured atlas sprites in world, additive (glows) and translucent (smoke); depth tested, no depth write
+    static final RenderPipeline TEXTURED_ADDITIVE = textured("textured_additive",
+            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+
+    static final RenderPipeline TEXTURED_ALPHA = textured("textured_alpha",
+            new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
+
+    // double sided solid geometry for mesh particles: opaque, depth tested and written so cubes read as 3D
+    static final RenderPipeline SOLID = derived("solid",
+            RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
+            ColorTargetState.DEFAULT, DEPTH_WRITE);
+
+    // lit textured sprites use the particle format and shader, so the world lightmap tints them
+    static final RenderPipeline TEXTURED_ADDITIVE_LIT = derived("textured_additive_lit",
+            RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
+            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+
+    static final RenderPipeline TEXTURED_ALPHA_LIT = derived("textured_alpha_lit",
+            RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
+            new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
+
+    // gui twins: no depth test, so the hud pass draws over whatever scene depth is left, and no depth write
+    static final RenderPipeline GUI_TEXTURED_ADDITIVE = textured("gui_textured_additive",
+            new ColorTargetState(BlendFunction.ADDITIVE), NO_DEPTH);
+
+    static final RenderPipeline GUI_TEXTURED_ALPHA = textured("gui_textured_alpha",
+            new ColorTargetState(BlendFunction.TRANSLUCENT), NO_DEPTH);
+
+    private static final List<RenderPipeline> ALL = List.of(
+            ADDITIVE, TEXTURED_ADDITIVE, TEXTURED_ALPHA, SOLID,
+            TEXTURED_ADDITIVE_LIT, TEXTURED_ALPHA_LIT,
+            GUI_TEXTURED_ADDITIVE, GUI_TEXTURED_ALPHA);
+
+    // the gpu device only compiles pipelines it knows about, so every custom pipeline is registered here
+    static void register(RegisterRenderPipelinesEvent event) {
+        ALL.forEach(event::registerPipeline);
+    }
+}
