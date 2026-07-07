@@ -18,7 +18,7 @@ public final class ScreenVfxManager {
     }
 
     public void spawn(EmitterSpec spec, float x, float y) {
-        MeshDebris.warnOnce("screen-vfx");
+        PortStubs.warnOnce("screen-vfx");
     }
 
     public void tick() {

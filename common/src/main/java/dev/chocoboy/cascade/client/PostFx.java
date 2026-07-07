@@ -20,7 +20,7 @@ public final class PostFx {
 
     public static void setEnabled(boolean on) {
         if (on) {
-            MeshDebris.warnOnce("bloom");
+            PortStubs.warnOnce("bloom");
         }
         enabled = on;
     }

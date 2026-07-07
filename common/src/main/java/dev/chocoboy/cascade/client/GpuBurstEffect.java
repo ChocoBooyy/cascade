@@ -27,7 +27,7 @@ public final class GpuBurstEffect implements RenderedEffect {
 
     @Override
     public void render(VfxFrame frame) {
-        MeshDebris.warnOnce("gpu-burst");
+        PortStubs.warnOnce("gpu-burst");
     }
 
     @Override

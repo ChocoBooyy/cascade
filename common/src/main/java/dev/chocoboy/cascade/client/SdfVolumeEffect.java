@@ -26,7 +26,7 @@ public final class SdfVolumeEffect implements RenderedEffect {
 
     @Override
     public void render(VfxFrame frame) {
-        MeshDebris.warnOnce("sdf-volume");
+        PortStubs.warnOnce("sdf-volume");
     }
 
     @Override

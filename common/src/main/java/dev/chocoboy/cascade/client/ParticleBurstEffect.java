@@ -15,10 +15,11 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import com.mojang.blaze3d.vertex.QuadInstance;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -163,17 +164,100 @@ public final class ParticleBurstEffect implements RenderedEffect {
         }
     }
 
-    // block-model debris rides vanilla's block quad pipeline, which 26.1 rebuilt around BlockStateModel and
-    // ChunkSectionLayer. disabled on this port until that path is re-implemented; the effect still fires, it
-    // just draws no debris. see the porting notes
     private void renderBlockMesh(VfxFrame frame) {
-        MeshDebris.warnOnce("block");
+        List<BakedQuad> quads = BlockMeshCache.quadsFor(render.meshModel());
+        if (quads.isEmpty()) {
+            return;
+        }
+        Level level = Minecraft.getInstance().level;
+        Vec3 cam = frame.cameraPos();
+        PoseStack pose = frame.pose();
+        // cutoutMovingBlock is 26.1's buffer-drawable cutout, the moving-piston twin of the chunk layer
+        frame.queue().submit(RenderTypes.cutoutMovingBlock(), vc -> {
+            Quaternionf rot = new Quaternionf();
+            QuadInstance quad = new QuadInstance();
+            quad.setColor(-1);   // like pre-26.1, block debris is untinted, so grass-style blocks read gray
+            quad.setOverlayCoords(OverlayTexture.NO_OVERLAY);
+            for (Particle p : sim.particles()) {
+                float size = sim.sizeOf(p);
+                float s = size * 2f;   // block models span a unit cube, size is a half extent, so double it
+                float wx = (float) (origin.x + p.pos.x() - cam.x);
+                float wy = (float) (origin.y + p.pos.y() - cam.y);
+                float wz = (float) (origin.z + p.pos.z() - cam.z);
+                // block debris always reads scene light, there is no full bright variant like cube and shard have
+                quad.setLightCoords(level != null ? lightAt(level, p) : 0xF000F0);
+                // this path pushes the shared frame pose, so the pop must run even if a quad throws, or the rest
+                // of the frame draws on a corrupted stack
+                pose.pushPose();
+                try {
+                    pose.translate(wx, wy, wz);
+                    pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                    pose.scale(s, s, s);
+                    pose.translate(-0.5f, -0.5f, -0.5f);   // center the 0..1 block model on the particle
+                    PoseStack.Pose last = pose.last();
+                    for (int i = 0; i < quads.size(); i++) {
+                        vc.putBakedQuad(last, quads.get(i), quad);
+                    }
+                } finally {
+                    pose.popPose();
+                }
+            }
+        });
     }
 
-    // item-model debris rode ItemRenderer.renderStatic, which 26.1 replaced with the ItemStackRenderState
-    // resolver. disabled on this port until that path is re-implemented; see the porting notes
     private void renderItemMesh(VfxFrame frame) {
-        MeshDebris.warnOnce("item");
+        List<ItemMeshCache.Layer> layers = ItemMeshCache.layersFor(render.meshModel());
+        if (layers.isEmpty()) {
+            return;
+        }
+        Level level = Minecraft.getInstance().level;
+        Vec3 cam = frame.cameraPos();
+        PoseStack pose = frame.pose();
+        // each quad names its own item render type, so this path cannot group by type
+        frame.queue().submitDirect(buffers -> {
+            Quaternionf rot = new Quaternionf();
+            QuadInstance quad = new QuadInstance();
+            quad.setOverlayCoords(OverlayTexture.NO_OVERLAY);
+            for (Particle p : sim.particles()) {
+                float size = sim.sizeOf(p);
+                // the captured ground transform already centers and shrinks the model, so no centering shift
+                // here, and a larger scale compensates the shrink
+                float s = size * 3f;
+                float wx = (float) (origin.x + p.pos.x() - cam.x);
+                float wy = (float) (origin.y + p.pos.y() - cam.y);
+                float wz = (float) (origin.z + p.pos.z() - cam.z);
+                quad.setLightCoords(level != null ? lightAt(level, p) : 0xF000F0);
+                pose.pushPose();
+                try {
+                    pose.translate(wx, wy, wz);
+                    pose.mulPose(rot.rotationYXZ(p.yaw, p.pitch, p.rotation));
+                    pose.scale(s, s, s);
+                    for (ItemMeshCache.Layer layer : layers) {
+                        pose.pushPose();
+                        pose.mulPose(layer.pose());
+                        PoseStack.Pose last = pose.last();
+                        List<BakedQuad> quads = layer.quads();
+                        for (int i = 0; i < quads.size(); i++) {
+                            BakedQuad baked = quads.get(i);
+                            quad.setColor(layerColor(layer.tints(), baked.materialInfo()));
+                            buffers.getBuffer(baked.materialInfo().itemRenderType()).putBakedQuad(last, baked, quad);
+                        }
+                        pose.popPose();
+                    }
+                } finally {
+                    pose.popPose();
+                }
+            }
+        });
+    }
+
+    // vanilla's tint resolution: untinted quads and out-of-range tint indices draw white
+    private static int layerColor(int[] tints, BakedQuad.MaterialInfo info) {
+        if (!info.isTinted()) {
+            return -1;
+        }
+        int index = info.tintIndex();
+        return index >= 0 && index < tints.length ? tints[index] : -1;
     }
 
     private void renderMesh(VfxFrame frame) {
