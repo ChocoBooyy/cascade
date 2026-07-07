@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
+import dev.chocoboy.cascade.client.BloomBlit;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -128,7 +129,8 @@ final class CascadePipelines {
             ADDITIVE, TEXTURED_ADDITIVE, TEXTURED_ALPHA, SOLID,
             TEXTURED_ADDITIVE_LIT, TEXTURED_ALPHA_LIT,
             TEXTURED_ALPHA_SOFT, TEXTURED_ALPHA_LIT_SOFT,
-            GUI_TEXTURED_ADDITIVE, GUI_TEXTURED_ALPHA);
+            GUI_TEXTURED_ADDITIVE, GUI_TEXTURED_ALPHA,
+            BloomBlit.PIPELINE);
 
     // the gpu device only compiles pipelines it knows about, so every custom pipeline is registered here
     static void register(RegisterRenderPipelinesEvent event) {
