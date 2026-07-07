@@ -20,7 +20,7 @@ public final class CascadeTestCommands {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         var root = CascadeDemos.serverTree();
-        CascadeDemos.addToggles(root, () -> FMLEnvironment.dist.isClient());
+        CascadeDemos.addToggles(root, () -> FMLEnvironment.getDist().isClient());
         event.getDispatcher().register(root);
     }
 }

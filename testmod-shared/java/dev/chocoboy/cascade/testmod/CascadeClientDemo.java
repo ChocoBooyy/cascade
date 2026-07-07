@@ -104,7 +104,7 @@ final class CascadeClientDemo {
     private static void say(String msg) {
         var player = Minecraft.getInstance().player;
         if (player != null) {
-            player.displayClientMessage(Component.literal(msg), false);
+            player.sendSystemMessage(Component.literal(msg));
         }
     }
 }

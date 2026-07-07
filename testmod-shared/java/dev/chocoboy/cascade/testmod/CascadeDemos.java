@@ -19,7 +19,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -74,7 +74,7 @@ public final class CascadeDemos {
                 // primitives and one-liners
                 .then(show("burst", src -> burst(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0))))
                 .then(show("firework", src -> Vfx.play(src.getLevel(), src.getPosition().add(0.0, 1.0, 0.0),
-                        ResourceLocation.fromNamespaceAndPath("cascade", "firework"))))
+                        Identifier.fromNamespaceAndPath("cascade", "firework"))))
                 .then(show("beam", src -> Vfx.beam(src.getLevel(), src.getPosition(),
                         src.getPosition().add(lookVector(src).scale(10.0)))))
                 .then(show("custombeam", CascadeDemos::customBeam))
@@ -164,7 +164,7 @@ public final class CascadeDemos {
         VfxSequence seq = Vfx.at(level);
         stage(seq, src, "burst", () -> burst(level, p.add(0.0, 1.0, 0.0)), 75);
         stage(seq, src, "firework json", () -> Vfx.play(level, p.add(0.0, 1.0, 0.0),
-                ResourceLocation.fromNamespaceAndPath("cascade", "firework")), 75);
+                Identifier.fromNamespaceAndPath("cascade", "firework")), 75);
         stage(seq, src, "beam", () -> Vfx.beam(level, p, beamTo), 50);
         stage(seq, src, "custom beam", () -> customBeam(src), 55);
         stage(seq, src, "dome", () -> standaloneDome(level, p.add(0.0, 1.0, 0.0)), 85);
@@ -207,7 +207,7 @@ public final class CascadeDemos {
     // block has no actionbar so it falls back to plain feedback
     private static void announce(CommandSourceStack src, String name) {
         if (src.getEntity() instanceof ServerPlayer player) {
-            player.displayClientMessage(Component.literal(name), true);
+            player.sendOverlayMessage(Component.literal(name));
         } else {
             src.sendSuccess(() -> Component.literal(name), false);
         }
@@ -776,7 +776,7 @@ public final class CascadeDemos {
         Runnable[] fires = {
                 () -> burst(level, src.getPosition().add(0.0, 1.0, 0.0)),
                 () -> Vfx.play(level, src.getPosition().add(0.0, 1.0, 0.0),
-                        ResourceLocation.fromNamespaceAndPath("cascade", "firework")),
+                        Identifier.fromNamespaceAndPath("cascade", "firework")),
                 () -> layered(level, src.getPosition()),
                 () -> splash(level, src.getPosition()),
                 () -> jet(level, src.getPosition().add(0.0, 1.0, 0.0)),
