@@ -12,9 +12,9 @@
     "client": [ "dev.chocoboy.cascade.fabric.client.CascadeFabricClient" ]
   },
   "depends": {
-    "fabricloader": ">=0.16",
-    "minecraft": "~1.21.1",
-    "java": ">=21",
+    "fabricloader": ">=0.19",
+    "minecraft": "~26.1",
+    "java": ">=25",
     "fabric-api": "*"
   }
 }
