@@ -29,7 +29,7 @@ public final class CascadeFabricClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        CascadeRenderTypes.install(new CoreRenderTypes());
+        CascadeRenderTypes.install(new CoreRenderTypes.Provider());
         registerReceivers();
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             VfxRenderManager.get().clientTick();

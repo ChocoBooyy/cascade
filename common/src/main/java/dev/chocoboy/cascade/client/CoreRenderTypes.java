@@ -7,13 +7,14 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 // is gone, so each type is a RenderPipeline (see CorePipelines) paired with a RenderSetup that binds the
 // particle atlas, all public vanilla api. exposed to the shared render code through the provider seam.
 //
-// this class is loaded lazily, on the first draw that asks for a type, never at pipeline registration. that
-// matters: a RenderSetup resolves its bound texture to a gpu view when it is built and caches it, so the
-// atlas must already be registered by then. the static block below uploads it first, on the render thread,
-// before any textured type is built. building these at registration instead would resolve the atlas before
-// it exists and cache a blank texture, drawing every sprite as a flat coloured quad.
-//
-public final class CoreRenderTypes implements CascadeRenderTypes.Provider {
+// this class is loaded lazily, on the first draw that asks for a type, never at loader init or pipeline
+// registration. that matters twice: a RenderSetup resolves its bound texture to a gpu view when it is
+// built and caches it, so the atlas must already be registered by then (the static block below uploads it
+// first); and the atlas upload itself needs the gpu device, which does not exist yet when loader
+// entrypoints install the provider. the nested Provider exists exactly for that: instantiating a nested
+// class does not initialize its enclosing class, so this class loads only when the first provider method
+// runs, on the first draw.
+public final class CoreRenderTypes {
 
     private static final int BUFFER_BYTES = 1536;
 
@@ -34,6 +35,9 @@ public final class CoreRenderTypes implements CascadeRenderTypes.Provider {
                     false);
 
 
+
+    private CoreRenderTypes() {
+    }
 
     // an untextured type: just the pipeline and a vertex buffer
     private static RenderType plain(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline, boolean sort) {
@@ -120,58 +124,63 @@ public final class CoreRenderTypes implements CascadeRenderTypes.Provider {
         return RenderType.create(name, setup.createRenderSetup());
     }
 
-    @Override
-    public RenderType additive() {
-        return ADDITIVE;
-    }
+    // the provider each loader installs at client init. a nested class so constructing it does not
+    // class-load the enclosing types; they load when the first method here runs, on the first draw
+    public static final class Provider implements CascadeRenderTypes.Provider {
 
-    @Override
-    public RenderType texturedAdditive() {
-        return TEXTURED_ADDITIVE;
-    }
+        @Override
+        public RenderType additive() {
+            return ADDITIVE;
+        }
 
-    @Override
-    public RenderType texturedAlpha() {
-        return TEXTURED_ALPHA;
-    }
+        @Override
+        public RenderType texturedAdditive() {
+            return TEXTURED_ADDITIVE;
+        }
 
-    @Override
-    public RenderType texturedAlphaSoft() {
-        return softAlpha();
-    }
+        @Override
+        public RenderType texturedAlpha() {
+            return TEXTURED_ALPHA;
+        }
 
-    @Override
-    public RenderType solid() {
-        return SOLID;
-    }
+        @Override
+        public RenderType texturedAlphaSoft() {
+            return softAlpha();
+        }
 
-    @Override
-    public RenderType solidLit() {
-        return SOLID_LIT;
-    }
+        @Override
+        public RenderType solid() {
+            return SOLID;
+        }
 
-    @Override
-    public RenderType texturedAdditiveLit() {
-        return TEXTURED_ADDITIVE_LIT;
-    }
+        @Override
+        public RenderType solidLit() {
+            return SOLID_LIT;
+        }
 
-    @Override
-    public RenderType texturedAlphaLit() {
-        return TEXTURED_ALPHA_LIT;
-    }
+        @Override
+        public RenderType texturedAdditiveLit() {
+            return TEXTURED_ADDITIVE_LIT;
+        }
 
-    @Override
-    public RenderType texturedAlphaLitSoft() {
-        return softAlphaLit();
-    }
+        @Override
+        public RenderType texturedAlphaLit() {
+            return TEXTURED_ALPHA_LIT;
+        }
 
-    @Override
-    public RenderType guiTexturedAdditive() {
-        return GUI_TEXTURED_ADDITIVE;
-    }
+        @Override
+        public RenderType texturedAlphaLitSoft() {
+            return softAlphaLit();
+        }
 
-    @Override
-    public RenderType guiTexturedAlpha() {
-        return GUI_TEXTURED_ALPHA;
+        @Override
+        public RenderType guiTexturedAdditive() {
+            return GUI_TEXTURED_ADDITIVE;
+        }
+
+        @Override
+        public RenderType guiTexturedAlpha() {
+            return GUI_TEXTURED_ALPHA;
+        }
     }
 }

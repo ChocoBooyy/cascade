@@ -13,7 +13,7 @@ public final class CascadeClient {
     }
 
     public static void init(IEventBus modBus) {
-        CascadeRenderTypes.install(new CoreRenderTypes());
+        CascadeRenderTypes.install(new CoreRenderTypes.Provider());
         NeoForge.EVENT_BUS.register(new VfxRenderBridge());
         NeoForge.EVENT_BUS.register(ShakeController.get());
         // pipelines compile lazily on first draw either way; registering them on the mod bus lets the gpu
