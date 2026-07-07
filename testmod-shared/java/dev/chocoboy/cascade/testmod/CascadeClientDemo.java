@@ -34,11 +34,8 @@ final class CascadeClientDemo {
     }
 
     static void gpu() {
+        // no capability gate on 26.1: the stateless gpu path runs on minecraft's own gl floor
         Minecraft.getInstance().execute(() -> {
-            if (!GpuSim.available()) {
-                say("gpu sim unavailable, needs gl 4.3");
-                return;
-            }
             boolean on = !GpuSim.enabled();
             GpuSim.setEnabled(on);
             say("gpu sim " + (on ? "on" : "off"));

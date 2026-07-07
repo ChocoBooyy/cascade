@@ -1,4 +1,4 @@
-#version 430
+#version 330
 
 // same math as vanilla position_tex_color, so gpu billboards shade exactly like the cpu ones
 
