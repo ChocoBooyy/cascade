@@ -14,8 +14,6 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 // before any textured type is built. building these at registration instead would resolve the atlas before
 // it exists and cache a blank texture, drawing every sprite as a flat coloured quad.
 //
-// still pending from the port: the lightmap-lit mesh variant, whose provider method maps onto the unlit
-// twin. see the porting notes
 final class VfxRenderTypes {
 
     private static final int BUFFER_BYTES = 1536;
@@ -48,6 +46,14 @@ final class VfxRenderTypes {
         return RenderType.create(name, setup.createRenderSetup());
     }
 
+    // an untextured lit type: no atlas, but the lightmap bound for the vendored lightmap vertex stage
+    private static RenderType lightmapPlain(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline) {
+        return RenderType.create(name, RenderSetup.builder(pipeline)
+                .useLightmap()
+                .bufferSize(BUFFER_BYTES)
+                .createRenderSetup());
+    }
+
     // a textured type: binds the particle atlas to Sampler0, and the lightmap too when the shader is lit
     private static RenderType textured(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline,
             boolean sort, boolean lightmap) {
@@ -65,6 +71,7 @@ final class VfxRenderTypes {
 
     static final RenderType ADDITIVE = plain("cascade_additive", CascadePipelines.ADDITIVE, false);
     static final RenderType SOLID = plain("cascade_solid", CascadePipelines.SOLID, false);
+    static final RenderType SOLID_LIT = lightmapPlain("cascade_solid_lit", CascadePipelines.SOLID_LIT);
     static final RenderType TEXTURED_ADDITIVE = textured("cascade_textured_additive", CascadePipelines.TEXTURED_ADDITIVE, false, false);
     static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha", CascadePipelines.TEXTURED_ALPHA, true, false);
     static final RenderType TEXTURED_ADDITIVE_LIT = textured("cascade_textured_additive_lit", CascadePipelines.TEXTURED_ADDITIVE_LIT, false, true);

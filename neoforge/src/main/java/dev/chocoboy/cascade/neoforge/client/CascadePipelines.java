@@ -84,6 +84,19 @@ final class CascadePipelines {
             RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
             ColorTargetState.DEFAULT, DEPTH_WRITE);
 
+    // its lit twin: vanilla dropped position_color_lightmap in 26.1, so a vendored vertex stage folds the
+    // lightmap into the vertex color and the mesh takes scene light
+    static final RenderPipeline SOLID_LIT = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+            .withLocation(Identifier.fromNamespaceAndPath("cascade", "solid_lit"))
+            .withVertexShader(Identifier.fromNamespaceAndPath("cascade", "core/position_color_lightmap"))
+            .withFragmentShader(Identifier.fromNamespaceAndPath("cascade", "core/position_color_lightmap"))
+            .withSampler("Sampler2")
+            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, VertexFormat.Mode.QUADS)
+            .withColorTargetState(ColorTargetState.DEFAULT)
+            .withDepthStencilState(DEPTH_WRITE)
+            .withCull(false)
+            .build();
+
     // lit textured sprites use the particle format and shader, so the world lightmap tints them
     static final RenderPipeline TEXTURED_ADDITIVE_LIT = derived("textured_additive_lit",
             RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
@@ -126,7 +139,7 @@ final class CascadePipelines {
             new ColorTargetState(BlendFunction.TRANSLUCENT), NO_DEPTH);
 
     private static final List<RenderPipeline> ALL = List.of(
-            ADDITIVE, TEXTURED_ADDITIVE, TEXTURED_ALPHA, SOLID,
+            ADDITIVE, TEXTURED_ADDITIVE, TEXTURED_ALPHA, SOLID, SOLID_LIT,
             TEXTURED_ADDITIVE_LIT, TEXTURED_ALPHA_LIT,
             TEXTURED_ALPHA_SOFT, TEXTURED_ALPHA_LIT_SOFT,
             GUI_TEXTURED_ADDITIVE, GUI_TEXTURED_ALPHA,

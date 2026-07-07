@@ -33,8 +33,7 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
 
     @Override
     public RenderType solidLit() {
-        // the lightmap-lit mesh shader is gone in 26.1, so lit mesh debris draws unlit. see the porting notes
-        return VfxRenderTypes.SOLID;
+        return VfxRenderTypes.SOLID_LIT;
     }
 
     @Override

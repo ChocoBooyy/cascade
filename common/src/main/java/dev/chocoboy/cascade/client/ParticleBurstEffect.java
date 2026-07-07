@@ -261,10 +261,7 @@ public final class ParticleBurstEffect implements RenderedEffect {
     }
 
     private void renderMesh(VfxFrame frame) {
-        // 26.1 dropped the lightmap-lit mesh shader, so the lit mesh type falls back to the unlit one. its
-        // vertex format carries no lightmap coord, so the writer must not emit one: force unlit here until
-        // the lit path is restored. see the porting notes
-        boolean lit = false;
+        boolean lit = render.lit();
         RenderType type = lit ? CascadeRenderTypes.solidLit() : CascadeRenderTypes.solid();
         Level level = lit ? Minecraft.getInstance().level : null;
         Vec3 cam = frame.cameraPos();
