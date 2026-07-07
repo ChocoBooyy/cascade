@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id 'fabric-loom' version '1.17-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
 }
 
 base {
@@ -9,10 +9,6 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(java_version)
-}
-
-loom {
-    accessWidenerPath = file("src/main/resources/cascade.accesswidener")
 }
 
 sourceSets {

@@ -38,6 +38,15 @@ public final class ParticleAtlas {
         return LOCATION;
     }
 
+    // sheet dimensions in pixels, for callers that address cells in texel space (the hud blit path)
+    static int width() {
+        return WIDTH;
+    }
+
+    static int height() {
+        return HEIGHT;
+    }
+
     // builds and registers the atlas on first call. Must run on the render thread. public so a loader's
     // render-type setup can guarantee the atlas exists before a RenderSetup resolves it to a gpu texture
     public static void ensureUploaded() {

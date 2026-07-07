@@ -48,7 +48,7 @@ public final class CascadeFabric implements ModInitializer {
     }
 
     private static void registerPayloads() {
-        PayloadTypeRegistry<net.minecraft.network.RegistryFriendlyByteBuf> s2c = PayloadTypeRegistry.playS2C();
+        PayloadTypeRegistry<net.minecraft.network.RegistryFriendlyByteBuf> s2c = PayloadTypeRegistry.clientboundPlay();
         s2c.register(EmitterPayload.TYPE, EmitterPayload.STREAM_CODEC);
         s2c.register(EffectPayload.TYPE, EffectPayload.STREAM_CODEC);
         s2c.register(BeamPayload.TYPE, BeamPayload.STREAM_CODEC);

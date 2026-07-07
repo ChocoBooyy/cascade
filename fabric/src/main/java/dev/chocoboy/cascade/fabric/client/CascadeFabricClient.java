@@ -1,9 +1,8 @@
 package dev.chocoboy.cascade.fabric.client;
 
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import dev.chocoboy.cascade.client.CascadeClientHandler;
 import dev.chocoboy.cascade.client.CascadeRenderTypes;
-import dev.chocoboy.cascade.client.CascadeShaders;
+import dev.chocoboy.cascade.client.CoreRenderTypes;
 import dev.chocoboy.cascade.client.PostFx;
 import dev.chocoboy.cascade.client.ScreenVfxManager;
 import dev.chocoboy.cascade.client.VfxRenderManager;
@@ -17,44 +16,38 @@ import dev.chocoboy.cascade.net.ShakePayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
+// on 26.1 the render types and pipelines are shared vanilla-api code (CoreRenderTypes/CorePipelines), so
+// this glue only installs the provider and feeds the shared managers fabric's tick, level and hud hooks.
+// pipelines compile lazily on first draw, so no registration hook is needed here
 public final class CascadeFabricClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        CascadeRenderTypes.install(new FabricRenderTypes());
-        registerShaders();
+        CascadeRenderTypes.install(new CoreRenderTypes());
         registerReceivers();
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             VfxRenderManager.get().clientTick();
             ScreenVfxManager.get().tick();
         });
-        HudRenderCallback.EVENT.register((gui, tickCounter) -> ScreenVfxManager.get().render(gui));
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
-            Camera cam = context.camera();
-            VfxRenderManager.get().render(context.matrixStack(),
-                    Minecraft.getInstance().renderBuffers().bufferSource(), cam.rotation(), cam.getPosition());
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("cascade", "screen_vfx"),
+                (gui, tickCounter) -> ScreenVfxManager.get().render(gui));
+        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(context -> {
+            Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+            VfxRenderManager.get().render(context.poseStack(),
+                    Minecraft.getInstance().renderBuffers().bufferSource(), camera.rotation(), camera.position());
             // the bloom capture re-renders here, in the same stage, so the frame's matrices still match
-            PostFx.captureVfx(context.matrixStack(),
-                    Minecraft.getInstance().renderBuffers().bufferSource(), cam.rotation(), cam.getPosition());
+            PostFx.captureVfx(context.poseStack(),
+                    Minecraft.getInstance().renderBuffers().bufferSource(), camera.rotation(), camera.position());
         });
-        WorldRenderEvents.END.register(context ->
-                PostFx.process(context.tickCounter().getGameTimeDeltaPartialTick(false)));
-    }
-
-    private static void registerShaders() {
-        CoreShaderRegistrationCallback.EVENT.register(context -> {
-            context.register(ResourceLocation.fromNamespaceAndPath("cascade", "cascade_soft"),
-                    DefaultVertexFormat.POSITION_TEX_COLOR, CascadeShaders::setSoft);
-            context.register(ResourceLocation.fromNamespaceAndPath("cascade", "cascade_soft_lit"),
-                    DefaultVertexFormat.PARTICLE, CascadeShaders::setSoftLit);
-        });
+        // run post fx after the whole level, so it captures particles too
+        LevelRenderEvents.END_MAIN.register(context ->
+                PostFx.process(Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false)));
     }
 
     private static void registerReceivers() {

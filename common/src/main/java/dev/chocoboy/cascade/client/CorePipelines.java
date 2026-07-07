@@ -1,32 +1,35 @@
-package dev.chocoboy.cascade.neoforge.client;
+package dev.chocoboy.cascade.client;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
-import dev.chocoboy.cascade.client.BloomBlit;
-import dev.chocoboy.cascade.client.GpuSim;
-import dev.chocoboy.cascade.client.ScreenVfxPipelines;
-import dev.chocoboy.cascade.client.SdfFx;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import java.util.List;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 
-// the render pipelines for the cascade render types, kept apart from VfxRenderTypes on purpose. the gpu
-// device compiles pipelines at registration time, which happens during client startup, before the game
-// loop; VfxRenderTypes, by contrast, builds its RenderTypes lazily on the first draw so the particle atlas
-// is registered before a RenderSetup resolves it. touching this class at registration must not drag the
-// RenderTypes (and the atlas resolve) along with it, so the two live in separate classes.
-final class CascadePipelines {
+// the render pipelines for the cascade render types, kept apart from CoreRenderTypes on purpose. the gpu
+// device compiles pipelines lazily on first draw (or upfront where a loader pre-registers them), while
+// CoreRenderTypes builds its RenderTypes on the first draw so the particle atlas is registered before a
+// RenderSetup resolves it; touching this class must not drag the RenderTypes along, so the two live in
+// separate classes.
+//
+// everything here is built from scratch on the public vanilla builder: the vanilla snippets and the
+// toBuilder derivation are loader-widened api (neoforge access transformers) that fabric cannot see, so
+// the uniform blocks and shader stages the snippets would contribute are declared explicitly instead,
+// matching the vanilla pipelines they mirror (position_color for the untextured types, particle for the
+// lit ones)
+public final class CorePipelines {
 
     static final DepthStencilState DEPTH_NO_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false);
     static final DepthStencilState DEPTH_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true);
 
+    private static final Identifier POSITION_COLOR = Identifier.withDefaultNamespace("core/position_color");
     private static final Identifier POSITION_TEX_COLOR = Identifier.withDefaultNamespace("core/position_tex_color");
+    private static final Identifier PARTICLE = Identifier.withDefaultNamespace("core/particle");
 
     // the pre-26.1 position_tex_color fragment stage, vendored: it discarded texels below alpha 0.1 where
     // the 26.1 one only discards exact zero. cascade's sprites carry their shape in the alpha channel over
@@ -40,25 +43,31 @@ final class CascadePipelines {
     private static final Identifier POSITION_TEX_SOFT =
             Identifier.fromNamespaceAndPath("cascade", "core/position_tex_soft");
 
-    private CascadePipelines() {
+    private CorePipelines() {
     }
 
-    private static RenderPipeline derived(String name, RenderPipeline base, VertexFormat format,
-            ColorTargetState color, DepthStencilState depth) {
-        return base.toBuilder()
+    // the world matrix and projection blocks every world pipeline reads, vanilla's matrices snippet inlined
+    static RenderPipeline.Builder worldBuilder(String name) {
+        return RenderPipeline.builder()
                 .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
-                .withVertexFormat(format, VertexFormat.Mode.QUADS)
+                .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
+                .withUniform("Projection", UniformType.UNIFORM_BUFFER);
+    }
+
+    // untextured vertex-colored quads, the vanilla position_color stages
+    private static RenderPipeline plain(String name, ColorTargetState color, DepthStencilState depth) {
+        return worldBuilder(name)
+                .withVertexShader(POSITION_COLOR)
+                .withFragmentShader(POSITION_COLOR)
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS)
                 .withColorTargetState(color)
                 .withDepthStencilState(depth)
                 .withCull(false)
                 .build();
     }
 
-    // the unlit textured world types are built from scratch: the closest stock textured pipeline, gui_textured,
-    // targets the orthographic hud and does not sample a bound world texture, so it drew sprites as flat quads
     private static RenderPipeline textured(String name, ColorTargetState color, DepthStencilState depth) {
-        return RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
-                .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
+        return worldBuilder(name)
                 .withVertexShader(POSITION_TEX_COLOR)
                 .withFragmentShader(POSITION_TEX_CUTOUT)
                 .withSampler("Sampler0")
@@ -69,9 +78,21 @@ final class CascadePipelines {
                 .build();
     }
 
+    // lit sprites ride the vanilla particle stages, whose vertex shader folds the lightmap into the vertex
+    // color; the fog block is part of that shader's interface even though cascade leaves fog defaults alone
+    private static RenderPipeline.Builder litBuilder(String name) {
+        return worldBuilder(name)
+                .withUniform("Fog", UniformType.UNIFORM_BUFFER)
+                .withVertexShader(PARTICLE)
+                .withSampler("Sampler0")
+                .withSampler("Sampler2")
+                .withVertexFormat(DefaultVertexFormat.PARTICLE, VertexFormat.Mode.QUADS)
+                .withDepthStencilState(DEPTH_NO_WRITE)
+                .withCull(false);
+    }
+
     // untextured additive quads for beams: additive blend, depth tested so terrain occludes, no depth write
-    static final RenderPipeline ADDITIVE = derived("additive",
-            RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
+    static final RenderPipeline ADDITIVE = plain("additive",
             new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
 
     // textured atlas sprites in world, additive (glows) and translucent (smoke); depth tested, no depth write
@@ -82,14 +103,11 @@ final class CascadePipelines {
             new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
 
     // double sided solid geometry for mesh particles: opaque, depth tested and written so cubes read as 3D
-    static final RenderPipeline SOLID = derived("solid",
-            RenderPipelines.DEBUG_QUADS, DefaultVertexFormat.POSITION_COLOR,
-            ColorTargetState.DEFAULT, DEPTH_WRITE);
+    static final RenderPipeline SOLID = plain("solid", ColorTargetState.DEFAULT, DEPTH_WRITE);
 
     // its lit twin: vanilla dropped position_color_lightmap in 26.1, so a vendored vertex stage folds the
     // lightmap into the vertex color and the mesh takes scene light
-    static final RenderPipeline SOLID_LIT = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath("cascade", "solid_lit"))
+    static final RenderPipeline SOLID_LIT = worldBuilder("solid_lit")
             .withVertexShader(Identifier.fromNamespaceAndPath("cascade", "core/position_color_lightmap"))
             .withFragmentShader(Identifier.fromNamespaceAndPath("cascade", "core/position_color_lightmap"))
             .withSampler("Sampler2")
@@ -99,38 +117,33 @@ final class CascadePipelines {
             .withCull(false)
             .build();
 
-    // lit textured sprites use the particle format and shader, so the world lightmap tints them
-    static final RenderPipeline TEXTURED_ADDITIVE_LIT = derived("textured_additive_lit",
-            RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
-            new ColorTargetState(BlendFunction.ADDITIVE), DEPTH_NO_WRITE);
+    static final RenderPipeline TEXTURED_ADDITIVE_LIT = litBuilder("textured_additive_lit")
+            .withFragmentShader(PARTICLE)
+            .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
+            .build();
 
-    static final RenderPipeline TEXTURED_ALPHA_LIT = derived("textured_alpha_lit",
-            RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
-            new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
+    static final RenderPipeline TEXTURED_ALPHA_LIT = litBuilder("textured_alpha_lit")
+            .withFragmentShader(PARTICLE)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .build();
 
     // soft twins of the alpha types: the soft fragment stage fades the quad near scene geometry, reading
     // cascade's depth copy through the extra DepthSampler
-    static final RenderPipeline TEXTURED_ALPHA_SOFT =
-            RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
-                    .withLocation(Identifier.fromNamespaceAndPath("cascade", "textured_alpha_soft"))
-                    .withVertexShader(POSITION_TEX_COLOR)
-                    .withFragmentShader(POSITION_TEX_SOFT)
-                    .withSampler("Sampler0")
-                    .withSampler("DepthSampler")
-                    .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
-                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-                    .withDepthStencilState(DEPTH_NO_WRITE)
-                    .withCull(false)
-                    .build();
-
-    static final RenderPipeline TEXTURED_ALPHA_LIT_SOFT = RenderPipelines.TRANSLUCENT_PARTICLE.toBuilder()
-            .withLocation(Identifier.fromNamespaceAndPath("cascade", "textured_alpha_lit_soft"))
+    static final RenderPipeline TEXTURED_ALPHA_SOFT = worldBuilder("textured_alpha_soft")
+            .withVertexShader(POSITION_TEX_COLOR)
             .withFragmentShader(POSITION_TEX_SOFT)
+            .withSampler("Sampler0")
             .withSampler("DepthSampler")
-            .withVertexFormat(DefaultVertexFormat.PARTICLE, VertexFormat.Mode.QUADS)
+            .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withDepthStencilState(DEPTH_NO_WRITE)
             .withCull(false)
+            .build();
+
+    static final RenderPipeline TEXTURED_ALPHA_LIT_SOFT = litBuilder("textured_alpha_lit_soft")
+            .withFragmentShader(POSITION_TEX_SOFT)
+            .withSampler("DepthSampler")
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .build();
 
     private static final List<RenderPipeline> ALL = List.of(
@@ -140,8 +153,9 @@ final class CascadePipelines {
             ScreenVfxPipelines.ADDITIVE, ScreenVfxPipelines.ALPHA,
             BloomBlit.PIPELINE, SdfFx.PIPELINE, GpuSim.PIPELINE);
 
-    // the gpu device only compiles pipelines it knows about, so every custom pipeline is registered here
-    static void register(RegisterRenderPipelinesEvent event) {
-        ALL.forEach(event::registerPipeline);
+    // the gpu device compiles pipelines lazily on first draw; a loader that can pre-register them for an
+    // upfront compile (neoforge's register event) feeds this list through
+    public static List<RenderPipeline> all() {
+        return ALL;
     }
 }

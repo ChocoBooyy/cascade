@@ -1,10 +1,6 @@
 package dev.chocoboy.cascade.client;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
 import dev.chocoboy.cascade.engine.effect.Particle;
@@ -13,12 +9,7 @@ import dev.chocoboy.cascade.engine.effect.RenderSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.navigation.ScreenRectangle;
-import net.minecraft.client.gui.render.TextureSetup;
-import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
-import org.joml.Matrix3x2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,17 +17,22 @@ import org.slf4j.LoggerFactory;
 // VfxRenderManager: each loader feeds it a client tick and its gui render pass. the engine sim is unitless,
 // so screen specs just author in gui units (size 8 is 8 scaled pixels, speed in units per tick).
 //
-// the 26.1 gui is retained: instead of writing quads into a buffer source, each system submits one
-// GuiElementRenderState carrying its pipeline and the atlas, and the gui renderer batches and draws it
-// with the rest of the hud later in the frame. the vertices are built at that point, still within the
-// same frame, so the referenced sim state has not ticked on
+// the 26.1 gui is retained, and the only vanilla-public way to feed it custom-pipeline quads is the blit
+// family, so each particle draws as one blit of its atlas cell under a pushed 2d pose carrying the
+// particle's translation, rotation and scale; the gui renderer still batches blits that share a pipeline.
+// the blit takes integer corners, so the quad spans a fixed base extent and the pose scales it to size,
+// keeping sub-pixel motion smooth
 public final class ScreenVfxManager {
+
 
     private static final ScreenVfxManager INSTANCE = new ScreenVfxManager();
     private static final Logger LOGGER = LoggerFactory.getLogger("Cascade");
 
     // screen effects are cosmetic, so cap them rather than risk unbounded growth under spam
     private static final int MAX_EFFECTS = 64;
+
+    // the half extent of the unscaled blit quad; the 2d pose scales it down to the particle size
+    private static final int BASE_EXTENT = 64;
 
     private final List<Entry> active = new ArrayList<>();
     // screen particles are client-local cosmetics, so a plain counter seed is enough; there is no
@@ -80,61 +76,49 @@ public final class ScreenVfxManager {
         }
         try {
             ParticleAtlas.ensureUploaded();
-            TextureSetup atlas = TextureSetup.singleTexture(
-                    Minecraft.getInstance().getTextureManager()
-                            .getTexture(ParticleAtlas.textureId()).getTextureView(),
-                    RenderSystem.getSamplerCache().getSampler(
-                            AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
-                            FilterMode.NEAREST, FilterMode.NEAREST, false));
-            ScreenRectangle bounds = new ScreenRectangle(0, 0, gui.guiWidth(), gui.guiHeight());
-            Matrix3x2f pose = new Matrix3x2f(gui.pose());
             for (Entry entry : active) {
-                RenderPipeline pipeline = entry.spec().render().blend() == BlendMode.ADDITIVE
-                        ? ScreenVfxPipelines.ADDITIVE
-                        : ScreenVfxPipelines.ALPHA;
-                gui.submitGuiElementRenderState(new HudParticles(entry, pipeline, atlas, pose, bounds));
+                renderEntry(gui, entry);
             }
         } catch (RuntimeException e) {
             logOnce("rendering a screen effect", e);
         }
     }
 
-    // one system's particles as a retained gui element; the gui renderer batches elements that share a
-    // pipeline and texture setup, so all additive systems still land in one draw
-    private record HudParticles(Entry entry, RenderPipeline pipeline, TextureSetup textureSetup,
-            Matrix3x2f pose, ScreenRectangle bounds) implements GuiElementRenderState {
-
-        // one rotated quad per particle. of the render spec only blend, sprite, and animate apply on the
-        // hud; stretch, lit, soft, and mesh are world features and are ignored here. engine y maps
-        // straight to screen y, which grows down; authors write screen-space specs knowing that
-        @Override
-        public void buildVertices(VertexConsumer vc) {
-            RenderSpec render = entry.spec().render();
-            ParticleSystem sim = entry.system();
-            boolean animate = render.animate();
-            float[] still = ParticleAtlas.uv(render.sprite());
-            for (Particle p : sim.particles()) {
-                int color = sim.colorOf(p);
-                int a = (int) (sim.alphaOf(p) * 255f);
-                int argb = (a << 24) | (color & 0xFFFFFF);
-                float s = sim.sizeOf(p) / 2f;
-                float cx = entry.x() + p.pos.x();
-                float cy = entry.y() + p.pos.y();
-                float[] uv = animate ? ParticleAtlas.uv(render.sprite(), frameOf(p)) : still;
-                // rotate the corners in plane, the same trick as Billboards. screen y grows down, so the
-                // +y corners sample the cell's bottom edge to keep the sprite upright
-                float cs = (float) Math.cos(p.rotation);
-                float sn = (float) Math.sin(p.rotation);
-                vc.addVertexWith2DPose(pose, cx - s * cs + s * sn, cy - s * sn - s * cs).setUv(uv[0], uv[1]).setColor(argb);
-                vc.addVertexWith2DPose(pose, cx - s * cs - s * sn, cy - s * sn + s * cs).setUv(uv[0], uv[3]).setColor(argb);
-                vc.addVertexWith2DPose(pose, cx + s * cs - s * sn, cy + s * sn + s * cs).setUv(uv[2], uv[3]).setColor(argb);
-                vc.addVertexWith2DPose(pose, cx + s * cs + s * sn, cy + s * sn - s * cs).setUv(uv[2], uv[1]).setColor(argb);
+    // one blit per particle. of the render spec only blend, sprite, and animate apply on the hud; stretch,
+    // lit, soft, and mesh are world features and are ignored here. engine y maps straight to screen y,
+    // which grows down; authors write screen-space specs knowing that
+    private void renderEntry(GuiGraphicsExtractor gui, Entry entry) {
+        RenderSpec render = entry.spec().render();
+        RenderPipeline pipeline = render.blend() == BlendMode.ADDITIVE
+                ? ScreenVfxPipelines.ADDITIVE
+                : ScreenVfxPipelines.ALPHA;
+        ParticleSystem sim = entry.system();
+        boolean animate = render.animate();
+        float[] still = ParticleAtlas.uv(render.sprite());
+        int texW = ParticleAtlas.width();
+        int texH = ParticleAtlas.height();
+        for (Particle p : sim.particles()) {
+            int color = sim.colorOf(p);
+            int a = (int) (sim.alphaOf(p) * 255f);
+            int argb = (a << 24) | (color & 0xFFFFFF);
+            float s = sim.sizeOf(p) / 2f;
+            if (s <= 0f) {
+                continue;
             }
-        }
-
-        @Override
-        public ScreenRectangle scissorArea() {
-            return null;
+            float[] uv = animate ? ParticleAtlas.uv(render.sprite(), frameOf(p)) : still;
+            float u = uv[0] * texW;
+            float v = uv[1] * texH;
+            int uvW = Math.round((uv[2] - uv[0]) * texW);
+            int uvH = Math.round((uv[3] - uv[1]) * texH);
+            // the quad spans a fixed base extent and the pose carries position, spin, and size, so the
+            // integer blit corners never quantize the motion
+            gui.pose().pushMatrix();
+            gui.pose().translate(entry.x() + p.pos.x(), entry.y() + p.pos.y());
+            gui.pose().rotate(p.rotation);
+            gui.pose().scale(s / BASE_EXTENT);
+            gui.blit(pipeline, ParticleAtlas.textureId(), -BASE_EXTENT, -BASE_EXTENT,
+                    u, v, BASE_EXTENT * 2, BASE_EXTENT * 2, uvW, uvH, texW, texH, argb);
+            gui.pose().popMatrix();
         }
     }
 

@@ -1,12 +1,11 @@
-package dev.chocoboy.cascade.neoforge.client;
+package dev.chocoboy.cascade.client;
 
-import dev.chocoboy.cascade.client.ParticleAtlas;
-import dev.chocoboy.cascade.client.SoftDepth;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
-// the neoforge render types, rebuilt for 26.1. the old RenderStateShard composite builder is gone, so each
-// type is a RenderPipeline (see CascadePipelines) paired with a RenderSetup that binds the particle atlas.
+// the render types, rebuilt for 26.1 and shared by both loaders: the old RenderStateShard composite builder
+// is gone, so each type is a RenderPipeline (see CorePipelines) paired with a RenderSetup that binds the
+// particle atlas, all public vanilla api. exposed to the shared render code through the provider seam.
 //
 // this class is loaded lazily, on the first draw that asks for a type, never at pipeline registration. that
 // matters: a RenderSetup resolves its bound texture to a gpu view when it is built and caches it, so the
@@ -14,7 +13,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 // before any textured type is built. building these at registration instead would resolve the atlas before
 // it exists and cache a blank texture, drawing every sprite as a flat coloured quad.
 //
-final class VfxRenderTypes {
+public final class CoreRenderTypes implements CascadeRenderTypes.Provider {
 
     private static final int BUFFER_BYTES = 1536;
 
@@ -34,8 +33,7 @@ final class VfxRenderTypes {
                     com.mojang.blaze3d.textures.FilterMode.NEAREST,
                     false);
 
-    private VfxRenderTypes() {
-    }
+
 
     // an untextured type: just the pipeline and a vertex buffer
     private static RenderType plain(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline, boolean sort) {
@@ -69,15 +67,15 @@ final class VfxRenderTypes {
         return RenderType.create(name, setup.createRenderSetup());
     }
 
-    static final RenderType ADDITIVE = plain("cascade_additive", CascadePipelines.ADDITIVE, false);
-    static final RenderType SOLID = plain("cascade_solid", CascadePipelines.SOLID, false);
-    static final RenderType SOLID_LIT = lightmapPlain("cascade_solid_lit", CascadePipelines.SOLID_LIT);
-    static final RenderType TEXTURED_ADDITIVE = textured("cascade_textured_additive", CascadePipelines.TEXTURED_ADDITIVE, false, false);
-    static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha", CascadePipelines.TEXTURED_ALPHA, true, false);
-    static final RenderType TEXTURED_ADDITIVE_LIT = textured("cascade_textured_additive_lit", CascadePipelines.TEXTURED_ADDITIVE_LIT, false, true);
-    static final RenderType TEXTURED_ALPHA_LIT = textured("cascade_textured_alpha_lit", CascadePipelines.TEXTURED_ALPHA_LIT, true, true);
-    static final RenderType GUI_TEXTURED_ADDITIVE = textured("cascade_gui_textured_additive", dev.chocoboy.cascade.client.ScreenVfxPipelines.ADDITIVE, false, false);
-    static final RenderType GUI_TEXTURED_ALPHA = textured("cascade_gui_textured_alpha", dev.chocoboy.cascade.client.ScreenVfxPipelines.ALPHA, true, false);
+    static final RenderType ADDITIVE = plain("cascade_additive", CorePipelines.ADDITIVE, false);
+    static final RenderType SOLID = plain("cascade_solid", CorePipelines.SOLID, false);
+    static final RenderType SOLID_LIT = lightmapPlain("cascade_solid_lit", CorePipelines.SOLID_LIT);
+    static final RenderType TEXTURED_ADDITIVE = textured("cascade_textured_additive", CorePipelines.TEXTURED_ADDITIVE, false, false);
+    static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha", CorePipelines.TEXTURED_ALPHA, true, false);
+    static final RenderType TEXTURED_ADDITIVE_LIT = textured("cascade_textured_additive_lit", CorePipelines.TEXTURED_ADDITIVE_LIT, false, true);
+    static final RenderType TEXTURED_ALPHA_LIT = textured("cascade_textured_alpha_lit", CorePipelines.TEXTURED_ALPHA_LIT, true, true);
+    static final RenderType GUI_TEXTURED_ADDITIVE = textured("cascade_gui_textured_additive", ScreenVfxPipelines.ADDITIVE, false, false);
+    static final RenderType GUI_TEXTURED_ALPHA = textured("cascade_gui_textured_alpha", ScreenVfxPipelines.ALPHA, true, false);
 
     // the soft types bind cascade's scene depth copy, whose texture is recreated on window resize. a
     // RenderSetup caches the resolved gpu view when built, so these are rebuilt whenever the depth copy's
@@ -87,12 +85,12 @@ final class VfxRenderTypes {
     private static RenderType texturedAlphaLitSoft;
     private static int softGeneration = -1;
 
-    static RenderType texturedAlphaSoft() {
+    private static RenderType softAlpha() {
         ensureSoft();
         return texturedAlphaSoft;
     }
 
-    static RenderType texturedAlphaLitSoft() {
+    private static RenderType softAlphaLit() {
         ensureSoft();
         return texturedAlphaLitSoft;
     }
@@ -103,9 +101,9 @@ final class VfxRenderTypes {
         if (softGeneration != generation) {
             softGeneration = generation;
             texturedAlphaSoft = softTextured("cascade_textured_alpha_soft_" + generation,
-                    CascadePipelines.TEXTURED_ALPHA_SOFT, false);
+                    CorePipelines.TEXTURED_ALPHA_SOFT, false);
             texturedAlphaLitSoft = softTextured("cascade_textured_alpha_lit_soft_" + generation,
-                    CascadePipelines.TEXTURED_ALPHA_LIT_SOFT, true);
+                    CorePipelines.TEXTURED_ALPHA_LIT_SOFT, true);
         }
     }
 
@@ -120,5 +118,60 @@ final class VfxRenderTypes {
             setup.useLightmap();
         }
         return RenderType.create(name, setup.createRenderSetup());
+    }
+
+    @Override
+    public RenderType additive() {
+        return ADDITIVE;
+    }
+
+    @Override
+    public RenderType texturedAdditive() {
+        return TEXTURED_ADDITIVE;
+    }
+
+    @Override
+    public RenderType texturedAlpha() {
+        return TEXTURED_ALPHA;
+    }
+
+    @Override
+    public RenderType texturedAlphaSoft() {
+        return softAlpha();
+    }
+
+    @Override
+    public RenderType solid() {
+        return SOLID;
+    }
+
+    @Override
+    public RenderType solidLit() {
+        return SOLID_LIT;
+    }
+
+    @Override
+    public RenderType texturedAdditiveLit() {
+        return TEXTURED_ADDITIVE_LIT;
+    }
+
+    @Override
+    public RenderType texturedAlphaLit() {
+        return TEXTURED_ALPHA_LIT;
+    }
+
+    @Override
+    public RenderType texturedAlphaLitSoft() {
+        return softAlphaLit();
+    }
+
+    @Override
+    public RenderType guiTexturedAdditive() {
+        return GUI_TEXTURED_ADDITIVE;
+    }
+
+    @Override
+    public RenderType guiTexturedAlpha() {
+        return GUI_TEXTURED_ALPHA;
     }
 }

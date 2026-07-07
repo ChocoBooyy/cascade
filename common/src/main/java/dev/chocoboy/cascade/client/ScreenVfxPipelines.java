@@ -7,7 +7,6 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 // the hud particle pipelines: the textured world pair with no depth test, so the gui pass draws them over
@@ -24,8 +23,7 @@ public final class ScreenVfxPipelines {
     }
 
     private static RenderPipeline build(String name, BlendFunction blend) {
-        return RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
-                .withLocation(Identifier.fromNamespaceAndPath("cascade", name))
+        return CorePipelines.worldBuilder(name)
                 .withVertexShader(Identifier.withDefaultNamespace("core/position_tex_color"))
                 .withFragmentShader(Identifier.fromNamespaceAndPath("cascade", "core/position_tex_cutout"))
                 .withSampler("Sampler0")
