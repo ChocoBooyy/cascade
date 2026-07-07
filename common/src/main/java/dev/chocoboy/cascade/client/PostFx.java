@@ -78,7 +78,9 @@ public final class PostFx {
         captured = false;
         Minecraft mc = Minecraft.getInstance();
         try {
-            PostChain chain = mc.getShaderManager().getPostChain(CHAIN, Set.of());
+            // main is an external target from the chain's point of view and must be granted explicitly;
+            // process() then substitutes the capture for it
+            PostChain chain = mc.getShaderManager().getPostChain(CHAIN, Set.of(PostChain.MAIN_TARGET_ID));
             if (chain == null) {
                 failed = true;
                 LOGGER.error("Cascade bloom post chain failed to load, post fx disabled");
