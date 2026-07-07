@@ -37,12 +37,13 @@ See [docs/getting-started.md](docs/getting-started.md) for the walkthrough.
 ## Requirements
 
 Minecraft 26.1, Java 25, and either NeoForge or Fabric with Fabric API. The 1.21.1 build lives on the
-`main` branch as the `1.0.0` artifact.
+`1.21.1` branch as the `1.0.0` artifact.
 
 ## Status
 
-1.0.0+26.1, the Minecraft 26.1 port of the 1.0.0 release. The public API is unchanged and committed
-across 1.x. See [CHANGELOG.md](CHANGELOG.md).
+1.0.0+26.1, the Minecraft 26.1 port of the 1.0.0 release. Each Minecraft version lives on its own
+branch, named for it. The public API is unchanged and committed across 1.x. See
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
