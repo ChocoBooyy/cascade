@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.QuadInstance;
 import dev.chocoboy.cascade.engine.effect.BlendMode;
 import dev.chocoboy.cascade.engine.effect.CollisionProbe;
 import dev.chocoboy.cascade.engine.effect.EmitterSpec;
@@ -15,7 +16,6 @@ import java.util.Random;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import com.mojang.blaze3d.vertex.QuadInstance;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.geometry.BakedQuad;

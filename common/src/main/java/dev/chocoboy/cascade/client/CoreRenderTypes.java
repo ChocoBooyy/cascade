@@ -1,5 +1,11 @@
 package dev.chocoboy.cascade.client;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuSampler;
+import java.util.function.Supplier;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
@@ -26,12 +32,12 @@ public final class CoreRenderTypes {
     // the atlas is a single mip level built for nearest sampling, so it must be bound with a nearest,
     // no-mipmap sampler. the default sampler mipmaps, and sampling a missing mip reads as white, which drew
     // every sprite as a flat vertex-coloured quad. clamp to edge so a cell cannot bleed into its neighbour.
-    private static final java.util.function.Supplier<com.mojang.blaze3d.textures.GpuSampler> ATLAS_SAMPLER = () ->
-            com.mojang.blaze3d.systems.RenderSystem.getSamplerCache().getSampler(
-                    com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
-                    com.mojang.blaze3d.textures.AddressMode.CLAMP_TO_EDGE,
-                    com.mojang.blaze3d.textures.FilterMode.NEAREST,
-                    com.mojang.blaze3d.textures.FilterMode.NEAREST,
+    private static final Supplier<GpuSampler> ATLAS_SAMPLER = () ->
+            RenderSystem.getSamplerCache().getSampler(
+                    AddressMode.CLAMP_TO_EDGE,
+                    AddressMode.CLAMP_TO_EDGE,
+                    FilterMode.NEAREST,
+                    FilterMode.NEAREST,
                     false);
 
 
@@ -40,7 +46,7 @@ public final class CoreRenderTypes {
     }
 
     // an untextured type: just the pipeline and a vertex buffer
-    private static RenderType plain(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline, boolean sort) {
+    private static RenderType plain(String name, RenderPipeline pipeline, boolean sort) {
         RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline).bufferSize(BUFFER_BYTES);
         if (sort) {
             setup.sortOnUpload();
@@ -49,7 +55,7 @@ public final class CoreRenderTypes {
     }
 
     // an untextured lit type: no atlas, but the lightmap bound for the vendored lightmap vertex stage
-    private static RenderType lightmapPlain(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline) {
+    private static RenderType lightmapPlain(String name, RenderPipeline pipeline) {
         return RenderType.create(name, RenderSetup.builder(pipeline)
                 .useLightmap()
                 .bufferSize(BUFFER_BYTES)
@@ -57,7 +63,7 @@ public final class CoreRenderTypes {
     }
 
     // a textured type: binds the particle atlas to Sampler0, and the lightmap too when the shader is lit
-    private static RenderType textured(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline,
+    private static RenderType textured(String name, RenderPipeline pipeline,
             boolean sort, boolean lightmap) {
         RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", ParticleAtlas.textureId(), ATLAS_SAMPLER)
@@ -111,7 +117,7 @@ public final class CoreRenderTypes {
         }
     }
 
-    private static RenderType softTextured(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline,
+    private static RenderType softTextured(String name, RenderPipeline pipeline,
             boolean lightmap) {
         RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline)
                 .withTexture("Sampler0", ParticleAtlas.textureId(), ATLAS_SAMPLER)

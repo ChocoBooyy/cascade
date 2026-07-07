@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 
 // builds the particle sprite sheet in code so the library ships no image assets. The sheet is a grid of
-// FRAMES columns by one row per SpriteId, each cell 64px and all white so the vertex color tints it.
+// FRAMES columns by one row per SpriteId, each cell 128px and all white so the vertex color tints it.
 // Frame 0 is the still sprite; the later frames animate it (smoke boils and thins, the spark twinkles
 // out, the ring expands like a shockwave) so a system can flipbook across them over a particle's life.
 // Built once, lazily, on the render thread the first time a particle wants it.

@@ -3,6 +3,27 @@
 Notable changes to Cascade, newest first. Versions follow [semver](https://semver.org): the public API is
 stable across 1.x, and a breaking change would come with a 2.0.
 
+## 1.0.0+26.1 - 2026-07-08
+
+The Minecraft 26.1 port of the 1.0.0 release. The public API is unchanged; every 1.0.0 feature renders on
+26.1's rewritten GPU pipeline, verified against a side-by-side 1.21.1 build.
+
+### Changed
+
+- The render layer moved from the removed `RenderStateShard`/`ShaderInstance` composite API onto 26.1's
+  `RenderPipeline`/`RenderSetup` model, shared by both loaders from the common module.
+- The GPU burst backend no longer uses compute shaders: spawn state uploads once as a vertex buffer and the
+  vertex shader re-integrates the forces each frame. The old OpenGL 4.3 requirement is gone; the backend now
+  runs wherever Minecraft does.
+- Bloom rides 26.1's post-effect format; soft particles, lit meshes, and the sprite alpha cutout ship as
+  vendored core shader stages, since vanilla dropped or changed theirs.
+- HUD particles draw through the retained GUI as batched blits.
+
+### Requirements
+
+- Minecraft 26.1, Java 25, NeoForge or Fabric with Fabric API. The 1.21.1 line continues as `1.0.0` on the
+  `main` branch.
+
 ## 1.0.0 - 2026-07-04
 
 First release. Cascade is a code-first visual effects and sequencing library for Minecraft 1.21.1, running on

@@ -1,6 +1,6 @@
 # Cascade
 
-A code-first visual effects and sequencing library for Minecraft 1.21.1, on NeoForge and Fabric. Your mod
+A code-first visual effects and sequencing library for Minecraft 1.21.1 and 26.1, on NeoForge and Fabric. Your mod
 plays effects from server-side code; Cascade streams them to nearby clients, which own the simulation and
 rendering. Nothing spawns as an entity and nothing is saved.
 

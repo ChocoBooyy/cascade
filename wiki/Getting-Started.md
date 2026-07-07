@@ -11,7 +11,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.chocoboy.cascade:cascade-neoforge:1.0.0'
+    // pick the version matching your Minecraft: 1.0.0 for 1.21.1, 1.0.0+26.1 for 26.1
+    implementation 'dev.chocoboy.cascade:cascade-neoforge:1.0.0+26.1'
 }
 ```
 

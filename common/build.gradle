@@ -21,6 +21,15 @@ neoForge {
     neoFormVersion = neo_form_version
 }
 
+// this module's own compile runs against plain vanilla, a purity check that keeps the shared code off
+// loader-private api. CoreRenderTypes is the one deliberate exception: RenderType.create is package-private
+// in vanilla but access-widened by BOTH loaders (a neoforge access transformer, fabric's transitive access
+// wideners), so the file targets the both-loaders surface instead. the loaders still compile it from the
+// shared source through the commonJava source-merge below
+tasks.named('compileJava', JavaCompile) {
+    exclude '**/client/CoreRenderTypes.java'
+}
+
 configurations {
     commonJava {
         canBeResolved = false
