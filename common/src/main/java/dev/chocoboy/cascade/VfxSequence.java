@@ -43,6 +43,7 @@ public final class VfxSequence {
         return run(() -> beam.play(level, from, to));
     }
 
+    /** Adds a camera shake step. NeoForge clients only; Fabric clients ignore it (see {@link Vfx#shake}). */
     public VfxSequence shake(Vec3 pos, float magnitude, int duration) {
         return run(() -> Vfx.shake(level, pos, magnitude, duration));
     }

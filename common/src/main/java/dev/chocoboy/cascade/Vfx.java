@@ -56,7 +56,11 @@ public final class Vfx {
         EffectJson.register(typeId, json);
     }
 
-    /** Shakes the camera of nearby players. Magnitude is peak offset in blocks, duration is in ticks. */
+    /**
+     * Shakes the camera of nearby players. Magnitude is peak offset in blocks, duration is in ticks.
+     * NeoForge clients only: Fabric exposes no camera hook, so its clients accept the payload and ignore
+     * it. Safe to send regardless of loader.
+     */
     public static void shake(ServerLevel level, Vec3 pos, float magnitude, int duration) {
         sender.sendNear(level, pos.x, pos.y, pos.z, ShakePayload.RADIUS, new ShakePayload(pos, magnitude, duration));
     }

@@ -36,6 +36,9 @@ Vfx.shake(level, pos, 0.3f, 14);          // magnitude in blocks, duration in ti
 Vfx.light(level, pos, 0xFFAA33, 4f, 30);  // a soft ground glow: color, radius, duration
 ```
 
+Shake is NeoForge-only: Fabric clients accept the payload and ignore it, so mixed-loader servers can send
+it freely. See [Capabilities and Limits](Capabilities-and-Limits).
+
 ## Signed-distance volumes
 
 A raymarched volume built from primitive shapes fused by a smooth union. Offsets and sizes are in blocks.

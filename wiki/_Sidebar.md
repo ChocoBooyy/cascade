@@ -6,3 +6,4 @@
 - [Sequencing](Sequencing)
 - [Datapack Effects](Datapack-Effects)
 - [Custom Components](Custom-Components)
+- [Capabilities and Limits](Capabilities-and-Limits)

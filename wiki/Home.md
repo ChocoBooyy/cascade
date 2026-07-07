@@ -23,5 +23,6 @@ Vfx.emitter()
 - [Sequencing](Sequencing) - timelines with delays and parallel branches
 - [Datapack Effects](Datapack-Effects) - author effects as JSON
 - [Custom Components](Custom-Components) - add particle behaviors of your own
+- [Capabilities and Limits](Capabilities-and-Limits) - what works where, and each feature's bounds
 
 Every method is documented in the javadoc on `Vfx` and the `Vfx*` builders.
