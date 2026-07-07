@@ -1,6 +1,7 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import dev.chocoboy.cascade.client.ParticleAtlas;
+import dev.chocoboy.cascade.client.SoftDepth;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 
@@ -13,8 +14,8 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 // before any textured type is built. building these at registration instead would resolve the atlas before
 // it exists and cache a blank texture, drawing every sprite as a flat coloured quad.
 //
-// first cut of the port: the soft (depth-fading) and lightmap-lit variants are not rebuilt yet, so the
-// provider maps them onto their hard-edged and unlit twins. see the porting notes
+// still pending from the port: the lightmap-lit mesh variant, whose provider method maps onto the unlit
+// twin. see the porting notes
 final class VfxRenderTypes {
 
     private static final int BUFFER_BYTES = 1536;
@@ -70,4 +71,47 @@ final class VfxRenderTypes {
     static final RenderType TEXTURED_ALPHA_LIT = textured("cascade_textured_alpha_lit", CascadePipelines.TEXTURED_ALPHA_LIT, true, true);
     static final RenderType GUI_TEXTURED_ADDITIVE = textured("cascade_gui_textured_additive", CascadePipelines.GUI_TEXTURED_ADDITIVE, false, false);
     static final RenderType GUI_TEXTURED_ALPHA = textured("cascade_gui_textured_alpha", CascadePipelines.GUI_TEXTURED_ALPHA, true, false);
+
+    // the soft types bind cascade's scene depth copy, whose texture is recreated on window resize. a
+    // RenderSetup caches the resolved gpu view when built, so these are rebuilt whenever the depth copy's
+    // generation moves instead of living as static finals like the types above. the generation is stamped
+    // into the name in case type names are registered anywhere unique
+    private static RenderType texturedAlphaSoft;
+    private static RenderType texturedAlphaLitSoft;
+    private static int softGeneration = -1;
+
+    static RenderType texturedAlphaSoft() {
+        ensureSoft();
+        return texturedAlphaSoft;
+    }
+
+    static RenderType texturedAlphaLitSoft() {
+        ensureSoft();
+        return texturedAlphaLitSoft;
+    }
+
+    private static void ensureSoft() {
+        SoftDepth.ensureReady();
+        int generation = SoftDepth.generation();
+        if (softGeneration != generation) {
+            softGeneration = generation;
+            texturedAlphaSoft = softTextured("cascade_textured_alpha_soft_" + generation,
+                    CascadePipelines.TEXTURED_ALPHA_SOFT, false);
+            texturedAlphaLitSoft = softTextured("cascade_textured_alpha_lit_soft_" + generation,
+                    CascadePipelines.TEXTURED_ALPHA_LIT_SOFT, true);
+        }
+    }
+
+    private static RenderType softTextured(String name, com.mojang.blaze3d.pipeline.RenderPipeline pipeline,
+            boolean lightmap) {
+        RenderSetup.RenderSetupBuilder setup = RenderSetup.builder(pipeline)
+                .withTexture("Sampler0", ParticleAtlas.textureId(), ATLAS_SAMPLER)
+                .withTexture("DepthSampler", SoftDepth.textureId(), ATLAS_SAMPLER)
+                .sortOnUpload()
+                .bufferSize(BUFFER_BYTES);
+        if (lightmap) {
+            setup.useLightmap();
+        }
+        return RenderType.create(name, setup.createRenderSetup());
+    }
 }

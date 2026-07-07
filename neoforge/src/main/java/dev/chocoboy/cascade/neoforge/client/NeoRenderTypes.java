@@ -23,8 +23,7 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
 
     @Override
     public RenderType texturedAlphaSoft() {
-        // soft depth fade is not ported yet, so soft maps onto its hard-edged twin. see the porting notes
-        return VfxRenderTypes.TEXTURED_ALPHA;
+        return VfxRenderTypes.texturedAlphaSoft();
     }
 
     @Override
@@ -50,8 +49,7 @@ public final class NeoRenderTypes implements CascadeRenderTypes.Provider {
 
     @Override
     public RenderType texturedAlphaLitSoft() {
-        // soft depth fade is not ported yet, so soft maps onto its hard-edged twin. see the porting notes
-        return VfxRenderTypes.TEXTURED_ALPHA_LIT;
+        return VfxRenderTypes.texturedAlphaLitSoft();
     }
 
     @Override

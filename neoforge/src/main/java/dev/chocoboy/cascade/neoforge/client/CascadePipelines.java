@@ -32,6 +32,11 @@ final class CascadePipelines {
     private static final Identifier POSITION_TEX_CUTOUT =
             Identifier.fromNamespaceAndPath("cascade", "core/position_tex_cutout");
 
+    // the soft particle fragment stage: fades alpha where the quad nears scene geometry, read from
+    // cascade's depth copy bound as DepthSampler. one fragment serves the lit and unlit soft pipelines
+    private static final Identifier POSITION_TEX_SOFT =
+            Identifier.fromNamespaceAndPath("cascade", "core/position_tex_soft");
+
     private CascadePipelines() {
     }
 
@@ -87,6 +92,31 @@ final class CascadePipelines {
             RenderPipelines.TRANSLUCENT_PARTICLE, DefaultVertexFormat.PARTICLE,
             new ColorTargetState(BlendFunction.TRANSLUCENT), DEPTH_NO_WRITE);
 
+    // soft twins of the alpha types: the soft fragment stage fades the quad near scene geometry, reading
+    // cascade's depth copy through the extra DepthSampler
+    static final RenderPipeline TEXTURED_ALPHA_SOFT =
+            RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+                    .withLocation(Identifier.fromNamespaceAndPath("cascade", "textured_alpha_soft"))
+                    .withVertexShader(POSITION_TEX_COLOR)
+                    .withFragmentShader(POSITION_TEX_SOFT)
+                    .withSampler("Sampler0")
+                    .withSampler("DepthSampler")
+                    .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+                    .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+                    .withDepthStencilState(DEPTH_NO_WRITE)
+                    .withCull(false)
+                    .build();
+
+    static final RenderPipeline TEXTURED_ALPHA_LIT_SOFT = RenderPipelines.TRANSLUCENT_PARTICLE.toBuilder()
+            .withLocation(Identifier.fromNamespaceAndPath("cascade", "textured_alpha_lit_soft"))
+            .withFragmentShader(POSITION_TEX_SOFT)
+            .withSampler("DepthSampler")
+            .withVertexFormat(DefaultVertexFormat.PARTICLE, VertexFormat.Mode.QUADS)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
+            .withDepthStencilState(DEPTH_NO_WRITE)
+            .withCull(false)
+            .build();
+
     // gui twins: no depth test, so the hud pass draws over whatever scene depth is left, and no depth write
     static final RenderPipeline GUI_TEXTURED_ADDITIVE = textured("gui_textured_additive",
             new ColorTargetState(BlendFunction.ADDITIVE), NO_DEPTH);
@@ -97,6 +127,7 @@ final class CascadePipelines {
     private static final List<RenderPipeline> ALL = List.of(
             ADDITIVE, TEXTURED_ADDITIVE, TEXTURED_ALPHA, SOLID,
             TEXTURED_ADDITIVE_LIT, TEXTURED_ALPHA_LIT,
+            TEXTURED_ALPHA_SOFT, TEXTURED_ALPHA_LIT_SOFT,
             GUI_TEXTURED_ADDITIVE, GUI_TEXTURED_ALPHA);
 
     // the gpu device only compiles pipelines it knows about, so every custom pipeline is registered here

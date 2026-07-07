@@ -101,10 +101,17 @@ public final class VfxRenderManager {
         }
         visible.sort(Comparator.comparingDouble(e -> e.position().distanceToSqr(camPos)));
 
-        // soft particles fade where they meet geometry by sampling a scene depth copy through a custom core
-        // shader. 26.1 replaced ShaderInstance with the RenderPipeline system, so that path is disabled on
-        // this port: soft effects still draw, they just clip hard against terrain like an ordinary quad.
-        // the refreshSoftDepth flag and SoftDepth blit stay wired for when the port is restored
+        // soft particles fade where they meet geometry by sampling a scene depth copy through the soft
+        // fragment stage. refresh the copy only when a visible effect asks for it, so non-soft scenes pay
+        // nothing; the bloom capture pass passes refreshSoftDepth false so it reuses this frame's copy
+        if (refreshSoftDepth) {
+            for (RenderedEffect effect : visible) {
+                if (effect.soft()) {
+                    SoftDepth.copyFromMain();
+                    break;
+                }
+            }
+        }
 
         // effects only submit work here; the queue draws it grouped by render type in the playback below
         int primitives = 0;
