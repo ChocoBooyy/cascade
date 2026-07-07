@@ -2,6 +2,7 @@ package dev.chocoboy.cascade.neoforge.client;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import dev.chocoboy.cascade.client.BloomBlit;
+import dev.chocoboy.cascade.client.ScreenVfxPipelines;
 import dev.chocoboy.cascade.client.SdfFx;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
@@ -23,7 +24,6 @@ final class CascadePipelines {
 
     static final DepthStencilState DEPTH_NO_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false);
     static final DepthStencilState DEPTH_WRITE = new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true);
-    static final DepthStencilState NO_DEPTH = new DepthStencilState(CompareOp.ALWAYS_PASS, false);
 
     private static final Identifier POSITION_TEX_COLOR = Identifier.withDefaultNamespace("core/position_tex_color");
 
@@ -132,18 +132,11 @@ final class CascadePipelines {
             .withCull(false)
             .build();
 
-    // gui twins: no depth test, so the hud pass draws over whatever scene depth is left, and no depth write
-    static final RenderPipeline GUI_TEXTURED_ADDITIVE = textured("gui_textured_additive",
-            new ColorTargetState(BlendFunction.ADDITIVE), NO_DEPTH);
-
-    static final RenderPipeline GUI_TEXTURED_ALPHA = textured("gui_textured_alpha",
-            new ColorTargetState(BlendFunction.TRANSLUCENT), NO_DEPTH);
-
     private static final List<RenderPipeline> ALL = List.of(
             ADDITIVE, TEXTURED_ADDITIVE, TEXTURED_ALPHA, SOLID, SOLID_LIT,
             TEXTURED_ADDITIVE_LIT, TEXTURED_ALPHA_LIT,
             TEXTURED_ALPHA_SOFT, TEXTURED_ALPHA_LIT_SOFT,
-            GUI_TEXTURED_ADDITIVE, GUI_TEXTURED_ALPHA,
+            ScreenVfxPipelines.ADDITIVE, ScreenVfxPipelines.ALPHA,
             BloomBlit.PIPELINE, SdfFx.PIPELINE);
 
     // the gpu device only compiles pipelines it knows about, so every custom pipeline is registered here

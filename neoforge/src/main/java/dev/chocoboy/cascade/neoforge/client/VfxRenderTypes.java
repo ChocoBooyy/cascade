@@ -76,8 +76,8 @@ final class VfxRenderTypes {
     static final RenderType TEXTURED_ALPHA = textured("cascade_textured_alpha", CascadePipelines.TEXTURED_ALPHA, true, false);
     static final RenderType TEXTURED_ADDITIVE_LIT = textured("cascade_textured_additive_lit", CascadePipelines.TEXTURED_ADDITIVE_LIT, false, true);
     static final RenderType TEXTURED_ALPHA_LIT = textured("cascade_textured_alpha_lit", CascadePipelines.TEXTURED_ALPHA_LIT, true, true);
-    static final RenderType GUI_TEXTURED_ADDITIVE = textured("cascade_gui_textured_additive", CascadePipelines.GUI_TEXTURED_ADDITIVE, false, false);
-    static final RenderType GUI_TEXTURED_ALPHA = textured("cascade_gui_textured_alpha", CascadePipelines.GUI_TEXTURED_ALPHA, true, false);
+    static final RenderType GUI_TEXTURED_ADDITIVE = textured("cascade_gui_textured_additive", dev.chocoboy.cascade.client.ScreenVfxPipelines.ADDITIVE, false, false);
+    static final RenderType GUI_TEXTURED_ALPHA = textured("cascade_gui_textured_alpha", dev.chocoboy.cascade.client.ScreenVfxPipelines.ALPHA, true, false);
 
     // the soft types bind cascade's scene depth copy, whose texture is recreated on window resize. a
     // RenderSetup caches the resolved gpu view when built, so these are rebuilt whenever the depth copy's

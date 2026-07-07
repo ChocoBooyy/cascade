@@ -1,12 +1,14 @@
 package dev.chocoboy.cascade.neoforge.client;
 
 import dev.chocoboy.cascade.client.PostFx;
+import dev.chocoboy.cascade.client.ScreenVfxManager;
 import dev.chocoboy.cascade.client.VfxRenderManager;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 // feeds neoforge's client tick and render pass into the shared render manager. 26.1 split the render
@@ -17,6 +19,12 @@ public final class VfxRenderBridge {
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         VfxRenderManager.get().clientTick();
+        ScreenVfxManager.get().tick();
+    }
+
+    @SubscribeEvent
+    public void onRenderGui(RenderGuiEvent.Post event) {
+        ScreenVfxManager.get().render(event.getGuiGraphics());
     }
 
     @SubscribeEvent
