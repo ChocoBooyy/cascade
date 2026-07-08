@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
     id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
 }
 
@@ -9,6 +10,8 @@ base {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(java_version)
+    withSourcesJar()
+    withJavadocJar()
 }
 
 sourceSets {
@@ -58,5 +61,48 @@ processResources {
     inputs.properties(props)
     filesMatching('fabric.mod.json') {
         expand props
+    }
+}
+
+// merged javadoc and the same dependency-free pom as the neoforge artifact: the jar is
+// self-contained, engine and common compile in as sources
+tasks.named('javadoc', Javadoc) {
+    dependsOn(configurations.commonJava, configurations.engineJava)
+    source(configurations.commonJava)
+    source(configurations.engineJava)
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
+}
+tasks.named('sourcesJar', Jar) {
+    dependsOn(configurations.commonJava, configurations.engineJava)
+    from(configurations.commonJava)
+    from(configurations.engineJava)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// gradle module metadata would re-declare the loader and fabric-api as runtime deps, defeating the
+// dependency-free pom; consumers resolve those themselves like on neoforge
+tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = false
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifactId base.archivesName.get()
+            from components.java
+            pom.withXml {
+                def deps = asNode().dependencies
+                if (!deps.isEmpty()) {
+                    asNode().remove(deps)
+                }
+            }
+        }
+    }
+    repositories {
+        // a local clone of the ChocoBooyy/maven repo; push it after publishing, consumers read it over raw
+        maven {
+            name = 'chocoboy'
+            url = uri("${rootDir}/../maven")
+        }
     }
 }
