@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'dev.chocoboy.cascade:cascade-neoforge:1.0.0'
+    implementation 'dev.chocoboy.cascade:cascade-neoforge:1.0.0+1.21.1'
 }
 ```
 

@@ -40,7 +40,7 @@ Minecraft 1.21.1, Java 21, and either NeoForge or Fabric with Fabric API.
 
 ## Status
 
-1.0.0, the first stable release. The public API is committed across 1.x. See [CHANGELOG.md](CHANGELOG.md).
+1.0.0+1.21.1, the first stable release, versioned for its Minecraft line. The public API is committed across 1.x. See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

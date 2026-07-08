@@ -6,6 +6,7 @@ license="MIT"
 modId="cascade"
 version="${version}"
 displayName="Cascade"
+authors="ChocoBoy"
 description="A visual effects and sequencing library for NeoForge."
 
 [[dependencies.cascade]]
