@@ -6,6 +6,7 @@
   "description": "A client-side VFX and sequencing library.",
   "authors": [ "chocoboy" ],
   "license": "MIT",
+  "icon": "assets/cascade/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [ "dev.chocoboy.cascade.fabric.CascadeFabric" ],

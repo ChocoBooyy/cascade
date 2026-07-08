@@ -4,6 +4,7 @@ license="MIT"
 
 [[mods]]
 modId="cascade"
+logoFile="assets/cascade/icon.png"
 version="${version}"
 displayName="Cascade"
 description="A visual effects and sequencing library for NeoForge."

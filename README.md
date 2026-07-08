@@ -1,5 +1,7 @@
 # Cascade
 
+<img src="logo.png" alt="Cascade" width="200" align="right">
+
 A code-first visual effects and sequencing library for Minecraft 26.1, on both NeoForge and Fabric. It gives
 other mods a fluent API for particle effects, beams, and choreographed timelines.
 
