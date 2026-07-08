@@ -15,8 +15,8 @@ Each commit message has a header, a body, and a footer.
 
 The header is required and must follow the Commit Message Header format.
 
-The body is required for all commits except type "docs". When present, the body must be at
-least 20 characters long.
+The body is optional. Use one only when the header cannot carry the why on its own, and keep
+it to a sentence or two.
 
 The footer is optional.
 
@@ -57,8 +57,8 @@ registry, build, docs, ci.
 
 ## Body
 
-Use the imperative, present tense. Explain why the change is needed. If helpful, include the
-previous behavior and the new behavior. Minimum length is 20 characters.
+Optional. Use the imperative, present tense, and explain why the change is needed in a
+sentence or two.
 
 ## Footer
 
