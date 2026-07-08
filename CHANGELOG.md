@@ -21,7 +21,7 @@ The Minecraft 26.1 port of the 1.0.0 release. The public API is unchanged; every
 
 ### Requirements
 
-- Minecraft 26.1, Java 25, NeoForge or Fabric with Fabric API. The 1.21.1 line continues as `1.0.0` on the
+- Minecraft 26.1, Java 25, NeoForge or Fabric with Fabric API. The 1.21.1 line continues as `1.0.0+1.21.1` on the
   `1.21.1` branch.
 
 ## 1.0.0 - 2026-07-04

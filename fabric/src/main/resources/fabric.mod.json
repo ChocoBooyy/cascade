@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "Cascade",
   "description": "A client-side VFX and sequencing library.",
-  "authors": [ "chocoboy" ],
+  "authors": [ "ChocoBoy" ],
   "license": "MIT",
   "icon": "assets/cascade/icon.png",
   "environment": "*",

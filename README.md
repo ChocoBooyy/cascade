@@ -39,7 +39,7 @@ See [docs/getting-started.md](docs/getting-started.md) for the walkthrough.
 ## Requirements
 
 Minecraft 26.1, Java 25, and either NeoForge or Fabric with Fabric API. The 1.21.1 build lives on the
-`1.21.1` branch as the `1.0.0` artifact.
+`1.21.1` branch as the `1.0.0+1.21.1` artifact.
 
 ## Status
 
