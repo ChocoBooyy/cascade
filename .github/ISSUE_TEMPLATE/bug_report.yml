@@ -1,0 +1,52 @@
+name: Bug report
+description: "Something in Cascade is broken, crashing, or rendering wrong"
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: What's the bug?
+      description: "What happened, and what did you expect instead? For rendering issues a screenshot or short clip helps a lot."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: How do you trigger it?
+      description: "The effect code or datapack json that hits it, trimmed to the smallest thing that still reproduces. If it's random or you're not sure, just say so."
+      render: java
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Mod loader
+      options:
+        - NeoForge
+        - Fabric
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Minecraft version
+      options:
+        - "26.1"
+        - "1.21.1"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Cascade version
+      description: "The artifact version you depend on."
+      placeholder: "e.g. 1.0.0+26.1"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Game log
+      description: "Upload your latest.log (plus the crash report if it crashed) to https://mclo.gs and paste the link. Please don't paste the whole log in here, it makes the issue unreadable."
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Anything else?
+      description: "Shaders, other rendering mods, whether the cpu fallback behaves differently with /cascade gpu off, anything that seems related."
+    validations:
+      required: false
